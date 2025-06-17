@@ -6,6 +6,8 @@ export interface Task {
   completed: boolean
   actions?: Action[]
   auto?: boolean
+  create_at: Date
+  due_at?: Date
 }
 
 export interface WeeklyTasks {
