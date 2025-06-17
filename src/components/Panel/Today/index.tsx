@@ -4,25 +4,6 @@ import "./index.css";
 interface Props {
     tasks: Task[]
 }
-// const toggleTaskCompletion = (period: TabType, day: DayOfWeek | null, taskId: number) => {
-//     setTasks(prevTasks => {
-
-//         const newTasks: TasksData = { ...prevTasks };
-
-//         if (period === 'today' || period === 'monthly') {
-//             newTasks[period] = newTasks[period].map(task =>
-//                 task.id === taskId ? { ...task, completed: !task.completed } : task
-//             );
-//         } else if (period === 'weekly' && day) {
-//             newTasks.weekly = { ...newTasks.weekly };
-//             newTasks.weekly[day] = newTasks.weekly[day].map(task =>
-//                 task.id === taskId ? { ...task, completed: !task.completed } : task
-//             );
-//         }
-
-//         return newTasks;
-//     });
-// };
 
 
 const TodayView = (props: Props) => {
