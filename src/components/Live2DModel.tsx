@@ -62,7 +62,7 @@ const Live2DModelComponent: React.FC<Live2DModelProps> = ({
         console.log('Model loaded successfully:', model);
         
         // 设置模型属性
-        model.scale.set(0.2);
+        model.scale.set(scale);
         model.x = position.x;
         model.y = position.y;
         
@@ -73,8 +73,8 @@ const Live2DModelComponent: React.FC<Live2DModelProps> = ({
           modelRef.current = model;
           
           // 启用交互
-          model.interactive = true;
-          model.buttonMode = true;
+          model.interactive = false;
+          model.buttonMode = false;
           
           // 添加点击事件 - 随机动作
           model.on('pointerdown', () => {

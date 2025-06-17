@@ -12,15 +12,15 @@ const Layout = () => {
             <li>
               <Link to="/about">关于</Link>
             </li>
+            <li>
+              <Link to="/dashboard">面板</Link>
+            </li>
           </ul>
         </nav>
       </header>
       <main>
         <Outlet />
       </main>
-      <footer>
-        <p>© 2023 Ducker 应用</p>
-      </footer>
     </div>
   );
 };
