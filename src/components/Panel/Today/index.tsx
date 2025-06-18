@@ -1,7 +1,7 @@
 import { useState } from "react";
 
 import type { Task } from "@/types";
-import TaskItem from "@/components/TaskItem";
+import TaskList from "@/components/Task/TaskList";
 
 interface Props {
     tasks: Task[]
@@ -11,18 +11,23 @@ interface Props {
 const TodayView = (props: Props) => {
     const { tasks } = props;
     const [taskList, setTaskList] = useState<Task[]>(tasks);
-    const completedCount = taskList.filter(t => t.completed).length;
-    const totalCount = taskList.length;
+    let completedCount = 0
+    taskList.forEach(item=>{
+        if (item.completed) completedCount += 1
+        if (item.children){
+            item.children.filter(child=>{
+                if (child.completed) completedCount += 1
+            })
+        }
+    });
+    let totalCount = 0 
+    taskList.forEach((item)=>{
+        totalCount += 1;
+        if(item.children){
+            totalCount += item.children.length;
+        }
+    });
     const progressPercent = totalCount > 0 ? (completedCount / totalCount) * 100 : 0;
-
-    const toggleTaskCompletion = (taskId: number) => {
-        setTaskList(prevTaskList =>
-            prevTaskList.map(task =>
-                task.id === taskId ? { ...task, completed: !task.completed } : task
-            )
-        );
-    }
-
 
     return (
         <div className="today-view">
@@ -36,11 +41,7 @@ const TodayView = (props: Props) => {
                     {completedCount} / {totalCount} 完成
                 </span>
             </div>
-            <ul className="task-list">
-                {taskList.map(task => (
-                    <TaskItem key={task.id} task={task} />
-                ))}
-            </ul>
+            <TaskList tasks={taskList} setTasks={setTaskList} />
         </div>
     );
 };

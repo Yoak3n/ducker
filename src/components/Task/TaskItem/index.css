@@ -27,7 +27,9 @@
 
 .sub-task-list {
     list-style: none;
-    padding-left: 1rem;
+    .sub-task{
+        margin-left: 1rem;
+    }
     .task-item-title{
         font-weight: normal;
         font-size: 14px;
@@ -38,7 +40,7 @@
 .task-item {
     display: flex;
     width: 100%;
-    background: #f9f9f9;
+    background: transparent;
     border-radius: 4px;
     align-items: center;
 }
@@ -51,7 +53,8 @@
 
 }
 
-.task-item.completed {
+.root-task.completed,
+.sub-task.completed {
     background: #e8f8f5;
     color: #27ae60;
 }

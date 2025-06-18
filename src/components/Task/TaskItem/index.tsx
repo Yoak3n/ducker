@@ -5,23 +5,21 @@ import "./index.css";
 
 interface Props {
     root?: boolean;
-    task: Task
+    task: Task,
+    changeTask: (id: number,sub?:boolean) => void;
+
 }
 
-export default function TaskItem({ root = true, task }: Props) {
-    const [isCompleted, setIsCompleted] = useState(task.completed);
+export default function TaskItem({ root = true, task,changeTask }: Props) {
     const [isExpanded, setIsExpanded] = useState(false);
-    const toggleTaskCompletion = () => {
-        setIsCompleted(!isCompleted);
-        // TODO: Update task completion status in the backend
-    }
+    const itemClassName = (root ? "root-task" : "sub-task") +" "+ (task.completed ? "completed" : "")
     return (
-        <li className={root ? "root-task" : "sub-task"} key={task.id}>
-            <div className={isCompleted ? "task-item  completed" : "task-item"}>
+        <li className={itemClassName } key={task.id}>
+            <div className="task-item">
                 <input
                     type="checkbox"
-                    checked={isCompleted}
-                    onChange={() => toggleTaskCompletion()}
+                    checked={task.completed}
+                    onChange={() => root? changeTask(task.id):changeTask(task.id,true)}
                 />
                 <div className="task-item-content" >
                     <div className="task-item-title">{task.title}</div>
@@ -33,10 +31,10 @@ export default function TaskItem({ root = true, task }: Props) {
                         </span>
                     </button>}
             </div>
-            {isExpanded && task.children && task.children.length > 0 &&
+            {isExpanded && task.children &&
                 <ul className="sub-task-list">
                     {task.children.map((subTask) => (
-                        <TaskItem key={subTask.id} root={false} task={subTask} />
+                        <TaskItem key={subTask.id} root={false} task={subTask} changeTask={changeTask} />
                     ))}
                 </ul>}
         </li>
