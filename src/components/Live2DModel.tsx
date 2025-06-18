@@ -52,30 +52,30 @@ const Live2DModelComponent: React.FC<Live2DModelProps> = ({
     const loadModel = async () => {
       try {
         console.log('Loading model from path:', modelPath);
-        
+
         // 加载模型
         const model = await Live2DModel.from(modelPath, {
           autoUpdate: true,
           // autoLoad: true
         });
-        
+
         console.log('Model loaded successfully:', model);
-        
+
         // 设置模型属性
         model.scale.set(scale);
         model.x = position.x;
         model.y = position.y;
-        
+
         // 确保app.stage存在
         if (appRef.current && appRef.current.stage) {
           // 添加模型到舞台
           appRef.current.stage.addChild(model);
           modelRef.current = model;
-          
+
           // 启用交互
           model.interactive = false;
           model.buttonMode = false;
-          
+
           // 添加点击事件 - 随机动作
           model.on('pointerdown', () => {
             console.log('Model clicked');
@@ -123,7 +123,7 @@ const Live2DModelComponent: React.FC<Live2DModelProps> = ({
 
   return <div ref={containerRef} className="live2d-container" >
     <canvas ref={canvasRef} />
-    </div>;
+  </div>;
 };
 
 export default Live2DModelComponent;

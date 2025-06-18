@@ -1,6 +1,8 @@
 import { useState } from "react";
+
 import type { Task } from "@/types";
-import "./index.css";
+import TaskItem from "@/components/TaskItem";
+
 interface Props {
     tasks: Task[]
 }
@@ -36,16 +38,7 @@ const TodayView = (props: Props) => {
             </div>
             <ul className="task-list">
                 {taskList.map(task => (
-                    <li key={task.id} className={task.completed ? 'completed task-item' : 'task-item'}>
-                        <input
-                            type="checkbox"
-                            checked={task.completed}
-                            onChange={() => toggleTaskCompletion(task.id)}
-                        />
-                        <div className="task-item-title"  onClick={() => toggleTaskCompletion(task.id)}>
-                            {task.title}
-                        </div>
-                    </li>
+                    <TaskItem key={task.id} task={task} />
                 ))}
             </ul>
         </div>

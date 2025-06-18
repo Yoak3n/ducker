@@ -1,6 +1,9 @@
 import React from 'react';
 import Live2DModelComponent from '@/components/Live2DModel';
 
+
+
+
 const Home: React.FC = () => {
   return (
     <div className="home-page">

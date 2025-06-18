@@ -84,8 +84,6 @@
   margin: 5px 0;
   background: #f9f9f9;
   border-radius: 4px;
-  display: flex;
-  align-items: center;
 }
 
 .task-list li.completed {

@@ -5,9 +5,11 @@ export interface Task {
   title: string
   completed: boolean
   actions?: Action[]
+  children?: Task[]
   auto?: boolean
   create_at: Date
   due_at?: Date
+  reminder_at?: Date
 }
 
 export interface WeeklyTasks {

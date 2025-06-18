@@ -1,10 +1,13 @@
 import { createBrowserRouter } from 'react-router-dom';
-import Home from '@/pages/Home';
-import About from '@/pages/About';
-import Dashboard from '@/pages/Dashboard';
-import NotFound from '@/pages/NotFound';
+import { lazy } from 'react';
+
+
 import Layout from '@/pages/Layout';
 
+const Dashboard = lazy(() => import('@/pages/Dashboard'));
+const About = lazy(() => import('@/pages/About'));
+const NotFound = lazy(() => import('@/pages/NotFound'));
+const Home = lazy(() => import('@/pages/Home'));
 const router = createBrowserRouter([
   {
     path: '/',

@@ -148,8 +148,6 @@ const TaskDashboard: React.FC = () => {
 
   return (
     <div className="task-dashboard">
-      <h1>任务管理面板</h1>
-      
       <div className="tabs">
         <button 
           className={activeTab === 'today' ? 'active' : ''}

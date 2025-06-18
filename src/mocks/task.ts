@@ -1,6 +1,9 @@
 export const  allData = {
     today: [
-      { id: 1, title: '完成项目提案', completed: false, create_at: new Date(), due_at: new Date() },
+      { id: 1, title: '完成项目提案', completed: false, create_at: new Date(), due_at: new Date(),children: [
+         { id: 6, title: '功能开发', completed: false,create_at: new Date(), due_at: new Date() },
+        { id: 7, title: '文档编写', completed: false,create_at: new Date(), due_at: new Date() },
+      ] },
       { id: 2, title: '团队会议', completed: true ,create_at: new Date(), due_at: new Date()},
       { id: 3, title: '代码审查', completed: false ,create_at: new Date(), due_at: new Date()},
     ],
