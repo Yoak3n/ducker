@@ -6,12 +6,12 @@ use std::{
 use anyhow::Result;
 use once_cell::sync::OnceCell;
 use parking_lot::Mutex;
-use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
+use tauri::{menu::CheckMenuItem, tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent}};
+use tauri::Wry;
 use tauri::{
     menu::{Menu, MenuEvent, MenuItem, PredefinedMenuItem},
     AppHandle,
 };
-use tauri::Wry;
 // use super::handle;
 use crate::{
     core::handle, // utils::logging::Type
@@ -137,6 +137,12 @@ impl Tray {
         self.update_tray_display()?;
         Ok(())
     }
+    pub fn update_menu_visible(&self, visible: bool) {
+        let app_handle = handle::Handle::global().app_handle().unwrap();
+        let tray = app_handle.tray_by_id("main").unwrap();
+        tray.set_menu(Some(create_tray_menu(&app_handle, visible).unwrap())).unwrap();
+    }
+
     pub fn create_tray_from_handle(&self, app_handle: &AppHandle) -> Result<()> {
         log::info!(target: "app", "正在从AppHandle创建系统托盘");
         let mut builder = TrayIconBuilder::with_id("main")
@@ -149,35 +155,27 @@ impl Tray {
         let tray = builder.build(app_handle)?;
         tray.on_tray_icon_event(|_, event| {
             let tray_event = String::from("main_window");
-            if let TrayIconEvent::Click {
-                button: MouseButton::Left,
-                button_state: MouseButtonState::Down,
-                ..
-            } = event
-            {
-                match tray_event.as_str() {
+            match event {
+                TrayIconEvent::Click {
+                    button: MouseButton::Left,
+                    button_state: MouseButtonState::Down,
+                    ..
+                } => match tray_event.as_str() {
                     "main_window" => {
                         log::info!(target: "app", "Tray点击事件: 显示主窗口");
                     }
                     _ => {}
-                }
-            }
-            if let TrayIconEvent::DoubleClick {
-                button: MouseButton::Left,..
-            } = event{
-                if let Some(window) = handle::Handle::global().get_window() {
-                    if window.is_visible().unwrap_or(false) {
-                        log::info!(target: "app", "Tray双击事件: 隐藏主窗口");
-                        let _ = window.hide();
-                    } else {
-                        log::info!(target: "app", "Tray双击事件: 显示主窗口");
-                        let _ = window.show();
-                        let _ = window.set_focus();
-                    }
-                } else {
-                    log::warn!(target: "app", "Tray双击事件: 主窗口不存在");
-                }
-                
+                },
+                // 有点耗性能，可能需要再其他地方调用update
+                // TrayIconEvent::Move { rect, position, .. } => {
+                //     println!("{:?}", rect);
+                //     Tray::global().update_all_states().unwrap();
+                // },
+                TrayIconEvent::DoubleClick {
+                    button: MouseButton::Left,
+                    ..
+                } => window_manager::switch_main_window(),
+                _ => {}
             }
         });
         tray.on_menu_event(on_menu_event);
@@ -196,19 +194,23 @@ fn create_tray_menu(app_handle: &AppHandle, visiable: bool) -> Result<Menu<Wry>>
         None::<&str>,
     )
     .unwrap();
-    let show = {
-        if visiable {
-            &MenuItem::with_id(app_handle, "open_window", "Hide", true, None::<&str>).unwrap()
-        } else {
-            &MenuItem::with_id(app_handle, "open_window", "Show", true, None::<&str>).unwrap()
-        }
-    };
+    // let show = {
+    //     if visiable {
+    //         println!("visiable");
+    //         &MenuItem::with_id(app_handle, "open_window", "Hide", true, None::<&str>).unwrap()
+    //     } else {
+    //         println!("not visiable");
+    //         &MenuItem::with_id(app_handle, "open_window", "Show", true, None::<&str>).unwrap()
+    //     }
+    // };
+    let show_item = &CheckMenuItem::with_id(app_handle, "open_window", "Live2D", true, visiable, Some("Show")).unwrap();
     let separator = &PredefinedMenuItem::separator(app_handle).unwrap();
+    let about_item = &MenuItem::with_id(app_handle, "about", format!("About v{version}"), true, None::<&str>).unwrap();
     let quit =
-        &MenuItem::with_id(app_handle, "quit", "Exit", true, Some("CmdOrControl+Q")).unwrap();
+        &MenuItem::with_id(app_handle, "quit", "Exit", true, Some("")).unwrap();
 
     let menu = tauri::menu::MenuBuilder::new(app_handle)
-        .items(&[app_version, separator, show, quit])
+        .items(&[app_version, separator, show_item,about_item, quit])
         .build()
         .unwrap();
     logging!(info, Type::Tray, true, "Creating tray menu");
@@ -223,7 +225,7 @@ fn on_menu_event(_: &AppHandle, event: MenuEvent) {
         }
         _ => {}
     }
-    if let Err(e) = Tray::global().update_all_states() {
-        log::warn!(target: "app", "更新托盘状态失败: {}", e);
-    }
+    // if let Err(e) = Tray::global().update_all_states() {
+    //     log::warn!(target: "app", "更新托盘状态失败: {}", e);
+    // }
 }

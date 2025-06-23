@@ -5,7 +5,12 @@ use std::{
     sync::atomic::{AtomicBool, Ordering},
     time::{Duration, Instant},
 };
-use crate::{core::handle,logging,utils::logging::Type};
+use crate::{
+    core::{handle,tray},
+
+    logging,
+    utils::logging::Type
+};
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum WindowOperationResult {
@@ -51,9 +56,12 @@ pub enum WindowLabel {
 }
 
 pub fn switch_main_window() {
+    println!("called");
+
     let app_handle = handle::Handle::global().app_handle().unwrap();
     if let Some(window) = app_handle.get_webview_window("main") {
         let visible = window.is_visible().unwrap_or(false);
+        tray::Tray::global().update_menu_visible(!visible);
         if visible {
             window.close().unwrap();
         } else {
@@ -62,7 +70,11 @@ pub fn switch_main_window() {
         }
     } else {
         create_main_window();
+        logging!(info, Type::Window, true, "Creating main window");
+        tray::Tray::global().update_menu_visible(true);
     }
+
+
 }
 
 pub fn create_window_by_label(label: &WindowLabel) {

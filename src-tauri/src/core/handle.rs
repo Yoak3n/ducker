@@ -60,7 +60,8 @@ impl Handle {
     pub fn get_window_visible(&self) -> bool {
         let window = self.get_window();
         match window {
-            Some(window) => window.is_visible().unwrap(),
+            // TODO 没有按照预想的立即返回false
+            Some(window) => window.is_visible().unwrap_or(false),
             None => false,
         }
     }

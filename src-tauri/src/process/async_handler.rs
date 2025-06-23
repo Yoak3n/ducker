@@ -2,7 +2,7 @@ use std::future::Future;
 use tauri::{async_runtime, async_runtime::JoinHandle};
 
 pub struct AsyncHandler;
-
+#[allow(dead_code)]
 impl AsyncHandler {
     pub fn spawn<F, Fut>(f: F) -> JoinHandle<()>
     where
