@@ -122,7 +122,7 @@ const Live2DModelComponent: React.FC<Live2DModelProps> = ({
   }, [modelPath, width, height, position, scale]);
 
   return <div ref={containerRef} className="live2d-container" >
-    <canvas ref={canvasRef} />
+    <canvas ref={canvasRef} data-tauri-drag-region />
   </div>;
 };
 

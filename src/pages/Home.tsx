@@ -6,11 +6,8 @@ import Live2DModelComponent from '@/components/Live2DModel';
 
 const Home: React.FC = () => {
   return (
-    <div className="home-page">
-      {/* <h1>欢迎来到Ducker应用</h1> */}
-      <p>这是一个使用React Router实现的单页面应用</p>
-      
-      <div className="live2d-wrapper">
+    <div className="home-page" >
+      <div className="live2d-wrapper" data-tauri-drag-region>
         <Live2DModelComponent 
           modelPath="/models/Mao/Mao.model3.json" 
           width={300} 

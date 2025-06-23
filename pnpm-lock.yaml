@@ -14,6 +14,21 @@ importers:
       '@pixi/utils':
         specifier: ^6.5.10
         version: 6.5.10(@pixi/constants@6.5.10)(@pixi/settings@6.5.10(@pixi/constants@6.5.10))
+      '@tauri-apps/plugin-dialog':
+        specifier: ~2.2.2
+        version: 2.2.2
+      '@tauri-apps/plugin-global-shortcut':
+        specifier: ~2.2.1
+        version: 2.2.1
+      '@tauri-apps/plugin-notification':
+        specifier: ~2.2.2
+        version: 2.2.2
+      '@tauri-apps/plugin-opener':
+        specifier: ~2.2.7
+        version: 2.2.7
+      '@tauri-apps/plugin-shell':
+        specifier: ~2.2.2
+        version: 2.2.2
       pixi-live2d-display:
         specifier: ^0.4.0
         version: 0.4.0(0736f5bd67d2e4de7e9fff36ad63fa2e)
@@ -768,6 +783,24 @@ packages:
     resolution: {integrity: sha512-SnGhLiE5rlK0ofq8kzuDkM0g7FN1s5VYY+YSMTibP7CqShxCQvqtNxTARS4xX4PFJfHjG0ZQYX9iGzI3FQh5Aw==}
     cpu: [x64]
     os: [win32]
+
+  '@tauri-apps/api@2.5.0':
+    resolution: {integrity: sha512-Ldux4ip+HGAcPUmuLT8EIkk6yafl5vK0P0c0byzAKzxJh7vxelVtdPONjfgTm96PbN24yjZNESY8CKo8qniluA==}
+
+  '@tauri-apps/plugin-dialog@2.2.2':
+    resolution: {integrity: sha512-Pm9qnXQq8ZVhAMFSEPwxvh+nWb2mk7LASVlNEHYaksHvcz8P6+ElR5U5dNL9Ofrm+uwhh1/gYKWswK8JJJAh6A==}
+
+  '@tauri-apps/plugin-global-shortcut@2.2.1':
+    resolution: {integrity: sha512-b64/TI1t5LIi2JY4OWlYjZpPRq60T5GVVL/no27sUuxaNUZY8dVtwsMtDUgxUpln2yR+P2PJsYlqY5V8sLSxEw==}
+
+  '@tauri-apps/plugin-notification@2.2.2':
+    resolution: {integrity: sha512-d71rJdtkFUTcG4dqydnv6d7ZwlNZVcdjrVOPwc9GsF6y9DgVN1WCZ9T/vbfD2qrJslf7ai+rnNJc62TLLC2IdA==}
+
+  '@tauri-apps/plugin-opener@2.2.7':
+    resolution: {integrity: sha512-uduEyvOdjpPOEeDRrhwlCspG/f9EQalHumWBtLBnp3fRp++fKGLqDOyUhSIn7PzX45b/rKep//ZQSAQoIxobLA==}
+
+  '@tauri-apps/plugin-shell@2.2.2':
+    resolution: {integrity: sha512-fg9XKWfzRQsN8p+Zrk82WeHvXFvGVnG0/mTlujQdLWNnO5cM6WD9qCrHbFytScVS+WhmRAkuypQPcxeKKl3VBg==}
 
   '@types/babel__core@7.20.5':
     resolution: {integrity: sha512-qoQprZvz5wQFJwMDqeseRXWv3rqMvhgpbXFfVyWhbx9X47POIA6i/+dXefEmZKoAgOaTdaIgNSMqMIU61yRyzA==}
@@ -2255,6 +2288,28 @@ snapshots:
 
   '@rollup/rollup-win32-x64-msvc@4.43.0':
     optional: true
+
+  '@tauri-apps/api@2.5.0': {}
+
+  '@tauri-apps/plugin-dialog@2.2.2':
+    dependencies:
+      '@tauri-apps/api': 2.5.0
+
+  '@tauri-apps/plugin-global-shortcut@2.2.1':
+    dependencies:
+      '@tauri-apps/api': 2.5.0
+
+  '@tauri-apps/plugin-notification@2.2.2':
+    dependencies:
+      '@tauri-apps/api': 2.5.0
+
+  '@tauri-apps/plugin-opener@2.2.7':
+    dependencies:
+      '@tauri-apps/api': 2.5.0
+
+  '@tauri-apps/plugin-shell@2.2.2':
+    dependencies:
+      '@tauri-apps/api': 2.5.0
 
   '@types/babel__core@7.20.5':
     dependencies:

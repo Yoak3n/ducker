@@ -1,23 +1,9 @@
-import { Link, Outlet } from 'react-router-dom';
-
+import { Outlet } from 'react-router-dom';
+import Header from '@/components/Layout/Header';
 const Layout = () => {
   return (
     <div className="app-container">
-      <header>
-        <nav>
-          <ul className="nav-links">
-            <li>
-              <Link to="/">首页</Link>
-            </li>
-            <li>
-              <Link to="/about">关于</Link>
-            </li>
-            <li>
-              <Link to="/dashboard">面板</Link>
-            </li>
-          </ul>
-        </nav>
-      </header>
+      <Header />
       <main>
         <Outlet />
       </main>

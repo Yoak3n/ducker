@@ -10,21 +10,20 @@ const NotFound = lazy(() => import('@/pages/NotFound'));
 const Home = lazy(() => import('@/pages/Home'));
 const router = createBrowserRouter([
   {
-    path: '/',
+    path: '/main',
+    index: true,
+    element: <Home />,
+  },{
+    path: "/",
     element: <Layout />,
     children: [
       {
-        index: true,
-        element: <Home />,
-      },
-      {
-        path: 'about',
-        element: <About />,
-      },
-      {
-        path: 'dashboard',
+        path: "dashboard",
         element: <Dashboard />,
-      },
+      },{
+        path: "about",
+        element: <About />
+      }
     ],
   },
   {
