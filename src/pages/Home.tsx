@@ -1,5 +1,5 @@
 import React from 'react';
-import Live2DModelComponent from '@/components/Live2DModel';
+import Live2DModelComponent from '@/components/Live2D';
 
 
 

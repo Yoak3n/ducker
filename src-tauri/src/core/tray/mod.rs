@@ -166,15 +166,10 @@ impl Tray {
                     }
                     _ => {}
                 },
-                // 有点耗性能，可能需要再其他地方调用update
-                // TrayIconEvent::Move { rect, position, .. } => {
-                //     println!("{:?}", rect);
-                //     Tray::global().update_all_states().unwrap();
-                // },
                 TrayIconEvent::DoubleClick {
                     button: MouseButton::Left,
                     ..
-                } => window_manager::switch_main_window(),
+                } => window_manager::toggle_main_window(),
                 _ => {}
             }
         });
@@ -186,31 +181,24 @@ impl Tray {
 
 fn create_tray_menu(app_handle: &AppHandle, visiable: bool) -> Result<Menu<Wry>> {
     let version = resolve::VERSION.get().unwrap();
-    let app_version = &MenuItem::with_id(
-        app_handle,
-        "app_version",
-        format!("{version}"),
-        false,
-        None::<&str>,
-    )
-    .unwrap();
-    // let show = {
-    //     if visiable {
-    //         println!("visiable");
-    //         &MenuItem::with_id(app_handle, "open_window", "Hide", true, None::<&str>).unwrap()
-    //     } else {
-    //         println!("not visiable");
-    //         &MenuItem::with_id(app_handle, "open_window", "Show", true, None::<&str>).unwrap()
-    //     }
-    // };
+    // let app_version = &MenuItem::with_id(
+    //     app_handle,
+    //     "app_version",
+    //     format!("{version}"),
+    //     false,
+    //     None::<&str>,
+    // )
+    // .unwrap();
+
     let show_item = &CheckMenuItem::with_id(app_handle, "open_window", "Live2D", true, visiable, Some("Show")).unwrap();
+    let dashboard_item = &MenuItem::with_id(app_handle, "dashboard", "Dashboard", true, None::<&str>).unwrap();
     let separator = &PredefinedMenuItem::separator(app_handle).unwrap();
     let about_item = &MenuItem::with_id(app_handle, "about", format!("About v{version}"), true, None::<&str>).unwrap();
     let quit =
         &MenuItem::with_id(app_handle, "quit", "Exit", true, Some("")).unwrap();
 
     let menu = tauri::menu::MenuBuilder::new(app_handle)
-        .items(&[app_version, separator, show_item,about_item, quit])
+        .items(&[ show_item, dashboard_item, about_item,separator, quit])
         .build()
         .unwrap();
     logging!(info, Type::Tray, true, "Creating tray menu");
@@ -219,10 +207,9 @@ fn create_tray_menu(app_handle: &AppHandle, visiable: bool) -> Result<Menu<Wry>>
 
 fn on_menu_event(_: &AppHandle, event: MenuEvent) {
     match event.id.as_ref() {
-        "open_window" => window_manager::switch_main_window(),
-        "quit" => {
-            feat::quit(Some(0));
-        }
+        "open_window" => window_manager::toggle_main_window(),
+        "dashboard" => window_manager::create_window_by_label(&window_manager::WindowLabel::Dashboard),
+        "quit" => feat::quit(Some(0)),
         _ => {}
     }
     // if let Err(e) = Tray::global().update_all_states() {

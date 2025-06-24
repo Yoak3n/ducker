@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import * as PIXI from 'pixi.js';
 // Import specifically from cubism4 module for model3.json files
 import { Live2DModel, InternalModel } from 'pixi-live2d-display/cubism4';
+import ContextMenu from './ContextMenu';
 
 // 注册Live2D模型加载器
 // 将PIXI声明为全局变量
@@ -133,7 +134,6 @@ const Live2DModelComponent: React.FC<Live2DModelProps> = ({
   };
   
   // 处理点击其他区域关闭菜单
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   const handleClickOutside = () => {
     if (showMenu) {
       setShowMenu(false);
@@ -196,47 +196,13 @@ const Live2DModelComponent: React.FC<Live2DModelProps> = ({
       
       {/* 自定义右键菜单 */}
       {showMenu && (
-        <div 
-          className="custom-context-menu" 
-          style={{
-            position: 'fixed',
-            top: `${menuPosition.y}px`,
-            left: `${menuPosition.x}px`,
-            backgroundColor: '#fff',
-            border: '1px solid #ccc',
-            borderRadius: '4px',
-            boxShadow: '0 2px 10px rgba(0,0,0,0.2)',
-            padding: '5px 0',
-            zIndex: 1000
-          }}
-        >
-          {menuItems.map((item, index) => (
-            <div 
-              key={index}
-              onClick={(e) => {
-                e.stopPropagation();
-                item.action();
-                setShowMenu(false);
-              }}
-              style={{
-                padding: '8px 15px',
-                cursor: 'pointer',
-                // hover: {
-                //   backgroundColor: '#f5f5f5'
-                // }
-              }}
-              onMouseOver={(e) => {
-                e.currentTarget.style.backgroundColor = '#f5f5f5';
-              }}
-              onMouseOut={(e) => {
-                e.currentTarget.style.backgroundColor = 'transparent';
-              }}
-            >
-              {item.label}
-            </div>
-          ))}
-        </div>
-      )}
+        <ContextMenu
+          menuItems={menuItems}
+          position={menuPosition}
+          hideMenuCallback={setShowMenu}
+        />
+      )
+      }
     </div>
   );
 };

@@ -101,6 +101,7 @@ dependencies = [
  "parking_lot",
  "rand 0.8.5",
  "rusqlite",
+ "scopeguard",
  "serde",
  "serde_json",
  "serde_yaml",
