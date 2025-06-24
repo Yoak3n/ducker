@@ -4,3 +4,4 @@ pub mod init;
 pub mod logging;
 pub mod resolve;
 pub mod window_manager;
+pub mod date;

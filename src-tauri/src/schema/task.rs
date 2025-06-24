@@ -1,28 +1,41 @@
-use crate::{schema::AppState, store::module::ActionManager, store::module::TaskManager};
+use crate::{
+    schema::AppState, 
+    store::module::{ActionManager, TaskManager},
+    utils::{
+        date::{to_datetime_str, to_timestamp,str_to_datetime}, 
+        help::random_string
+    },
+};
 use serde::{Deserialize, Serialize};
+
+// TODO 重构任务表字段：改为时间戳存储日期
 
 #[derive(Deserialize, Serialize, Debug)]
 pub struct TaskRecord {
     pub id: String,
+    pub value: f64,
     pub completed: bool,
+    pub auto: bool,
     pub parent_id: Option<String>,
     pub name: String,
-    pub desc: String,
     pub actions: Vec<String>,
-    pub created_at: String,
-    pub start_at: Option<String>,
+    pub created_at: i64,
+    pub due_to: Option<i64>,
+    pub reminder: Option<i64>,
 }
 impl TaskRecord {
     pub fn into_view(self, actions: Vec<Action>, children: Vec<TaskView>) -> TaskView {
         TaskView {
             id: self.id,
             name: self.name,
+            value: self.value,
             completed: self.completed,
-            desc: self.desc,
+            auto: self.auto,
             actions: Some(actions),
             children: Some(children),
-            created_at: self.created_at,
-            start_at: self.start_at,
+            created_at: to_datetime_str(self.created_at),
+            due_to: self.due_to.map(to_datetime_str),
+            reminder: self.reminder.map(to_datetime_str),
         }
     }
 }
@@ -30,13 +43,15 @@ impl From<TaskRecord> for TaskView {
     fn from(record: TaskRecord) -> Self {
         Self {
             id: record.id,
+            value: record.value,
             name: record.name,
             completed: record.completed,
-            desc: record.desc,
+            auto: record.auto,
             actions: None,
             children: None,
-            created_at: record.created_at,
-            start_at: record.start_at,
+            created_at: to_datetime_str(record.created_at),
+            due_to: record.due_to.map(to_datetime_str),
+            reminder: record.reminder.map(to_datetime_str),
         }
     }
 }
@@ -60,41 +75,83 @@ impl TryFrom<(TaskRecord, &AppState)> for TaskView {
             .into_iter()
             .map(|child| Self::try_from((child, state)))
             .collect::<Result<Vec<_>, _>>()?;
+        
+        let created_at = to_datetime_str(record.created_at);
+        let due_to = record.due_to.map(to_datetime_str);
+        let reminder = record.reminder.map(to_datetime_str);
+
 
         Ok(Self {
             id: record.id,
+            value: record.value,
             name: record.name,
             completed: record.completed,
-            desc: record.desc,
+            auto: record.auto,
             actions,
             children: Some(children),
-            created_at: record.created_at,
-            start_at: record.start_at,
+            created_at,
+            due_to,
+            reminder,
         })
     }
 }
 
-#[derive(Deserialize, Serialize, Debug)]
+
+impl From<TaskData> for TaskRecord {
+    fn from(data: TaskData) -> Self {
+        let id = match &data.id {
+            Some(id) => id.clone(),
+            None => format!("task{}", random_string(6)),
+        };
+        let created_at = if let Some(s) = data.created_at {
+            str_to_datetime(s.as_str()).timestamp()
+        } else {
+            chrono::Local::now().timestamp()
+        };
+
+        Self {
+            id,
+            value: data.value,
+            completed: data.completed,
+            auto: data.auto,
+            parent_id: data.parent_id,
+            name: data.name,
+            actions: data.actions,
+            created_at,
+            due_to:data.due_to.map(|s| str_to_datetime(s.as_str()).timestamp()),
+            reminder: data.reminder.map(|s| str_to_datetime(s.as_str()).timestamp()),
+        }
+    }
+}
+
+
+
+#[derive(Deserialize, Serialize, Debug,Clone)]
 pub struct TaskData {
-    pub id: String,
-    pub completed: bool,
-    pub parent_id: Option<String>,
+    pub id: Option<String>,
     pub name: String,
-    pub desc: String,
+    pub value: f64,
+    pub completed: bool,
+    pub auto: bool,
+    pub parent_id: Option<String>,
     pub actions: Vec<String>,
-    pub start_at: Option<String>,
+    pub created_at: Option<String>,
+    pub due_to: Option<String>,
+    pub reminder: Option<String>,
 }
 use super::Action;
 #[derive(Deserialize, Serialize, Debug)]
 pub struct TaskView {
     pub id: String,
     pub name: String,
+    pub value: f64,
     pub completed: bool,
-    pub desc: String,
+    pub auto: bool,
     pub actions: Option<Vec<Action>>,
     pub children: Option<Vec<TaskView>>,
     pub created_at: String,
-    pub start_at: Option<String>,
+    pub due_to: Option<String>,
+    pub reminder: Option<String>,
 }
 
 impl TaskView {
