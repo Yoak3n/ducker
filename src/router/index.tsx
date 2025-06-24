@@ -8,6 +8,7 @@ const Dashboard = lazy(() => import('@/pages/Dashboard'));
 const About = lazy(() => import('@/pages/About'));
 const NotFound = lazy(() => import('@/pages/NotFound'));
 const Home = lazy(() => import('@/pages/Home'));
+const TaskDemo = lazy(() => import('@/pages/TaskDemo'));
 const router = createBrowserRouter([
   {
     path: '/main',
@@ -23,6 +24,9 @@ const router = createBrowserRouter([
       },{
         path: "about",
         element: <About />
+      },{
+        path: "task-demo",
+        element: <TaskDemo />
       }
     ],
   },
