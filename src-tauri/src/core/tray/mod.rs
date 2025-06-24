@@ -129,14 +129,14 @@ impl Tray {
 
         Ok(())
     }
-    pub fn update_all_states(&self) -> Result<()> {
-        // 确保所有状态更新完成
-        // self.update_menu()?;
-        self.update_icon(None)?;
-        self.update_tooltip()?;
-        self.update_tray_display()?;
-        Ok(())
-    }
+    // pub fn update_all_states(&self) -> Result<()> {
+    //     // 确保所有状态更新完成
+    //     // self.update_menu()?;
+    //     self.update_icon(None)?;
+    //     self.update_tooltip()?;
+    //     self.update_tray_display()?;
+    //     Ok(())
+    // }
     pub fn update_menu_visible(&self, visible: bool) {
         let app_handle = handle::Handle::global().app_handle().unwrap();
         let tray = app_handle.tray_by_id("main").unwrap();
