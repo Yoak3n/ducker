@@ -13,7 +13,7 @@ export interface Task {
   reminder?: Date
 }
 
-export interface TasksData {
+export interface TaskData {
   id?: string,
   name: string
   value?: number

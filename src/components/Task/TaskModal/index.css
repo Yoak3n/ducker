@@ -109,6 +109,46 @@
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
+/* 提醒偏移量选择器样式 */
+.reminder-offset-select {
+  background-color: #f9fafb;
+  border: 1px solid #d1d5db;
+  cursor: pointer;
+}
+
+.reminder-offset-select:hover {
+  border-color: #9ca3af;
+}
+
+.reminder-offset-select:focus {
+  background-color: #ffffff;
+  border-color: #3b82f6;
+}
+
+/* 计算后的提醒时间显示样式 */
+.reminder-time-display {
+  background-color: #f3f4f6;
+  color: #6b7280;
+  cursor: not-allowed;
+}
+
+.reminder-time-display:focus {
+  background-color: #f3f4f6;
+  border-color: #d1d5db;
+  box-shadow: none;
+}
+
+/* 任务价值输入框样式 */
+input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
 .form-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -612,24 +652,58 @@
 /* 响应式设计 */
 @media (max-width: 768px) {
   .task-modal {
-    width: 95vw;
-    max-height: 90vh;
-    margin: 5vh auto;
+    width: 95%;
+    max-width: none;
+    margin: 1rem;
+    max-height: calc(100vh - 2rem);
   }
-  
-  .form-group {
-    margin-bottom: 1rem;
+
+  .task-modal-header {
+    padding: 1rem;
   }
-  
+
+  .task-modal-content {
+    padding: 1rem;
+  }
+
   .form-actions {
+    padding: 1rem;
     flex-direction: column;
-    gap: 0.5rem;
+    gap: 0.75rem;
   }
-  
+
   .form-actions button {
     width: 100%;
   }
-  
+
+  /* 表单字段移动端样式 */
+  .form-group {
+    margin-bottom: 1.25rem;
+  }
+
+  .form-group label {
+    font-size: 0.9rem;
+    margin-bottom: 0.6rem;
+  }
+
+  .form-group input,
+  .form-group textarea,
+  .form-group select {
+    padding: 0.875rem;
+    font-size: 1rem;
+  }
+
+  /* 提醒偏移量选择器移动端样式 */
+  .reminder-offset-select {
+    padding: 0.875rem;
+    font-size: 1rem;
+  }
+
+  /* 任务价值输入框移动端样式 */
+  input[type="number"] {
+    font-size: 1rem;
+  }
+
   .action-item-preview {
     flex-wrap: wrap;
     gap: 0.25rem;
@@ -640,39 +714,15 @@
      order: -1;
    }
    
-   /* 移动端动作选择窗口优化 */
-   .action-select-modal-content {
-     width: 95vw;
-     max-height: 90vh;
-     margin: 5vh auto;
-   }
-   
-   .action-select-modal-header,
-   .action-select-modal-body,
-   .action-select-modal-footer {
-     padding: 1rem;
-   }
-   
-   .action-select-modal-footer {
-     flex-direction: column;
-     gap: 0.5rem;
-   }
-   
-   .action-select-modal-footer button {
-      width: 100%;
-    }
-    
-    /* 移动端关联动作区域优化 */
-    .actions-section {
+   .actions-section {
       padding: 1rem;
-      margin-top: 0.75rem;
+      margin: 0 -1rem;
     }
     
     .actions-header {
       flex-direction: column;
       align-items: stretch;
       gap: 0.75rem;
-      margin-bottom: 0.75rem;
     }
     
     .actions-title {
@@ -681,16 +731,14 @@
     
     .add-action-button {
       width: 100%;
-      justify-content: center;
-      padding: 0.75rem 1rem;
     }
     
     .actions-empty-state {
-      padding: 1.5rem 0.5rem;
+      padding: 1.5rem 1rem;
     }
     
     .actions-empty-state .material-symbols-outlined {
-      font-size: 2.5rem;
+      font-size: 2rem;
     }
     
     .actions-summary {
@@ -701,8 +749,30 @@
     
     .edit-actions-btn {
       width: 100%;
-      justify-content: center;
-      padding: 0.5rem 1rem;
+      padding: 0.75rem 1rem;
+    }
+   
+   /* 动作选择模态窗口移动端样式 */
+   .action-select-modal-content {
+     width: 95%;
+     max-width: none;
+     margin: 1rem;
+     max-height: calc(100vh - 2rem);
+   }
+   
+   .action-select-modal-header,
+   .action-select-modal-body,
+   .action-select-modal-footer {
+     padding: 1rem;
+   }
+   
+   .action-select-modal-footer {
+     flex-direction: column;
+     gap: 0.75rem;
+   }
+   
+   .action-select-modal-footer button {
+      width: 100%;
     }
   }
 
