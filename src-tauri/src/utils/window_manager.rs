@@ -232,7 +232,7 @@ pub fn create_dashboard_window(){
                     tauri::WebviewUrl::App("/".into()),
                 )
                 .title("dida")
-                .inner_size(890.0, 700.0)
+                .inner_size(1080.0, 900.0)
                 .min_inner_size(620.0, 550.0)
                 .decorations(false)
                 .focused(true)

@@ -4,26 +4,107 @@ import {
   CardContent,
   CardDescription,
   CardFooter,
-  CardHeader
+  CardHeader,
+  CardTitle
 } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Label } from "@/components/ui/label"
-import { Input } from "@/components/ui/input"
-export default function ActionCard() {
-    return (
-    <Card >
-      <CardHeader>
-        <CardAction>
-          <Button variant="link">Delete</Button>
-        </CardAction>
+import { Badge } from "@/components/ui/badge"
+import type{ Action } from "@/types/modules/action"
+import { actionTypes } from "@/mocks/action"
+
+interface ActionCardProps {
+  action: Action;
+  isSelected?: boolean;
+  selectionOrder?: number;
+  onSelect?: (action: Action) => void;
+  onRemove?: (action: Action) => void;
+  showSelection?: boolean;
+}
+
+export default function ActionCard({ 
+  action, 
+  isSelected = false, 
+  selectionOrder, 
+  onSelect, 
+  onRemove,
+  showSelection = false 
+}: ActionCardProps) {
+  const actionType = actionTypes.find(type => type.value === action.type);
+  
+  const handleCardClick = () => {
+    if (showSelection && onSelect) {
+      onSelect(action);
+    }
+  };
+
+  const handleRemove = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (onRemove) {
+      onRemove(action);
+    }
+  };
+
+  return (
+    <Card 
+      className={`cursor-pointer transition-all duration-200 hover:shadow-md ${
+        isSelected ? 'ring-2 ring-blue-500 bg-blue-50' : 'hover:bg-gray-50'
+      }`}
+      onClick={handleCardClick}
+    >
+      <CardHeader className="pb-2">
+        <div className="flex items-start justify-between">
+          <div className="flex items-center gap-2">
+            <span className="material-symbols-outlined text-lg">
+              {actionType?.icon || 'settings'}
+            </span>
+            <CardTitle className="text-sm font-medium">{action.name}</CardTitle>
+            {isSelected && selectionOrder !== undefined && (
+              <Badge variant="secondary" className="text-xs">
+                {selectionOrder}
+              </Badge>
+            )}
+          </div>
+          {isSelected && onRemove && (
+            <CardAction>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={handleRemove}
+                className="h-6 w-6 p-0 hover:bg-red-100"
+              >
+                <span className="material-symbols-outlined text-sm text-red-500">
+                  close
+                </span>
+              </Button>
+            </CardAction>
+          )}
+        </div>
       </CardHeader>
-      <CardContent>
+      
+      <CardContent className="pt-0 pb-2">
+        <CardDescription className="text-xs text-gray-600 line-clamp-2">
+          {action.description}
+        </CardDescription>
+        
+        <div className="mt-2 flex items-center gap-2">
+          <Badge variant="outline" className="text-xs">
+            {actionType?.label || action.type}
+          </Badge>
+          {action.wait > 0 && (
+            <Badge variant="secondary" className="text-xs">
+              等待 {action.wait}ms
+            </Badge>
+          )}
+        </div>
       </CardContent>
-      <CardFooter className="flex-col gap-2">
-        <Button type="submit" className="w-1/2">
-          Submit
-        </Button>
+      
+      <CardFooter className="pt-0 pb-3">
+        <div className="w-full">
+          <div className="text-xs text-gray-500 font-mono truncate">
+            {action.cmd} {action.args.join(' ')}
+          </div>
+        </div>
       </CardFooter>
     </Card>
-    )
+  )
 }

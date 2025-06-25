@@ -2,12 +2,8 @@ import React, { useState, useEffect } from 'react';
 import type { Task, Action } from '@/types';
 import './index.css';
 import ActionSelect from '@/components/Action/ActionSelect';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover"
-import { Button } from '@/components/ui/button';
+
+// import { Button } from '@/components/ui/button';
 
 interface TaskModalProps {
   isOpen: boolean;
@@ -35,17 +31,35 @@ const initialFormData: TaskFormData = {
   actions: []
 };
 
-const actionTypes = [
-  { value: 'exec_command', label: '执行命令' },
-  { value: 'open_file', label: '打开文件' },
-  { value: 'open_dir', label: '打开目录' },
-  { value: 'open_url', label: '打开链接' }
-];
+// const actionTypes = [
+//   { value: 'exec_command', label: '执行命令' },
+//   { value: 'open_file', label: '打开文件' },
+//   { value: 'open_dir', label: '打开目录' },
+//   { value: 'open_url', label: '打开链接' }
+// ];
 
 export default function TaskModal({ isOpen, onClose, onSave, task, parentTask }: TaskModalProps) {
   const [formData, setFormData] = useState<TaskFormData>(initialFormData);
   const [showAdvanced, setShowAdvanced] = useState(false);
-  const [showActions, setShowActions] = useState(false);
+  const [isActionSelectOpen, setIsActionSelectOpen] = useState(false);
+
+  // 处理键盘事件
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        if (isActionSelectOpen) {
+          setIsActionSelectOpen(false);
+        } else if (isOpen) {
+          // setIsOpen(false);
+        }
+      }
+    };
+
+    if (isOpen || isActionSelectOpen) {
+      document.addEventListener('keydown', handleKeyDown);
+      return () => document.removeEventListener('keydown', handleKeyDown);
+    }
+  }, [isOpen, isActionSelectOpen]);
   // 初始化表单数据
   useEffect(() => {
     if (task) {
@@ -68,25 +82,11 @@ export default function TaskModal({ isOpen, onClose, onSave, task, parentTask }:
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleActionChange = (index: number, field: keyof Action, value: string | number | string[]) => {
-    const newActions = [...formData.actions];
-    newActions[index] = { ...newActions[index], [field]: value };
-    setFormData(prev => ({ ...prev, actions: newActions }));
-  };
-
-  const addAction = () => {
-    setShowActions(!showActions);
-    // const newAction: Action = {
-    //   id: `action_${Date.now()}`,
-    //   name: '',
-    //   description: '',
-    //   type: 'exec_command',
-    //   wait: 0,
-    //   cmd: '',
-    //   args: []
-    // };
-    // setFormData(prev => ({ ...prev, actions: [...prev.actions, newAction] }));
-  };
+  // const handleActionChange = (index: number, field: keyof Action, value: string | number | string[]) => {
+  //   const newActions = [...formData.actions];
+  //   newActions[index] = { ...newActions[index], [field]: value };
+  //   setFormData(prev => ({ ...prev, actions: newActions }));
+  // };
 
   // const removeAction = (index: number) => {
   //   setFormData(prev => ({
@@ -211,102 +211,57 @@ export default function TaskModal({ isOpen, onClose, onSave, task, parentTask }:
             {showAdvanced && (
               <div className="advanced-content">
                 <div className="actions-section">
-                  <div className="section-header">
-                    <h3>关联动作</h3>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <button type="button" className="add-action-btn" onClick={addAction}>
-                          <span className="material-symbols-outlined">add</span>
-                          添加动作
-                        </button>
-                      </PopoverTrigger>
-                      <PopoverContent style={{"zIndex": 1500, "width": "600px", "maxHeight": "400px", "overflowY": "auto"}}>
-                        <ActionSelect />
-                      </PopoverContent>
-                    </Popover>
-
+                  <div className="actions-section">
+                    <div className="actions-header">
+                      <div className="actions-title">
+                        <span className="material-symbols-outlined">settings</span>
+                        <h3>关联动作</h3>
+                        <span className="actions-count">{formData.actions.length}</span>
+                      </div>
+                      <button 
+                        type="button" 
+                        className="add-action-button" 
+                        onClick={() => setIsActionSelectOpen(true)}
+                      >
+                        <span className="material-symbols-outlined">add_circle</span>
+                        添加动作
+                      </button>
+                    </div>
+                    
+                    {formData.actions.length === 0 && (
+                      <div className="actions-empty-state">
+                        <span className="material-symbols-outlined">psychology_alt</span>
+                        <p>暂无关联动作</p>
+                        <span className="empty-hint">点击上方按钮添加动作</span>
+                      </div>
+                    )}
                   </div>
 
-                  {/* {formData.actions.map((action, index) => (
-                    <div key={action.id} className="action-item">
-                      <div className="action-header">
-                        <span>动作 {index + 1}</span>
-                        <button
-                          type="button"
-                          className="remove-action-btn"
-                          onClick={() => removeAction(index)}
-                        >
-                          <span className="material-symbols-outlined">delete</span>
-                        </button>
-                      </div>
-                      
-                      <div className="form-row">
-                        <div className="form-group">
-                          <label>动作名称</label>
-                          <input
-                            type="text"
-                            value={action.name}
-                            onChange={(e) => handleActionChange(index, 'name', e.target.value)}
-                            placeholder="动作名称"
-                          />
-                        </div>
-                        <div className="form-group">
-                          <label>动作类型</label>
-                          <select
-                            value={action.type}
-                            onChange={(e) => handleActionChange(index, 'type', e.target.value)}
-                          >
-                            {actionTypes.map(type => (
-                              <option key={type.value} value={type.value}>
-                                {type.label}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                      </div>
-
-                      <div className="form-group">
-                        <label>描述</label>
-                        <input
-                          type="text"
-                          value={action.description}
-                          onChange={(e) => handleActionChange(index, 'description', e.target.value)}
-                          placeholder="动作描述"
-                        />
-                      </div>
-
-                      <div className="form-row">
-                        <div className="form-group">
-                          <label>命令/路径</label>
-                          <input
-                            type="text"
-                            value={action.cmd}
-                            onChange={(e) => handleActionChange(index, 'cmd', e.target.value)}
-                            placeholder="命令或文件路径"
-                          />
-                        </div>
-                        <div className="form-group">
-                          <label>等待时间(秒)</label>
-                          <input
-                            type="number"
-                            value={action.wait}
-                            onChange={(e) => handleActionChange(index, 'wait', parseInt(e.target.value) || 0)}
-                            min="0"
-                          />
-                        </div>
-                      </div>
-
-                      <div className="form-group">
-                        <label>参数 (用逗号分隔)</label>
-                        <input
-                          type="text"
-                          value={action.args.join(', ')}
-                          onChange={(e) => handleActionChange(index, 'args', e.target.value.split(',').map(s => s.trim()).filter(s => s))}
-                          placeholder="参数1, 参数2, 参数3"
-                        />
+                  {/* 显示已选择的 Actions */}
+                  {formData.actions.length > 0 && (
+                    <div className="selected-actions">
+                      <h4>已选择的动作 ({formData.actions.length})</h4>
+                      <div className="actions-list">
+                        {formData.actions.map((action, index) => (
+                          <div key={action.id} className="action-item-preview">
+                            <span className="action-order">{index + 1}.</span>
+                            <span className="action-name">{action.name}</span>
+                            <span className="action-type">({action.type})</span>
+                            <button
+                              type="button"
+                              className="remove-action-btn"
+                              onClick={() => {
+                                const newActions = formData.actions.filter((_, i) => i !== index);
+                                handleInputChange('actions', newActions);
+                              }}
+                            >
+                              <span className="material-symbols-outlined">close</span>
+                            </button>
+                          </div>
+                        ))}
                       </div>
                     </div>
-                  ))} */}
+                  )}
                 </div>
               </div>
             )}
@@ -324,6 +279,44 @@ export default function TaskModal({ isOpen, onClose, onSave, task, parentTask }:
         </form>
 
       </div>
+      
+      {/* 独立的动作选择窗口 */}
+       {isActionSelectOpen && (
+         <div className="action-select-modal" onClick={() => setIsActionSelectOpen(false)}>
+           <div className="action-select-modal-content" onClick={(e) => e.stopPropagation()}>
+             <div className="action-select-modal-header">
+               <h2>选择动作</h2>
+               <button className="close-button" onClick={() => setIsActionSelectOpen(false)}>
+                 <span className="material-symbols-outlined">close</span>
+               </button>
+             </div>
+             <div className="action-select-modal-body">
+               <ActionSelect 
+                 selectedActions={formData.actions}
+                 onActionsChange={(actions) => handleInputChange('actions', actions)}
+                 multiSelect={true}
+                 maxHeight="50vh"
+               />
+             </div>
+             <div className="action-select-modal-footer">
+               <button 
+                 type="button" 
+                 className="cancel-btn" 
+                 onClick={() => setIsActionSelectOpen(false)}
+               >
+                 取消
+               </button>
+               <button 
+                 type="button"
+                 className="confirm-btn"
+                 onClick={() => setIsActionSelectOpen(false)}
+               >
+                 确认选择 ({formData.actions.length})
+               </button>
+             </div>
+           </div>
+         </div>
+       )}
     </div>
   );
 }

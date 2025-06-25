@@ -18,7 +18,7 @@
   border-radius: 12px;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
   width: 90%;
-  max-width: 600px;
+  max-width: 800px;
   max-height: 90vh;
   overflow: hidden;
   display: flex;
@@ -309,40 +309,402 @@
   opacity: 0.6;
 }
 
+/* 已选择的动作样式 */
+.selected-actions {
+  margin-top: 1rem;
+  padding: 1rem;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+}
+
+.selected-actions h4 {
+  margin: 0 0 0.75rem 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #495057;
+}
+
+.actions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.action-item-preview {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  background-color: white;
+  border: 1px solid #dee2e6;
+  border-radius: 6px;
+  font-size: 0.875rem;
+}
+
+.action-order {
+  font-weight: 600;
+  color: #6c757d;
+  min-width: 1.5rem;
+}
+
+.action-name {
+  font-weight: 500;
+  color: #212529;
+  flex: 1;
+}
+
+.action-type {
+  color: #6c757d;
+  font-size: 0.75rem;
+  background-color: #e9ecef;
+  padding: 0.125rem 0.375rem;
+  border-radius: 4px;
+}
+
+.remove-action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border: none;
+  background-color: #dc3545;
+  color: white;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.remove-action-btn:hover {
+  background-color: #c82333;
+}
+
+.remove-action-btn .material-symbols-outlined {
+  font-size: 0.875rem;
+}
+
+/* 关联动作区域样式 */
+.actions-section {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-top: 1rem;
+}
+
+.actions-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.actions-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.actions-title .material-symbols-outlined {
+  color: #64748b;
+  font-size: 1.25rem;
+}
+
+.actions-title h3 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #334155;
+}
+
+.actions-count {
+  background: #3b82f6;
+  color: white;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.25rem 0.5rem;
+  border-radius: 12px;
+  min-width: 1.5rem;
+  text-align: center;
+}
+
+.add-action-button {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.add-action-button:hover {
+  background: #2563eb;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.add-action-button .material-symbols-outlined {
+  font-size: 1rem;
+}
+
+/* 空状态样式 */
+.actions-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 2rem 1rem;
+  text-align: center;
+  color: #64748b;
+}
+
+.actions-empty-state .material-symbols-outlined {
+  font-size: 3rem;
+  color: #cbd5e1;
+  margin-bottom: 0.75rem;
+}
+
+.actions-empty-state p {
+  margin: 0 0 0.5rem 0;
+  font-size: 1rem;
+  font-weight: 500;
+  color: #475569;
+}
+
+.empty-hint {
+  font-size: 0.875rem;
+  color: #94a3b8;
+}
+
+/* 动作预览样式 */
+.actions-preview {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 1rem;
+}
+
+.actions-summary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.summary-text {
+  font-size: 0.875rem;
+  color: #475569;
+  font-weight: 500;
+}
+
+.edit-actions-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.375rem 0.75rem;
+  background: #f1f5f9;
+  color: #475569;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.edit-actions-btn:hover {
+  background: #e2e8f0;
+  color: #334155;
+  border-color: #cbd5e1;
+}
+
+.edit-actions-btn .material-symbols-outlined {
+  font-size: 0.875rem;
+}
+
+/* 独立动作选择窗口样式 */
+.action-select-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1500;
+}
+
+.action-select-modal-content {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  max-width: 800px;
+  width: 90vw;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.action-select-modal-header {
+  padding: 1.5rem;
+  border-bottom: 1px solid #e5e7eb;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.action-select-modal-header h2 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+.action-select-modal-body {
+  flex: 1;
+  padding: 1.5rem;
+  overflow: hidden;
+}
+
+.action-select-modal-footer {
+  padding: 1.5rem;
+  border-top: 1px solid #e5e7eb;
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
+
+.action-select-modal-footer button {
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.action-select-modal-footer .cancel-btn {
+  background: white;
+  border: 1px solid #d1d5db;
+  color: #374151;
+}
+
+.action-select-modal-footer .cancel-btn:hover {
+  background: #f9fafb;
+}
+
+.action-select-modal-footer .confirm-btn {
+  background: #3b82f6;
+  border: 1px solid #3b82f6;
+  color: white;
+}
+
+.action-select-modal-footer .confirm-btn:hover {
+  background: #2563eb;
+}
+
 /* 响应式设计 */
-@media (max-width: 640px) {
+@media (max-width: 768px) {
   .task-modal {
-    width: 95%;
-    margin: 20px;
+    width: 95vw;
+    max-height: 90vh;
+    margin: 5vh auto;
   }
   
-  .form-row {
-    grid-template-columns: 1fr;
-  }
-  
-  .checkbox-group {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 12px;
-  }
-  
-  .task-modal-header {
-    padding: 16px 20px;
-  }
-  
-  .task-modal-form {
-    padding: 20px;
+  .form-group {
+    margin-bottom: 1rem;
   }
   
   .form-actions {
     flex-direction: column;
+    gap: 0.5rem;
   }
   
-  .cancel-btn,
-  .save-btn {
+  .form-actions button {
     width: 100%;
   }
-}
+  
+  .action-item-preview {
+    flex-wrap: wrap;
+    gap: 0.25rem;
+  }
+  
+  .action-name {
+     min-width: 100%;
+     order: -1;
+   }
+   
+   /* 移动端动作选择窗口优化 */
+   .action-select-modal-content {
+     width: 95vw;
+     max-height: 90vh;
+     margin: 5vh auto;
+   }
+   
+   .action-select-modal-header,
+   .action-select-modal-body,
+   .action-select-modal-footer {
+     padding: 1rem;
+   }
+   
+   .action-select-modal-footer {
+     flex-direction: column;
+     gap: 0.5rem;
+   }
+   
+   .action-select-modal-footer button {
+      width: 100%;
+    }
+    
+    /* 移动端关联动作区域优化 */
+    .actions-section {
+      padding: 1rem;
+      margin-top: 0.75rem;
+    }
+    
+    .actions-header {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 0.75rem;
+      margin-bottom: 0.75rem;
+    }
+    
+    .actions-title {
+      justify-content: center;
+    }
+    
+    .add-action-button {
+      width: 100%;
+      justify-content: center;
+      padding: 0.75rem 1rem;
+    }
+    
+    .actions-empty-state {
+      padding: 1.5rem 0.5rem;
+    }
+    
+    .actions-empty-state .material-symbols-outlined {
+      font-size: 2.5rem;
+    }
+    
+    .actions-summary {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 0.75rem;
+    }
+    
+    .edit-actions-btn {
+      width: 100%;
+      justify-content: center;
+      padding: 0.5rem 1rem;
+    }
+  }
 
 /* Material Icons 样式调整 */
 .material-symbols-outlined {

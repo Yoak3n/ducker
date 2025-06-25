@@ -1,13 +1,13 @@
 import { createBrowserRouter } from 'react-router-dom';
 import { lazy } from 'react';
 
-
 import Layout from '@/pages/Layout';
 
 const Dashboard = lazy(() => import('@/pages/Dashboard'));
 const About = lazy(() => import('@/pages/About'));
 const NotFound = lazy(() => import('@/pages/NotFound'));
 const Home = lazy(() => import('@/pages/Home'));
+const ActionSelectDemo = lazy(() => import('@/components/Action/ActionSelectDemo'));
 const router = createBrowserRouter([
   {
     path: '/main',
@@ -25,6 +25,10 @@ const router = createBrowserRouter([
         element: <About />
       }
     ],
+  },
+  {
+    path: '/action-demo',
+    element: <ActionSelectDemo />,
   },
   {
     path: '*',
