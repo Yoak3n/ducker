@@ -1,0 +1,7 @@
+.today-view{
+    .today-title{
+        display: flex;
+        justify-content: space-between;
+        
+    }
+}

@@ -229,7 +229,7 @@ pub fn create_dashboard_window(){
     let window = tauri::WebviewWindowBuilder::new(
                     &app_handle,
                     "dashboard".to_string(),
-                    tauri::WebviewUrl::App("/dashboard".into()),
+                    tauri::WebviewUrl::App("/".into()),
                 )
                 .title("dida")
                 .inner_size(890.0, 700.0)

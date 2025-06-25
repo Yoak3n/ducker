@@ -1,15 +1,29 @@
 import type{ Action } from "./action";
 
 export interface Task {
-  id: number
-  title: string
+  id: string,
+  name: string
+  value: number
   completed: boolean
+  auto?: boolean
   actions?: Action[]
   children?: Task[]
+  created_at: Date
+  due_to?: Date
+  reminder?: Date
+}
+
+export interface TasksData {
+  id?: string,
+  name: string
+  value?: number
+  completed: boolean
   auto?: boolean
-  create_at: Date
-  due_at?: Date
-  reminder_at?: Date
+  actions?: string[]
+  parent_id?: string,
+  created_at?: Date
+  due_to?: Date
+  reminder?: Date
 }
 
 export interface WeeklyTasks {
@@ -22,8 +36,9 @@ export interface WeeklyTasks {
   sunday: Task[];
 }
 
-export interface TasksData {
+export interface TaskMocks{
   today: Task[];
   weekly: WeeklyTasks;
   monthly: Task[];
 }
+

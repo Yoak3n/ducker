@@ -3,6 +3,7 @@ import * as PIXI from 'pixi.js';
 // Import specifically from cubism4 module for model3.json files
 import { Live2DModel, InternalModel } from 'pixi-live2d-display/cubism4';
 import ContextMenu from './ContextMenu';
+import './index.css';
 
 // 注册Live2D模型加载器
 // 将PIXI声明为全局变量

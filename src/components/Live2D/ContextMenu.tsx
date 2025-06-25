@@ -13,9 +13,6 @@ interface MenuItem {
 
 export default function Live2DContextMenu({ position = { x: 0, y: 0 },hideMenuCallback,menuItems}: Props ) {
 
-
-
-
   return (
     <div className="live2d-context-menu" style={{
             position: 'fixed',

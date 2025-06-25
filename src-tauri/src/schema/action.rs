@@ -44,7 +44,7 @@ impl From<ActionRecord> for Action {
         action
     }
 }
-#[allow(dead_code)]
+
 #[derive(Deserialize, Debug)]
 pub struct ActionRecord {
     pub id: String,

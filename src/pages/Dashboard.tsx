@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import '@/assets/Dashboard.css';
-import type {TasksData, WeeklyTasks } from '@/types';
+import type {TaskMocks, TasksData, WeeklyTasks } from '@/types';
 import {allData} from '@/mocks/task';
 
 import TodayView from '@/components/Panel/Today';
@@ -17,13 +17,13 @@ const TaskDashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabType>('today');
   
   // 模拟任务数据，带有类型注解
-  const [tasks, setTasks] = useState<TasksData>(allData);
+  const [tasks, setTasks] = useState<TaskMocks>(allData);
 
   
-  const toggleTaskCompletion = (period: TabType, day: DayOfWeek | null, taskId: number) => {
+  const toggleTaskCompletion = (period: TabType, day: DayOfWeek | null, taskId: string) => {
     setTasks(prevTasks => {
       
-      const newTasks: TasksData = {...prevTasks};
+      const newTasks: TaskMocks = {...prevTasks};
       
       if (period === 'today' || period === 'monthly') {
         newTasks[period] = newTasks[period].map(task => 
@@ -100,7 +100,7 @@ const TaskDashboard: React.FC = () => {
                       checked={task.completed}
                       onChange={() => toggleTaskCompletion('weekly', day, task.id)}
                     />
-                    <span>{task.title}</span>
+                    <span>{task.name}</span>
                   </li>
                 ))}
                 {tasks.weekly[day].length === 0 && <li className="empty">无任务</li>}
@@ -138,7 +138,7 @@ const TaskDashboard: React.FC = () => {
                 checked={task.completed}
                 onChange={() => toggleTaskCompletion('monthly', null, task.id)}
               />
-              <span>{task.title}</span>
+              <span>{task.name}</span>
             </li>
           ))}
         </ul>

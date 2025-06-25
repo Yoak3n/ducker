@@ -1,6 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import type { Task, Action } from '@/types';
 import './index.css';
+import ActionSelect from '@/components/Action/ActionSelect';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
+import { Button } from '@/components/ui/button';
 
 interface TaskModalProps {
   isOpen: boolean;
@@ -11,20 +18,20 @@ interface TaskModalProps {
 }
 
 interface TaskFormData {
-  title: string;
+  name: string;
   completed: boolean;
   auto: boolean;
-  due_at: string;
-  reminder_at: string;
+  due_to: string;
+  reminder: string;
   actions: Action[];
 }
 
 const initialFormData: TaskFormData = {
-  title: '',
+  name: '',
   completed: false,
   auto: false,
-  due_at: '',
-  reminder_at: '',
+  due_to: '',
+  reminder: '',
   actions: []
 };
 
@@ -38,17 +45,17 @@ const actionTypes = [
 export default function TaskModal({ isOpen, onClose, onSave, task, parentTask }: TaskModalProps) {
   const [formData, setFormData] = useState<TaskFormData>(initialFormData);
   const [showAdvanced, setShowAdvanced] = useState(false);
-
+  const [showActions, setShowActions] = useState(false);
   // 初始化表单数据
   useEffect(() => {
     if (task) {
       // 编辑模式
       setFormData({
-        title: task.title,
+        name: task.name,
         completed: task.completed,
         auto: task.auto || false,
-        due_at: task.due_at ? new Date(task.due_at).toISOString().slice(0, 16) : '',
-        reminder_at: task.reminder_at ? new Date(task.reminder_at).toISOString().slice(0, 16) : '',
+        due_to: task.due_to ? new Date(task.due_to).toISOString().slice(0, 16) : '',
+        reminder: task.reminder ? new Date(task.reminder).toISOString().slice(0, 16) : '',
         actions: task.actions || []
       });
     } else {
@@ -68,34 +75,35 @@ export default function TaskModal({ isOpen, onClose, onSave, task, parentTask }:
   };
 
   const addAction = () => {
-    const newAction: Action = {
-      id: `action_${Date.now()}`,
-      name: '',
-      description: '',
-      type: 'exec_command',
-      wait: 0,
-      cmd: '',
-      args: []
-    };
-    setFormData(prev => ({ ...prev, actions: [...prev.actions, newAction] }));
+    setShowActions(!showActions);
+    // const newAction: Action = {
+    //   id: `action_${Date.now()}`,
+    //   name: '',
+    //   description: '',
+    //   type: 'exec_command',
+    //   wait: 0,
+    //   cmd: '',
+    //   args: []
+    // };
+    // setFormData(prev => ({ ...prev, actions: [...prev.actions, newAction] }));
   };
 
-  const removeAction = (index: number) => {
-    setFormData(prev => ({
-      ...prev,
-      actions: prev.actions.filter((_, i) => i !== index)
-    }));
-  };
+  // const removeAction = (index: number) => {
+  //   setFormData(prev => ({
+  //     ...prev,
+  //     actions: prev.actions.filter((_, i) => i !== index)
+  //   }));
+  // };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     const taskData: Partial<Task> = {
-      title: formData.title,
+      name: formData.name,
       completed: formData.completed,
       auto: formData.auto,
-      due_at: formData.due_at ? new Date(formData.due_at) : undefined,
-      reminder_at: formData.reminder_at ? new Date(formData.reminder_at) : undefined,
+      due_to: formData.due_to ? new Date(formData.due_to) : undefined,
+      reminder: formData.reminder ? new Date(formData.reminder) : undefined,
       actions: formData.actions.length > 0 ? formData.actions : undefined
     };
 
@@ -126,15 +134,14 @@ export default function TaskModal({ isOpen, onClose, onSave, task, parentTask }:
             <span className="material-symbols-outlined">close</span>
           </button>
         </div>
-
         <form onSubmit={handleSubmit} className="task-modal-form">
           <div className="form-group">
             <label htmlFor="title">任务标题 *</label>
             <input
               type="text"
               id="title"
-              value={formData.title}
-              onChange={(e) => handleInputChange('title', e.target.value)}
+              value={formData.name}
+              onChange={(e) => handleInputChange('name', e.target.value)}
               placeholder="输入任务标题..."
               autoComplete='off'
               required
@@ -145,18 +152,18 @@ export default function TaskModal({ isOpen, onClose, onSave, task, parentTask }:
           {parentTask && (
             <div className="parent-task-info">
               <span className="material-symbols-outlined">subdirectory_arrow_right</span>
-              <span>父任务: {parentTask.title}</span>
+              <span>父任务: {parentTask.name}</span>
             </div>
           )}
 
           <div className="form-row">
             <div className="form-group">
-              <label htmlFor="due_at">截止时间</label>
+              <label htmlFor="due_to">截止时间</label>
               <input
                 type="datetime-local"
-                id="due_at"
-                value={formData.due_at}
-                onChange={(e) => handleInputChange('due_at', e.target.value)}
+                id="due_to"
+                value={formData.due_to}
+                onChange={(e) => handleInputChange('due_to', e.target.value)}
               />
             </div>
             <div className="form-group">
@@ -164,21 +171,21 @@ export default function TaskModal({ isOpen, onClose, onSave, task, parentTask }:
               <input
                 type="datetime-local"
                 id="reminder_at"
-                value={formData.reminder_at}
-                onChange={(e) => handleInputChange('reminder_at', e.target.value)}
+                value={formData.reminder}
+                onChange={(e) => handleInputChange('reminder', e.target.value)}
               />
             </div>
           </div>
 
           <div className="form-group checkbox-group">
-            <label className="checkbox-label">
+            {task && <label className="checkbox-label">
               <input
                 type="checkbox"
                 checked={formData.completed}
                 onChange={(e) => handleInputChange('completed', e.target.checked)}
               />
               <span>已完成</span>
-            </label>
+            </label>}
             <label className="checkbox-label">
               <input
                 type="checkbox"
@@ -206,13 +213,21 @@ export default function TaskModal({ isOpen, onClose, onSave, task, parentTask }:
                 <div className="actions-section">
                   <div className="section-header">
                     <h3>关联动作</h3>
-                    <button type="button" className="add-action-btn" onClick={addAction}>
-                      <span className="material-symbols-outlined">add</span>
-                      添加动作
-                    </button>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <button type="button" className="add-action-btn" onClick={addAction}>
+                          <span className="material-symbols-outlined">add</span>
+                          添加动作
+                        </button>
+                      </PopoverTrigger>
+                      <PopoverContent style={{"zIndex": 1500, "width": "600px", "maxHeight": "400px", "overflowY": "auto"}}>
+                        <ActionSelect />
+                      </PopoverContent>
+                    </Popover>
+
                   </div>
 
-                  {formData.actions.map((action, index) => (
+                  {/* {formData.actions.map((action, index) => (
                     <div key={action.id} className="action-item">
                       <div className="action-header">
                         <span>动作 {index + 1}</span>
@@ -291,21 +306,23 @@ export default function TaskModal({ isOpen, onClose, onSave, task, parentTask }:
                         />
                       </div>
                     </div>
-                  ))}
+                  ))} */}
                 </div>
               </div>
             )}
+
           </div>
 
           <div className="form-actions">
             <button type="button" className="cancel-btn" onClick={handleClose}>
               取消
             </button>
-            <button type="submit" className="save-btn" disabled={!formData.title.trim()}>
+            <button type="submit" className="save-btn" disabled={!formData.name.trim()}>
               {task ? '保存' : '创建'}
             </button>
           </div>
         </form>
+
       </div>
     </div>
   );

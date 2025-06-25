@@ -8,7 +8,6 @@ use crate::{
 };
 use serde::{Deserialize, Serialize};
 
-// TODO 重构任务表字段：改为时间戳存储日期
 
 #[derive(Deserialize, Serialize, Debug)]
 pub struct TaskRecord {

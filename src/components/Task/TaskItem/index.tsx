@@ -6,7 +6,7 @@ import "./index.css";
 interface Props {
     root?: boolean;
     task: Task,
-    changeTask: (id: number,sub?:boolean) => void;
+    changeTask: (id: string,sub?:boolean) => void;
 
 }
 
@@ -22,7 +22,7 @@ export default function TaskItem({ root = true, task,changeTask }: Props) {
                     onChange={() => root? changeTask(task.id):changeTask(task.id,true)}
                 />
                 <div className="task-item-content" >
-                    <div className="task-item-title">{task.title}</div>
+                    <div className="task-item-title">{task.name}</div>
                 </div>
                 {task.children && task.children.length > 0 &&
                     <button className="dropdown-button" onClick={() => { setIsExpanded(!isExpanded) }}>

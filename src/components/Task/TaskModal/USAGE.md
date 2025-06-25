@@ -242,7 +242,3 @@ export default TaskManager;
   /* 自定义表单样式 */
 }
 ```
-
-## 访问演示
-
-访问 `/task-demo` 路由查看完整的功能演示。
