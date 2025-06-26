@@ -4,8 +4,8 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import ActionCard from "../ActionCard";
-import {type Action, actionTypes } from "@/types";
-import { mockActions} from "@/mocks/action";
+import { type Action, actionTypes } from "@/types";
+import { mockActions } from "@/mocks/action";
 
 interface ActionSelectProps {
   selectedActions?: Action[];
@@ -14,8 +14,8 @@ interface ActionSelectProps {
   maxHeight?: string;
 }
 
-export default function ActionSelect({ 
-  selectedActions = [], 
+export default function ActionSelect({
+  selectedActions = [],
   onActionsChange,
   multiSelect = false,
   maxHeight = "400px"
@@ -31,7 +31,7 @@ export default function ActionSelect({
   const filteredActions = useMemo(() => {
     return mockActions.filter(action => {
       const matchesSearch = action.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           action.desc.toLowerCase().includes(searchTerm.toLowerCase());
+        action.desc.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesType = selectedType === 'all' || action.type === selectedType;
       return matchesSearch && matchesType;
     });
@@ -53,7 +53,7 @@ export default function ActionSelect({
     // 多选模式
     const isSelected = currentSelectedActions.some(selected => selected.id === action.id);
     let newSelection: Action[];
-    
+
     if (isSelected) {
       // 取消选择
       newSelection = currentSelectedActions.filter(selected => selected.id !== action.id);
@@ -61,7 +61,7 @@ export default function ActionSelect({
       // 添加选择
       newSelection = [...currentSelectedActions, action];
     }
-    
+
     if (onActionsChange) {
       onActionsChange(newSelection);
     } else {
@@ -96,37 +96,6 @@ export default function ActionSelect({
 
   return (
     <div className="action-select-container space-y-4">
-      {/* 搜索框 */}
-      <div className="relative">
-        <span className="material-symbols-outlined absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
-          search
-        </span>
-        <Input 
-          placeholder="搜索 actions..." 
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="pl-10"
-        />
-      </div>
-
-      {/* 类型过滤器 */}
-      <div className="flex flex-wrap gap-2">
-        {actionTypes.map(type => (
-          <Button
-            key={type.value}
-            variant={selectedType === type.value ? "default" : "outline"}
-            size="sm"
-            onClick={() => setSelectedType(type.value)}
-            className="text-xs"
-          >
-            <span className="material-symbols-outlined text-sm mr-1">
-              {type.icon}
-            </span>
-            {type.label}
-          </Button>
-        ))}
-      </div>
-
       {/* 已选择的actions链 */}
       {multiSelect && currentSelectedActions.length > 0 && (
         <div className="space-y-2">
@@ -137,16 +106,16 @@ export default function ActionSelect({
               </span>
               Action 调用链 ({currentSelectedActions.length})
             </h4>
-            <Button 
-              variant="ghost" 
-              size="sm" 
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={handleClearAll}
               className="text-xs text-red-500 hover:text-red-700"
             >
               清空全部
             </Button>
           </div>
-          
+
           <div className="flex flex-wrap gap-2 p-3 bg-gray-50 rounded-lg">
             {currentSelectedActions.map((action, index) => (
               <div key={action.id} className="flex items-center gap-1">
@@ -171,10 +140,42 @@ export default function ActionSelect({
               </div>
             ))}
           </div>
-          
+
           <Separator />
         </div>
       )}
+      {/* 搜索框 */}
+      <div className="relative">
+        <span className="material-symbols-outlined absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+          search
+        </span>
+        <Input
+          placeholder="搜索 actions..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="pl-10"
+        />
+      </div>
+
+      {/* 类型过滤器 */}
+      <div className="flex flex-wrap gap-2">
+        {actionTypes.map(type => (
+          <Button
+            key={type.value}
+            variant={selectedType === type.value ? "default" : "outline"}
+            size="sm"
+            onClick={() => setSelectedType(type.value)}
+            className="text-xs"
+          >
+            <span className="material-symbols-outlined text-sm mr-1">
+              {type.icon}
+            </span>
+            {type.label}
+          </Button>
+        ))}
+      </div>
+
+
 
       {/* Actions列表 */}
       <div className="space-y-2">
@@ -188,9 +189,9 @@ export default function ActionSelect({
             </Badge>
           )}
         </div>
-        
-        <div 
-          className="action-list overflow-y-auto p-2" 
+
+        <div
+          className="action-list overflow-y-auto p-2"
           style={{ maxHeight: maxHeight || "300px" }}
         >
           {filteredActions.length > 0 ? (

@@ -47,7 +47,7 @@ impl Database {
                 desc TEXT,
                 command TEXT NOT NULL,
                 args TEXT,
-                typ INTEGER NOT NULL,
+                type INTEGER NOT NULL,
                 wait INTEGER NOT NULL DEFAULT 0,
                 retry INTEGER NOT NULL DEFAULT 0,
                 timeout INTEGER
@@ -117,7 +117,7 @@ impl ActionManager for Database {
         let typ: ActionType = ActionType::try_from(data.typ.as_str())?;
 
         conn.execute(
-            "INSERT INTO actions (id, name, desc, command, args, typ, wait, retry, timeout)
+            "INSERT INTO actions (id, name, desc, command, args, type, wait, retry, timeout)
             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
             (
                 &action_id,
@@ -152,7 +152,7 @@ impl ActionManager for Database {
             args_text = args.join(",");
         }
         conn.execute(
-            "UPDATE actions SET name = ?1, desc = ?2, command = ?3, args = ?4, typ = ?5,wait = ?6, retry = ?7, timeout =?8
+            "UPDATE actions SET name = ?1, desc = ?2, command = ?3, args = ?4, type = ?5,wait = ?6, retry = ?7, timeout =?8
             WHERE id = ?9",
             (
                 &action.name,
@@ -178,7 +178,7 @@ impl ActionManager for Database {
         let conn = self.conn.read();
         let mut stmt = conn.prepare(
             "SELECT 
-            id, name, desc, command, args, typ, wait, retry, timeout 
+            id, name, desc, command, args, type, wait, retry, timeout 
             FROM actions WHERE id = ?1",
         )?;
         let action = stmt.query_row([id], |row| {
@@ -215,7 +215,7 @@ impl ActionManager for Database {
         let placeholders = ids.iter().map(|_| "?").collect::<Vec<_>>().join(",");
         let query = format!(
             "SELECT 
-            id, name, desc, command, args, typ, wait, retry, timeout
+            id, name, desc, command, args, type, wait, retry, timeout
             FROM actions WHERE id IN ({})",
             placeholders
         );
@@ -262,7 +262,7 @@ impl ActionManager for Database {
         let conn = self.conn.read();
         let mut stmt = conn.prepare(
             "SELECT 
-            id, name, desc, command, args, typ, wait, retry, timeout 
+            id, name, desc, command, args, type, wait, retry, timeout 
             FROM actions",
         )?;
 

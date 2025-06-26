@@ -148,6 +148,7 @@ impl Tray {
         let mut builder = TrayIconBuilder::with_id("main")
             .icon(app_handle.default_window_icon().unwrap().clone())
             .icon_as_template(false);
+        // 不明所以
         let tray_event = String::from("main_window");
         if tray_event.as_str() != "tray_menu" {
             builder = builder.show_menu_on_left_click(false);
@@ -181,24 +182,16 @@ impl Tray {
 
 fn create_tray_menu(app_handle: &AppHandle, visiable: bool) -> Result<Menu<Wry>> {
     let version = resolve::VERSION.get().unwrap();
-    // let app_version = &MenuItem::with_id(
-    //     app_handle,
-    //     "app_version",
-    //     format!("{version}"),
-    //     false,
-    //     None::<&str>,
-    // )
-    // .unwrap();
-
     let show_item = &CheckMenuItem::with_id(app_handle, "open_window", "Live2D", true, visiable, Some("Show")).unwrap();
     let dashboard_item = &MenuItem::with_id(app_handle, "dashboard", "Dashboard", true, None::<&str>).unwrap();
     let separator = &PredefinedMenuItem::separator(app_handle).unwrap();
+    let action_item = &MenuItem::with_id(app_handle, "action", "Action", true, None::<&str>).unwrap();
     let about_item = &MenuItem::with_id(app_handle, "about", format!("About v{version}"), true, None::<&str>).unwrap();
     let quit =
         &MenuItem::with_id(app_handle, "quit", "Exit", true, Some("")).unwrap();
 
     let menu = tauri::menu::MenuBuilder::new(app_handle)
-        .items(&[ show_item, dashboard_item, about_item,separator, quit])
+        .items(&[show_item, dashboard_item, action_item, about_item, separator, quit])
         .build()
         .unwrap();
     logging!(info, Type::Tray, true, "Creating tray menu");
@@ -209,6 +202,7 @@ fn on_menu_event(_: &AppHandle, event: MenuEvent) {
     match event.id.as_ref() {
         "open_window" => window_manager::toggle_main_window(),
         "dashboard" => window_manager::create_window_by_label(&window_manager::WindowLabel::Dashboard),
+        "action" => window_manager::create_window_by_label(&window_manager::WindowLabel::Action),
         "quit" => feat::quit(Some(0)),
         _ => {}
     }

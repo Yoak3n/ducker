@@ -4,10 +4,11 @@ import { lazy } from 'react';
 import Layout from '@/pages/Layout';
 
 const Dashboard = lazy(() => import('@/pages/Dashboard'));
+const Action = lazy(() => import('@/pages/Action'));
 const About = lazy(() => import('@/pages/About'));
 const NotFound = lazy(() => import('@/pages/NotFound'));
 const Home = lazy(() => import('@/pages/Home'));
-const ActionSelectDemo = lazy(() => import('@/components/Action/ActionSelectDemo'));
+
 const router = createBrowserRouter([
   {
     path: '/main',
@@ -21,14 +22,13 @@ const router = createBrowserRouter([
         index: true,
         element: <Dashboard />,
       },{
+        path: "action",
+        element: <Action />
+      },{
         path: "about",
         element: <About />
       }
     ],
-  },
-  {
-    path: '/action-demo',
-    element: <ActionSelectDemo />,
   },
   {
     path: '*',

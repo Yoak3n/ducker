@@ -1,16 +1,15 @@
+use crate::{
+    core::{handle, tray},
+    logging,
+    utils::logging::Type,
+};
 use once_cell::sync::OnceCell;
 use parking_lot::Mutex;
-use tauri::{Manager, WebviewWindow, Wry};
 use std::{
     sync::atomic::{AtomicBool, Ordering},
     time::{Duration, Instant},
 };
-use crate::{
-    core::{handle,tray},
-
-    logging,
-    utils::logging::Type
-};
+use tauri::{Manager, WebviewWindow, Wry};
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum WindowOperationResult {
@@ -82,6 +81,7 @@ fn finish_window_operation() {
 pub enum WindowLabel {
     Main,
     Dashboard,
+    Action,
     Setting,
 }
 
@@ -112,6 +112,10 @@ pub fn create_window_by_label(label: &WindowLabel) {
         WindowLabel::Dashboard => {
             logging!(info, Type::Window, true, "Creating dashboard window");
             create_dashboard_window();
+        }
+        WindowLabel::Action => {
+            logging!(info, Type::Window, true, "Creating action window");
+            create_action_window();
         }
         WindowLabel::Setting => {
             logging!(info, Type::Window, true, "Creating setting window");
@@ -163,7 +167,9 @@ pub fn create_main_window() {
                 .maximizable(true)
                 .additional_browser_args("--enable-features=msWebView2EnableDraggableRegions --disable-features=OverscrollHistoryNavigation,msExperimentalScrolling")
                 .transparent(true)
+                .skip_taskbar(true)
                 .shadow(false)
+                .always_on_top(true)
                 .center()
                 .build();
         match window {
@@ -201,8 +207,7 @@ pub fn create_main_window() {
     }
 }
 
-
-pub fn create_dashboard_window(){
+fn create_dashboard_window() {
     let app_handle = handle::Handle::global().app_handle().unwrap();
     if let Some(window) = app_handle.get_webview_window("dashboard") {
         logging!(
@@ -225,7 +230,7 @@ pub fn create_dashboard_window(){
         let _ = window.set_focus();
         return;
     }
-    
+
     let window = tauri::WebviewWindowBuilder::new(
                     &app_handle,
                     "dashboard".to_string(),
@@ -261,7 +266,60 @@ pub fn create_dashboard_window(){
     }
 }
 
-pub fn create_settings_window(){
+fn create_action_window() {
+    let app_handle = handle::Handle::global().app_handle().unwrap();
+    if let Some(window) = app_handle.get_webview_window("action") {
+        logging!(
+            info,
+            Type::Window,
+            true,
+            "Found existing window, attempting to restore visibility"
+        );
+
+        if window.is_minimized().unwrap_or(false) {
+            logging!(
+                info,
+                Type::Window,
+                true,
+                "Window is minimized, restoring window state"
+            );
+            let _ = window.unminimize();
+        }
+    }
+    let window = tauri::WebviewWindowBuilder::new
+                    (&app_handle,
+                    "action".to_string(),
+                    tauri::WebviewUrl::App("/action".into()),
+                )
+                .title("dida")
+                .inner_size(890.0, 700.0)
+                .min_inner_size(620.0, 550.0)
+                .decorations(false)
+                .focused(true)
+                .maximizable(true)
+                .additional_browser_args("--enable-features=msWebView2EnableDraggableRegions --disable-features=OverscrollHistoryNavigation,msExperimentalScrolling")
+                .transparent(false)
+                .shadow(true)
+                .center()
+                .build();
+    match window {
+        Ok(w) => {
+            w.set_focus().unwrap();
+            logging!(info, Type::Window, true, "Window created successfully");
+            // let app_handle_clone = app_handle.clone();
+        }
+        Err(e) => {
+            logging!(
+                error,
+                Type::Window,
+                true,
+                "Failed to create window: {:?}",
+                e
+            );
+        }
+    }
+}
+pub fn create_settings_window() {
     let app_handle = handle::Handle::global().app_handle().unwrap();
     if let Some(window) = app_handle.get_webview_window("settings") {
         logging!(
@@ -296,7 +354,7 @@ pub fn create_settings_window(){
                 .transparent(false)
                 .shadow(true)
                 .center()
-                .build(); 
+                .build();
 
     match window {
         Ok(w) => {
@@ -329,7 +387,6 @@ impl WindowManager {
                 if is_minimized {
                     return WindowState::Minimized;
                 }
-
                 if !is_visible {
                     return WindowState::Hidden;
                 }
@@ -433,6 +490,7 @@ impl WindowManager {
                 logging!(info, Type::Window, true, "窗口不存在，将创建新窗口");
                 // 由于已经有防抖保护，直接调用内部方法
                 if Self::create_new_window() {
+                    tray::Tray::global().update_menu_visible(true);
                     WindowOperationResult::Created
                 } else {
                     WindowOperationResult::Failed
@@ -450,6 +508,7 @@ impl WindowManager {
                         "无焦点"
                     }
                 );
+                tray::Tray::global().update_menu_visible(false);
                 if let Some(window) = Self::get_main_window() {
                     match window.hide() {
                         Ok(_) => {
@@ -473,7 +532,8 @@ impl WindowManager {
                     true,
                     "窗口存在但被隐藏或最小化，将激活窗口"
                 );
-                if let Some(window) = Self::get_main_window() {
+                if let Some(window) = Self::get_main_window() {                    
+                    tray::Tray::global().update_menu_visible(true);
                     Self::activate_window(&window)
                 } else {
                     logging!(warn, Type::Window, true, "无法获取窗口实例");
@@ -482,7 +542,7 @@ impl WindowManager {
             }
         }
     }
-        /// 激活窗口（取消最小化、显示、设置焦点）
+    /// 激活窗口（取消最小化、显示、设置焦点）
     fn activate_window(window: &WebviewWindow<Wry>) -> WindowOperationResult {
         logging!(info, Type::Window, true, "开始激活窗口");
 
@@ -598,7 +658,7 @@ impl WindowManager {
         true
     }
 
-        /// 获取详细的窗口状态信息
+    /// 获取详细的窗口状态信息
     pub fn get_window_status_info() -> String {
         let state = Self::get_main_window_state();
         let is_visible = Self::is_main_window_visible();
