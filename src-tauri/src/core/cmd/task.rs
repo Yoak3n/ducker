@@ -37,8 +37,8 @@ pub async fn update_task(
 }
 
 #[tauri::command]
-pub async fn delete_task(state: State<'_, AppState>, id: String) -> Result<(), String> {
-    let res = state.db.delete_task(&id);
+pub async fn delete_task(state: State<'_, AppState>, id: &str) -> Result<(), String> {
+    let res = state.db.delete_task(id);
     match res {
         Ok(_) => Ok(()),
         Err(e) => {
@@ -49,8 +49,8 @@ pub async fn delete_task(state: State<'_, AppState>, id: String) -> Result<(), S
 }
 
 #[tauri::command]
-pub async fn get_task(state: State<'_, AppState>, id: String) -> Result<TaskView, String> {
-    let res = state.db.get_task(&id);
+pub async fn get_task(state: State<'_, AppState>, id: &str) -> Result<TaskView, String> {
+    let res = state.db.get_task(id);
     match res {
         Ok(data) => Ok(TaskView::try_from((data, state.inner())).unwrap()),
         Err(e) => {
@@ -101,12 +101,12 @@ pub async fn get_tasks_by_date_range(
 }
 
 #[tauri::command]
-pub async fn get_tasks_uncompleted(state: State<'_, AppState>) -> Result<Vec<TaskRecord>, String> {
-    let res = state.db.get_tasks_uncompleted();
+pub async fn get_tasks_by_status(state: State<'_, AppState>, completed: bool) -> Result<Vec<TaskRecord>, String> {
+    let res = state.db.get_tasks_by_status(completed);
     match res {
         Ok(data) => Ok(data),
         Err(e) => {
-            println!("获取未完成任务失败: {:?}", e);
+            println!("获取任务失败: {:?}", e);
             Err(e.to_string())
         }
     }
@@ -135,7 +135,7 @@ pub async fn get_tasks(
 
 #[tauri::command]
 pub async fn gen_random_task_id() -> Result<String, String> {
-    let random_str = random_string(6) + "task";
+    let random_str = format!("task_{}", random_string(6));
     Ok(random_str)
 }
 // #[tauri::command]

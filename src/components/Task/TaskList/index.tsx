@@ -7,7 +7,7 @@ interface Props {
 }
 
 export default function TaskList({ tasks,setTasks }: Props) {
-    const handleTaskChange = (id:number,sub?:boolean)=>{
+    const handleTaskChange = (id:string,sub?:boolean)=>{
         if (sub){
             tasks.map(task=>{
                 if (task.children && task.children.length > 0 ){

@@ -137,7 +137,7 @@ pub fn run() {
             core::cmd::task::get_task,
             core::cmd::task::get_all_tasks,
             core::cmd::task::get_tasks_by_date_range,
-            core::cmd::task::get_tasks_uncompleted,
+            core::cmd::task::get_tasks_by_status,
             core::cmd::task::get_tasks
         ])
         .build(tauri::generate_context!())

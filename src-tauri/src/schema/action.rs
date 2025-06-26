@@ -3,15 +3,18 @@ use serde::{Deserialize, Serialize};
 #[allow(dead_code)]
 #[derive(Deserialize, Serialize, Debug, Clone)]
 pub struct Action {
+    pub id: Option<String>,
     pub name: String,
     pub desc: String,
     pub wait: usize,
+    #[serde(rename = "type")]
+    pub typ: String,
     pub retry: Option<usize>,
     pub timeout: Option<u64>,
     pub command: String,
     pub args: Option<Vec<String>>,
-    pub typ: String,
-    pub id: Option<String>,
+
+
 }
 // impl From<ActionRecord> for Action {
 //     fn from(value: ActionRecord) -> Self {
@@ -48,6 +51,7 @@ impl From<ActionRecord> for Action {
 #[derive(Deserialize, Debug)]
 pub struct ActionRecord {
     pub id: String,
+    #[serde(rename = "type")]
     pub typ: ActionType,
     pub name: String,
     pub wait: usize,

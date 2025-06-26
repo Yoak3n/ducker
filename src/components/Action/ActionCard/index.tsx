@@ -10,7 +10,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import type{ Action } from "@/types/modules/action"
-import { actionTypes } from "@/mocks/action"
+import { actionTypes } from "@/types"
 
 interface ActionCardProps {
   action: Action;
@@ -46,12 +46,12 @@ export default function ActionCard({
 
   return (
     <Card 
-      className={`cursor-pointer transition-all duration-200 hover:shadow-md ${
+      className={`box-border cursor-pointer transition-all duration-200 hover:shadow-md ${
         isSelected ? 'ring-2 ring-blue-500 bg-blue-50' : 'hover:bg-gray-50'
       }`}
       onClick={handleCardClick}
     >
-      <CardHeader className="pb-2">
+      <CardHeader className="pb-2 h-6">
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-2">
             <span className="material-symbols-outlined text-lg">
@@ -59,13 +59,13 @@ export default function ActionCard({
             </span>
             <CardTitle className="text-sm font-medium">{action.name}</CardTitle>
             {isSelected && selectionOrder !== undefined && (
-              <Badge variant="secondary" className="text-xs">
+              <Badge variant="secondary" className="text-xs p-0">
                 {selectionOrder}
               </Badge>
             )}
           </div>
           {isSelected && onRemove && (
-            <CardAction>
+            <CardAction className="m-0">
               <Button 
                 variant="ghost" 
                 size="sm" 

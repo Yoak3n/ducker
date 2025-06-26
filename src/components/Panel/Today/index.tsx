@@ -1,6 +1,6 @@
 import { useState } from "react";
 import "./index.css";
-import type { Task } from "@/types";
+import type { Task, TaskData } from "@/types";
 import TaskList from "@/components/Task/TaskList";
 import { TaskModal } from "@/components/Task";
 import { Button } from "@/components/ui/button";
@@ -53,14 +53,15 @@ const TodayView = ({ tasks }: Props) => {
     //     setIsModalOpen(true);
     // };
 
-    const handleSaveTask = (taskData: Partial<Task>) => {
+    const handleSaveTask = (taskData: Partial<TaskData>) => {
         if (editingTask) {
             // 编辑模式
-            setTaskList(prev => prev.map(task =>
-                task.id === editingTask.id
-                    ? { ...task, ...taskData }
-                    : task
-            ));
+            // TODO: 开始写前后端交互吧！
+            // setTaskList(prev => prev.map(task =>
+            //     task.id === editingTask.id
+            //         ? { ...task, ...taskData }
+            //         : task
+            // ));
         } else {
             // 创建模式
             const newTask: Task = {

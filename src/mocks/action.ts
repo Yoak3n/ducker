@@ -39,15 +39,6 @@ export const mockActions: Action[] = [
   },
   {
     id: '5',
-    name: '发送邮件',
-    description: '打开默认邮件客户端发送邮件',
-    type: 'email',
-    wait: 0,
-    cmd: 'start',
-    args: ['mailto:{{email}}?subject={{subject}}&body={{body}}']
-  },
-  {
-    id: '6',
     name: '截图保存',
     description: '截取屏幕并保存到指定位置',
     type: 'command',
@@ -56,7 +47,7 @@ export const mockActions: Action[] = [
     args: ['-Command', 'Add-Type -AssemblyName System.Windows.Forms; [System.Windows.Forms.SendKeys]::SendWait("%{PRTSC}")']
   },
   {
-    id: '7',
+    id: '6',
     name: '复制文件',
     description: '将文件复制到指定位置',
     type: 'file',
@@ -65,7 +56,7 @@ export const mockActions: Action[] = [
     args: ['"{{source}}"', '"{{destination}}"']
   },
   {
-    id: '8',
+    id: '7',
     name: '创建文件夹',
     description: '在指定位置创建新文件夹',
     type: 'directory',
@@ -74,7 +65,7 @@ export const mockActions: Action[] = [
     args: ['"{{dirname}}"']
   },
   {
-    id: '9',
+    id: '8',
     name: '启动应用',
     description: '启动指定的应用程序',
     type: 'command',
@@ -83,7 +74,7 @@ export const mockActions: Action[] = [
     args: []
   },
   {
-    id: '10',
+    id: '9',
     name: '系统通知',
     description: '显示系统通知消息',
     type: 'command',
@@ -91,13 +82,4 @@ export const mockActions: Action[] = [
     cmd: 'powershell',
     args: ['-Command', 'New-BurntToastNotification -Text "{{title}}", "{{message}}"']
   }
-];
-
-export const actionTypes = [
-  { value: 'all', label: '全部类型', icon: 'apps' },
-  { value: 'file', label: '文件操作', icon: 'folder' },
-  { value: 'directory', label: '目录操作', icon: 'folder_open' },
-  { value: 'command', label: '命令执行', icon: 'terminal' },
-  { value: 'url', label: '网页链接', icon: 'link' },
-  { value: 'email', label: '邮件发送', icon: 'email' }
 ];

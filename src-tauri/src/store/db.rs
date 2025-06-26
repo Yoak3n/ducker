@@ -436,13 +436,14 @@ impl TaskManager for Database {
         Ok(result)
     }
 
-    fn get_tasks_uncompleted(&self) -> Result<Vec<TaskRecord>> {
+
+    fn get_tasks_by_status(&self, completed: bool) -> Result<Vec<TaskRecord>> {
         let conn = self.conn.read();
         let mut stmt = conn.prepare(
             "SELECT id, completed, parent_id, name, auto, actions, created_at, due_to, reminder, value 
-            FROM tasks WHERE completed = 0"
+            FROM tasks WHERE completed = ?1",
         )?;
-        let tasks = stmt.query_map([], |row| {
+        let tasks = stmt.query_map([completed], |row| {
             Self::build_task_record_from_row(row)
         })?;
 
@@ -452,7 +453,6 @@ impl TaskManager for Database {
         }
         Ok(result)
     }
-
     fn get_all_tasks(&self) -> Result<Vec<TaskRecord>> {
         let conn = self.conn.read();
         let mut stmt = conn.prepare(

@@ -4,8 +4,8 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import ActionCard from "../ActionCard";
-import type{ Action } from "@/types/modules/action";
-import { mockActions, actionTypes } from "@/mocks/action";
+import {type Action, actionTypes } from "@/types";
+import { mockActions} from "@/mocks/action";
 
 interface ActionSelectProps {
   selectedActions?: Action[];
@@ -190,7 +190,7 @@ export default function ActionSelect({
         </div>
         
         <div 
-          className="action-list overflow-y-auto" 
+          className="action-list overflow-y-auto p-2" 
           style={{ maxHeight: maxHeight || "300px" }}
         >
           {filteredActions.length > 0 ? (

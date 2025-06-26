@@ -1,13 +1,12 @@
 import { useState } from "react";
 import type { Task } from "@/types";
-
+import { execute_actions } from "@/api";
 import "./index.css";
 
 interface Props {
     root?: boolean;
     task: Task,
     changeTask: (id: string,sub?:boolean) => void;
-
 }
 
 export default function TaskItem({ root = true, task,changeTask }: Props) {
@@ -21,7 +20,7 @@ export default function TaskItem({ root = true, task,changeTask }: Props) {
                     checked={task.completed}
                     onChange={() => root? changeTask(task.id):changeTask(task.id,true)}
                 />
-                <div className="task-item-content" >
+                <div className="task-item-content" onClick={(e)=>{e.preventDefault();execute_actions(task.actions)}}>
                     <div className="task-item-title">{task.name}</div>
                 </div>
                 {task.children && task.children.length > 0 &&
@@ -34,7 +33,7 @@ export default function TaskItem({ root = true, task,changeTask }: Props) {
             {isExpanded && task.children &&
                 <ul className="sub-task-list">
                     {task.children.map((subTask) => (
-                        <TaskItem key={subTask.id} root={false} task={subTask} changeTask={changeTask} />
+                        <TaskItem key={subTask.id} root={false} task={subTask} changeTask={changeTask}/>
                     ))}
                 </ul>}
         </li>
