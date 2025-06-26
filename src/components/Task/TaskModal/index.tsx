@@ -142,7 +142,7 @@ export default function TaskModal({ isOpen, onClose, onSave, task, parentTask }:
         setFormData(prev => ({ ...prev, reminder: newReminderTime }));
       }
     }
-  }, [formData.due_to, formData.reminderOffset]);
+  }, [formData.due_to, formData.reminder, formData.reminderOffset]);
 
   const handleInputChange = (field: keyof TaskFormData, value: string | boolean | number | undefined | Action[]) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
