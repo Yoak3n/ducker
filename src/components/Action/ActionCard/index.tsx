@@ -83,7 +83,7 @@ export default function ActionCard({
       
       <CardContent className="pt-0 pb-2">
         <CardDescription className="text-xs text-gray-600 line-clamp-2">
-          {action.description}
+          {action.desc}
         </CardDescription>
         
         <div className="mt-2 flex items-center gap-2">
@@ -101,7 +101,7 @@ export default function ActionCard({
       <CardFooter className="pt-0 pb-3">
         <div className="w-full">
           <div className="text-xs text-gray-500 font-mono truncate">
-            {action.cmd} {action.args.join(' ')}
+            {action.command} {action.args?.join(' ')}
           </div>
         </div>
       </CardFooter>

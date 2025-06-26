@@ -31,7 +31,7 @@ export default function ActionSelect({
   const filteredActions = useMemo(() => {
     return mockActions.filter(action => {
       const matchesSearch = action.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           action.description.toLowerCase().includes(searchTerm.toLowerCase());
+                           action.desc.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesType = selectedType === 'all' || action.type === selectedType;
       return matchesSearch && matchesType;
     });
