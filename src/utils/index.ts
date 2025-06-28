@@ -10,5 +10,5 @@ const simplifyPath = (path:string) => {
     return path;
 };
 
-
+export * from './action'
 export {simplifyPath}

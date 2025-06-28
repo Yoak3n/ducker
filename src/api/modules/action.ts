@@ -12,6 +12,16 @@ async function execute_actions(actions: Action[]|undefined) {
     }
 }
 
+async function create_action(action:Action){
+    try{
+        await invoke('create_action',{action})
+    }catch(err){
+        console.error('Error creating action:', err);
+    }
+}
+
+
 export {
-    execute_actions
+    execute_actions,
+    create_action
 }

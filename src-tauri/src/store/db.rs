@@ -49,7 +49,7 @@ impl Database {
                 args TEXT,
                 type INTEGER NOT NULL,
                 wait INTEGER NOT NULL DEFAULT 0,
-                retry INTEGER NOT NULL DEFAULT 0,
+                retry INTEGER  DEFAULT 0,
                 timeout INTEGER
             )",
             [],
