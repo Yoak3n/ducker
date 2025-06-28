@@ -4,25 +4,25 @@ import { invoke } from "@tauri-apps/api/core";
 
 async function create_task(task: TaskData) {
     try {
-        const result = await invoke("create_task", { task });
+        const result = await invoke<string>("create_task", { task });
         return result;
     } catch (err) {
         console.log(err);
     }
 }
 
-async function update_task(id: string, task: TaskData) {
-    const result = await invoke("update_task", { id, task });
+async function update_task(id: string, task: TaskData): Promise<Task> {
+    const result = await invoke<Task>("update_task", { id, task });
     return result;
 }
 
-async function delete_task(id: String) {
-    const result = await invoke("delete_task", { id });
+async function delete_task(id: string): Promise<void> {
+    const result = await invoke<void>("delete_task", { id });
     return result;
 }
 
-async function get_task(id: string) {
-    const task = await invoke("get_task", { id });
+async function get_task(id: string): Promise<Task> {
+    const task = await invoke<Task>("get_task", { id });
     return task;
 }
 

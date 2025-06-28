@@ -18,7 +18,7 @@ interface ActionCardProps {
   selectionOrder?: number;
   onSelect?: (action: Action) => void;
   onRemove?: (action: Action) => void;
-  showSelection?: boolean;
+  selectable?: boolean;
 }
 
 export default function ActionCard({ 
@@ -27,12 +27,12 @@ export default function ActionCard({
   selectionOrder, 
   onSelect, 
   onRemove,
-  showSelection = false 
+  selectable = false 
 }: ActionCardProps) {
   const actionType = actionTypes.find(type => type.value === action.type);
   
   const handleCardClick = () => {
-    if (showSelection && onSelect) {
+    if (selectable && onSelect) {
       onSelect(action);
     }
   };

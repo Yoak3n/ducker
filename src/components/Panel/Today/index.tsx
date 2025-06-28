@@ -42,16 +42,6 @@ const TodayView = ({ tasks }: Props) => {
         setParentTask(null);
         setIsModalOpen(true);
     };
-    // const handleEditTask = (task: Task) => {
-    //     setEditingTask(task);
-    //     setParentTask(null);
-    //     setIsModalOpen(true);
-    // };
-    // const handleCreateSubTask = (parent: Task) => {
-    //     setEditingTask(null);
-    //     setParentTask(parent);
-    //     setIsModalOpen(true);
-    // };
 
     const handleSaveTask = (taskData: Partial<TaskData>) => {
         if (editingTask) {

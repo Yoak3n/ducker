@@ -16,6 +16,12 @@ export function exec_action(action: Action) {
 
 
 export async function open_file_select_dialog(file:boolean){
-    const path:string = await invoke("select_file",{file})
-    return path
+    try{
+        const path = await invoke<string>("select_file",{file})
+        return path
+    }catch(err){
+        console.error('Error opening file select dialog:', err);
+        return ""
+    }
+
 }

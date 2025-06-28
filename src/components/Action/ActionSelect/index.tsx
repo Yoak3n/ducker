@@ -206,7 +206,7 @@ export default function ActionSelect({
                     selectionOrder={getSelectionOrder(action)}
                     onSelect={handleActionSelect}
                     onRemove={multiSelect ? handleActionRemove : undefined}
-                    showSelection={true}
+                    selectable={true}
                   />
                 );
               })}

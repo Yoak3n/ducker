@@ -1,13 +1,16 @@
 export interface Action {
-    id?: string;
+    id: string;
     name: string;
     desc: string;
     wait: number;
-    type: string
+    type: 'exec_command' | 'open_url' | 'open_file' | 'open_dir';
     retry?: number;
     timeout?: number;
-    command: string;
+    command?: string;
+    url?: string;
     args?: string[];
+    createdAt?: string;
+    updatedAt?: string;
 }
 
 export interface ActionType {
@@ -15,6 +18,8 @@ export interface ActionType {
     label: string;
     icon?: string;
 }
+
+export type ActionTypeValue = 'exec_command' | 'open_url' | 'open_file' | 'open_dir';
 
 export const actionTypes:ActionType[] = [
   { value: 'all', label: '全部类型', icon: 'apps' },

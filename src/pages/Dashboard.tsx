@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import '@/assets/Dashboard.css';
-import type {TaskMocks, TasksData, WeeklyTasks } from '@/types';
+import type {TaskMocks,  WeeklyTasks } from '@/types';
 import {allData} from '@/mocks/task';
 
 import TodayView from '@/components/Panel/Today';
