@@ -140,10 +140,6 @@ export const useActionStore = create<ActionStore>()(
 
           // 合并数据确保所有必需字段都存在
           const fullActionData = {
-            name: currentAction.name,
-            desc: currentAction.desc,
-            type: currentAction.type,
-            wait: currentAction.wait,
             command: currentAction.command,
             url: currentAction.url,
             ...actionData

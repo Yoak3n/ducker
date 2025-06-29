@@ -1,14 +1,14 @@
 import { create } from 'zustand';
 import { devtools, subscribeWithSelector } from 'zustand/middleware';
-import type { TaskState, Task, CreateTaskData, UpdateTaskData, TaskFilters, TaskStats } from './types';
+import type { TaskState, Task, TaskData, TaskFilters, TaskStats } from './types';
 import * as taskApi from '@/api/modules/task';
 
 // 任务状态管理接口
 interface TaskStore extends TaskState {
   // CRUD 操作
   fetchTasks: () => Promise<void>;
-  createTask: (taskData: CreateTaskData) => Promise<Task>;
-  updateTask: (id: string, taskData: UpdateTaskData) => Promise<Task>;
+  createTask: (taskData: TaskData) => Promise<Task>;
+  updateTask: (id: string, taskData: TaskData) => Promise<Task>;
   deleteTask: (id: string) => Promise<void>;
   
   // 状态管理
@@ -18,7 +18,7 @@ interface TaskStore extends TaskState {
   
   // 便捷操作
   toggleTaskCompletion: (id: string) => Promise<void>;
-  bulkUpdateTasks: (ids: string[], updates: UpdateTaskData) => Promise<void>;
+  bulkUpdateTasks: (ids: string[], updates: TaskData) => Promise<void>;
   bulkDeleteTasks: (ids: string[]) => Promise<void>;
   
   // 查询方法（计算属性）
@@ -56,8 +56,8 @@ const filterTasks = (tasks: Task[], filters: TaskFilters): Task[] => {
     }
     
     // 日期范围过滤
-    if (filters.dateRange && task.createdAt) {
-      const taskDate = new Date(task.createdAt);
+    if (filters.dateRange && task.created_at) {
+      const taskDate = new Date(task.created_at);
       if (taskDate < filters.dateRange.start || taskDate > filters.dateRange.end) {
         return false;
       }
@@ -77,20 +77,20 @@ export const useTaskStore = create<TaskStore>()(
         
         // CRUD 操作
         fetchTasks: async () => {
-          set({ loading: true, error: null }, false, 'task/fetchTasks/start');
+          set({ loading: true, error: null }, false);
           try {
             const tasks = await taskApi.get_all_tasks();
-            set({ tasks: tasks || [], loading: false }, false, 'task/fetchTasks/success');
+            set({ tasks: tasks || [], loading: false }, false);
           } catch (error) {
             set({ 
               loading: false, 
               error: error instanceof Error ? error.message : '获取任务失败' 
-            }, false, 'task/fetchTasks/error');
+            }, false);
           }
         },
         
         createTask: async (taskData) => {
-          set({ loading: true, error: null }, false, 'task/createTask/start');
+          set({ loading: true, error: null }, false);
           try {
             const taskId = await taskApi.create_task(taskData);
             if (!taskId) {
@@ -117,7 +117,7 @@ export const useTaskStore = create<TaskStore>()(
         },
         
         updateTask: async (id, taskData) => {
-          set({ loading: true, error: null }, false, 'task/updateTask/start');
+          set({ loading: true, error: null }, false);
           try {
             // 获取当前任务以合并完整数据
             const currentTask = get().getTaskById(id);
@@ -127,8 +127,6 @@ export const useTaskStore = create<TaskStore>()(
             
             // 合并数据确保所有必需字段都存在
             const fullTaskData = {
-              name: currentTask.name,
-              completed: currentTask.completed,
               value: currentTask.value,
               ...taskData
             };
@@ -145,20 +143,20 @@ export const useTaskStore = create<TaskStore>()(
               tasks: tasks || [],
               currentTask: state.currentTask?.id === id ? updatedTask : state.currentTask,
               loading: false
-            }), false, 'task/updateTask/success');
+            }), false);
             
             return updatedTask;
           } catch (error) {
             set({ 
               loading: false, 
               error: error instanceof Error ? error.message : '更新任务失败' 
-            }, false, 'task/updateTask/error');
+            }, false);
             throw error;
           }
         },
         
         deleteTask: async (id) => {
-          set({ loading: true, error: null }, false, 'task/deleteTask/start');
+          set({ loading: true, error: null }, false);
           try {
             await taskApi.delete_task(id);
             
@@ -169,41 +167,41 @@ export const useTaskStore = create<TaskStore>()(
               tasks: tasks || [],
               currentTask: state.currentTask?.id === id ? null : state.currentTask,
               loading: false
-            }), false, 'task/deleteTask/success');
+            }), false);
           } catch (error) {
             set({ 
               loading: false, 
               error: error instanceof Error ? error.message : '删除任务失败' 
-            }, false, 'task/deleteTask/error');
+            }, false);
             throw error;
           }
         },
         
         // 状态管理
         setCurrentTask: (task) => {
-          set({ currentTask: task }, false, 'task/setCurrentTask');
+          set({ currentTask: task }, false);
         },
         
         setFilters: (filters) => {
           set(state => ({ 
             filters: { ...state.filters, ...filters } 
-          }), false, 'task/setFilters');
+          }), false);
         },
         
         clearError: () => {
-          set({ error: null }, false, 'task/clearError');
+          set({ error: null }, false);
         },
         
         // 便捷操作
         toggleTaskCompletion: async (id) => {
           const task = get().getTaskById(id);
           if (!task) throw new Error('任务不存在');
-          
-          await get().updateTask(id, { completed: !task.completed });
+          // TODO新建任务时不应该有actions
+          await get().updateTask(id, {...task, completed: !task.completed,actions:[] });
         },
         
         bulkUpdateTasks: async (ids, updates) => {
-          set({ loading: true, error: null }, false, 'task/bulkUpdate/start');
+          set({ loading: true, error: null }, false);
           try {
             const promises = ids.map(id => {
               const currentTask = get().getTaskById(id);
@@ -213,8 +211,6 @@ export const useTaskStore = create<TaskStore>()(
               
               // 合并数据确保所有必需字段都存在
               const fullTaskData = {
-                name: currentTask.name,
-                completed: currentTask.completed,
                 value: currentTask.value,
                 ...updates
               };
@@ -279,8 +275,8 @@ export const useTaskStore = create<TaskStore>()(
         
         getTasksByDateRange: (start, end) => {
           return get().tasks.filter(task => {
-            if (!task.createdAt) return false;
-            const taskDate = new Date(task.createdAt);
+            if (!task.created_at) return false;
+            const taskDate = new Date(task.created_at);
             return taskDate >= start && taskDate <= end;
           });
         },

@@ -1,33 +1,6 @@
 // 统一类型定义
-
-// 基础实体类型
-export interface Task {
-  id: string;
-  name: string;
-  completed: boolean;
-  value: number;
-  createdAt?: string;
-  updatedAt?: string;
-}
-
-export interface Action {
-  id: string;
-  name: string;
-  desc: string;
-  type: 'exec_command' | 'open_url' | 'open_file' | 'open_dir';
-  command: string;
-  args?: string[];
-  url?: string;
-  wait: number;
-  createdAt?: string;
-  updatedAt?: string;
-}
-
-// 创建数据类型（不包含id等自动生成字段）
-export type CreateTaskData = Omit<Task, 'id' | 'createdAt' | 'updatedAt'>;
-export type CreateActionData = Omit<Action, 'id' | 'createdAt' | 'updatedAt'>;
-export type UpdateTaskData = Partial<CreateTaskData>;
-export type UpdateActionData = Partial<CreateActionData>;
+import type{ Task,Action,TaskData,CreateActionData,UpdateActionData } from "@/types";
+export type {Task,Action,TaskData,CreateActionData,UpdateActionData}
 
 // 过滤器类型
 export interface TaskFilters {

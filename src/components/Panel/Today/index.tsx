@@ -4,6 +4,7 @@ import type { Task, TaskData } from "@/types";
 import TaskList from "@/components/Task/TaskList";
 import { TaskModal } from "@/components/Task";
 import { Button } from "@/components/ui/button";
+import { useTaskStore } from "@/store";
 
 interface Props {
     tasks: Task[]
@@ -15,10 +16,13 @@ const TodayView = ({ tasks }: Props) => {
     const [parentTask, setParentTask] = useState<Task | null>(null);
     const [editingTask, setEditingTask] = useState<Task | null>(null);
     // TODO 之后用 useContext 来获取任务数据
+
+    const taskStore = useTaskStore()
+
     const [taskList, setTaskList] = useState<Task[]>(tasks);
 
     let completedValueCount = 0
-    taskList.forEach(item => {
+    taskStore.tasks.forEach(item => {
         if (item.completed) completedValueCount += item.value || 0;
         if (item.children) {
             item.children.filter(child => {
@@ -55,28 +59,11 @@ const TodayView = ({ tasks }: Props) => {
         } else {
             // 创建模式
             const newTask: Task = {
-                id: Date.now(),
                 create_at: new Date(),
                 completed: false,
-                auto: false,
                 ...taskData
             } as Task;
-
-            if (parentTask) {
-                // 创建子任务
-                setTaskList(prev => prev.map(task => {
-                    if (task.id === parentTask.id) {
-                        return {
-                            ...task,
-                            children: [...(task.children || []), newTask]
-                        };
-                    }
-                    return task;
-                }));
-            } else {
-                // 创建根任务
-                setTaskList(prev => [...prev, newTask]);
-            }
+            console.log(newTask)
         }
     };
 

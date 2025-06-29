@@ -1,6 +1,5 @@
 use serde::{Deserialize, Serialize};
 
-#[allow(dead_code)]
 #[derive(Deserialize, Serialize, Debug, Clone)]
 pub struct Action {
     pub id: Option<String>,
@@ -13,7 +12,6 @@ pub struct Action {
     pub timeout: Option<u64>,
     pub command: String,
     pub args: Option<Vec<String>>,
-
 
 }
 // impl From<ActionRecord> for Action {

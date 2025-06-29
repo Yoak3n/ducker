@@ -37,6 +37,22 @@ pub async fn update_task(
 }
 
 #[tauri::command]
+pub async fn update_task_status(
+    state: State<'_, AppState>,
+    id: &str,
+    completed: bool,
+) -> Result<bool, String> {
+    let res = state.db.update_task_status(id, completed);
+    match res {
+        Ok(data) => Ok(data),
+        Err(e) => {
+            println!("更新任务状态失败: {:?}", e);
+            Err(e.to_string())
+        }
+    }
+}
+
+#[tauri::command]
 pub async fn delete_task(state: State<'_, AppState>, id: &str) -> Result<(), String> {
     let res = state.db.delete_task(id);
     match res {

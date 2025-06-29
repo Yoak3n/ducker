@@ -1,5 +1,5 @@
 import { invoke } from '@tauri-apps/api/core';
-import {type Action, type CreateActionData, type UpdateActionData } from '../../store/types';
+import type{ Action,CreateActionData, UpdateActionData } from '@/types';
 async function execute_actions(actions: Action[]|undefined) {
     try {
         if (!actions || actions.length === 0) {

@@ -3,15 +3,16 @@ export interface Action {
     name: string;
     desc: string;
     wait: number;
-    type: 'exec_command' | 'open_url' | 'open_file' | 'open_dir';
+    type: ActionTypeValue;
     retry?: number;
     timeout?: number;
     command?: string;
     url?: string;
     args?: string[];
-    createdAt?: string;
-    updatedAt?: string;
 }
+
+export type CreateActionData = Omit<Action, 'id' | 'created_at'>;
+export type UpdateActionData = Partial<CreateActionData>;
 
 export interface ActionType {
     value: string;

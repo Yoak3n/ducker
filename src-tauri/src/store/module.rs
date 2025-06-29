@@ -11,6 +11,7 @@ pub trait ActionManager {
 pub trait TaskManager {
     fn create_task(&self, task: &TaskData) -> Result<TaskRecord>;
     fn update_task(&self, id: &str, task: &TaskData) -> Result<TaskRecord>;
+    fn update_task_status(&self, id: &str, completed: bool) -> Result<bool>;
     fn delete_task(&self, id: &str) -> Result<()>;
     fn get_task(&self, id: &str) -> Result<TaskRecord>;
     fn get_tasks(&self, ids: &[String]) -> Result<Vec<TaskRecord>>;

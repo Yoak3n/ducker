@@ -1,11 +1,11 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import ActionCard from "../ActionCard";
 import { type Action, actionTypes } from "@/types";
-import { mockActions } from "@/mocks/action";
+import { useActionStore } from '@/store';
 
 interface ActionSelectProps {
   selectedActions?: Action[];
@@ -26,16 +26,21 @@ export default function ActionSelect({
 
   // 使用内部状态或外部传入的状态
   const currentSelectedActions = onActionsChange ? selectedActions : internalSelectedActions;
-
+  const actionStore = useActionStore();
+  useEffect(() => {
+    actionStore.fetchActions();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  const actions = useActionStore(state => state.actions);
   // 过滤actions
   const filteredActions = useMemo(() => {
-    return mockActions.filter(action => {
+    return actions.filter(action => {
       const matchesSearch = action.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         action.desc.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesType = selectedType === 'all' || action.type === selectedType;
       return matchesSearch && matchesType;
     });
-  }, [searchTerm, selectedType]);
+  }, [actions, searchTerm, selectedType]);
 
   // 处理action选择
   const handleActionSelect = (action: Action) => {

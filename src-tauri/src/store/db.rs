@@ -348,8 +348,19 @@ impl TaskManager for Database {
                 &record.parent_id,
                 &actions, id],
         )?;
-
         Ok(record)
+    }
+
+    fn update_task_status(&self, id: &str, completed: bool) -> Result<bool> {
+        let conn = self.conn.write();
+        conn.execute(
+            "UPDATE tasks 
+            SET completed = ?1
+            WHERE id = ?2",
+            params![
+                &completed, id],
+        )?;
+        Ok(true)
     }
 
     fn delete_task(&self, id: &str) -> Result<()> {
