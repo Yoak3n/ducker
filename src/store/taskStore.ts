@@ -195,12 +195,11 @@ export const useTaskStore = create<TaskStore>()(
         toggleTaskCompletion: async (id) => {
           const task = get().getTaskById(id);
           if (!task) throw new Error('任务不存在');
-          // TODO新建任务时不应该有actions
+          
+          await taskApi.update_task_status(id, !task.completed);
           set(state => ({
             tasks: state.tasks.map(t => t.id === id ? { ...t, completed: !t.completed } : t)
           }), false);
-          await taskApi.update_task_status(id, !task.completed);
-
         },
 
         bulkUpdateTasks: async (ids, updates) => {
