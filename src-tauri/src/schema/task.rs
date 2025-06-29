@@ -22,38 +22,8 @@ pub struct TaskRecord {
     pub due_to: Option<i64>,
     pub reminder: Option<i64>,
 }
-impl TaskRecord {
-    pub fn into_view(self, actions: Vec<Action>, children: Vec<TaskView>) -> TaskView {
-        TaskView {
-            id: self.id,
-            name: self.name,
-            value: self.value,
-            completed: self.completed,
-            auto: self.auto,
-            actions: Some(actions),
-            children: Some(children),
-            created_at: to_datetime_str(self.created_at),
-            due_to: self.due_to.map(to_datetime_str),
-            reminder: self.reminder.map(to_datetime_str),
-        }
-    }
-}
-impl From<TaskRecord> for TaskView {
-    fn from(record: TaskRecord) -> Self {
-        Self {
-            id: record.id,
-            value: record.value,
-            name: record.name,
-            completed: record.completed,
-            auto: record.auto,
-            actions: None,
-            children: None,
-            created_at: to_datetime_str(record.created_at),
-            due_to: record.due_to.map(to_datetime_str),
-            reminder: record.reminder.map(to_datetime_str),
-        }
-    }
-}
+
+
 
 impl TryFrom<(TaskRecord, &AppState)> for TaskView {
     type Error = anyhow::Error;
@@ -110,7 +80,8 @@ impl From<TaskData> for TaskRecord {
 
         Self {
             id,
-            value: data.value,
+            // TODO 添加更复杂的默认值逻辑
+            value: data.value.unwrap_or(0.0),
             completed: data.completed,
             auto: data.auto,
             parent_id: data.parent_id,
@@ -129,7 +100,7 @@ impl From<TaskData> for TaskRecord {
 pub struct TaskData {
     pub id: Option<String>,
     pub name: String,
-    pub value: f64,
+    pub value: Option<f64>,
     pub completed: bool,
     pub auto: bool,
     pub parent_id: Option<String>,
@@ -153,8 +124,3 @@ pub struct TaskView {
     pub reminder: Option<String>,
 }
 
-impl TaskView {
-    pub fn from_record(record: TaskRecord, actions: Vec<Action>, children: Vec<TaskView>) -> Self {
-        record.into_view(actions, children)
-    }
-}

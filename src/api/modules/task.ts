@@ -16,6 +16,11 @@ async function update_task(id: string, task: TaskData): Promise<Task> {
     return result;
 }
 
+async function update_task_status(id: string, completed: boolean): Promise<Task> {
+    const result = await invoke<Task>("update_task_status", { id, completed });
+    return result;
+}
+
 async function delete_task(id: string): Promise<void> {
     const result = await invoke<void>("delete_task", { id });
     return result;
@@ -55,5 +60,6 @@ export {
     get_tasks_by_status,
     get_tasks,
     update_task,
+    update_task_status,
     delete_task
 };

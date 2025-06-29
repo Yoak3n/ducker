@@ -1,6 +1,6 @@
 // 统一类型定义
-import type{ Task,Action,TaskData,CreateActionData,UpdateActionData } from "@/types";
-export type {Task,Action,TaskData,CreateActionData,UpdateActionData}
+import type { Task, Action, TaskData, CreateActionData, UpdateActionData } from "@/types";
+export type { Task, Action, TaskData, CreateActionData, UpdateActionData }
 
 // 过滤器类型
 export interface TaskFilters {

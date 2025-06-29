@@ -8,9 +8,9 @@ export interface Task {
   auto?: boolean
   actions?: Action[]
   children?: Task[]
-  created_at: Date
-  due_to?: Date
-  reminder?: Date
+  created_at: string
+  due_to?: string
+  reminder?: string
 }
 
 export interface TaskData {
@@ -21,9 +21,9 @@ export interface TaskData {
   auto?: boolean
   actions?: string[]
   parent_id?: string,
-  created_at?: Date
-  due_to?: Date
-  reminder?: Date
+  created_at?: string
+  due_to?: string
+  reminder?: string
 }
 
 export interface WeeklyTasks {

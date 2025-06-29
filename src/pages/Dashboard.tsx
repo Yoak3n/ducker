@@ -170,7 +170,7 @@ const TaskDashboard: React.FC = () => {
       </div>
       
       <div className="tab-content">
-        {activeTab === 'today' && <TodayView tasks={tasks.today} />}
+        {activeTab === 'today' && <TodayView />}
         {activeTab === 'weekly' && renderWeeklyView()}
         {activeTab === 'monthly' && renderMonthlyView()}
       </div>

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import "./index.css";
 import type { Task, TaskData } from "@/types";
 import TaskList from "@/components/Task/TaskList";
@@ -6,20 +6,19 @@ import { TaskModal } from "@/components/Task";
 import { Button } from "@/components/ui/button";
 import { useTaskStore } from "@/store";
 
-interface Props {
-    tasks: Task[]
-}
 
-
-const TodayView = ({ tasks }: Props) => {
+const TodayView = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [parentTask, setParentTask] = useState<Task | null>(null);
     const [editingTask, setEditingTask] = useState<Task | null>(null);
-    // TODO 之后用 useContext 来获取任务数据
 
     const taskStore = useTaskStore()
-
-    const [taskList, setTaskList] = useState<Task[]>(tasks);
+    const tasksList = taskStore.tasks
+    useEffect(() => {
+        taskStore.fetchTasks()
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [])
+    // const [taskList, setTaskList] = useState<Task[]>(tasks);
 
     let completedValueCount = 0
     taskStore.tasks.forEach(item => {
@@ -31,7 +30,7 @@ const TodayView = ({ tasks }: Props) => {
         }
     });
     let totalCount = 0
-    taskList.forEach((item) => {
+    tasksList.forEach((item) => {
         totalCount += item.value || 0;
         if (item.children) {
             item.children.forEach(child => {
@@ -58,15 +57,21 @@ const TodayView = ({ tasks }: Props) => {
             // ));
         } else {
             // 创建模式
-            const newTask: Task = {
-                create_at: new Date(),
+            const newTask: TaskData = {
                 completed: false,
+                name: taskData.name!,
                 ...taskData
-            } as Task;
+            };
             console.log(newTask)
+            taskStore.createTask(newTask)
+
         }
     };
 
+    const handleTaskStatueChange = (id: string) => {
+        taskStore.toggleTaskCompletion(id)
+
+    }
 
     return (
         <div className="today-view">
@@ -81,17 +86,18 @@ const TodayView = ({ tasks }: Props) => {
                 <h2>今日任务 ({new Date().toLocaleDateString()})</h2>
                 <Button variant="outline" onClick={handleCreateTask}>创建任务</Button>
             </div>
+            {totalCount > 0 &&
+                <div className="progress-bar">
+                    <div className="progress"
+                        style={{ width: `${progressPercent}%` }}
+                    ></div>
+                    <span>
+                        {completedValueCount} / {totalCount} 完成
+                    </span>
+                </div>
+            }
 
-            <div className="progress-bar">
-                <div
-                    className="progress"
-                    style={{ width: `${progressPercent}%` }}
-                ></div>
-                <span>
-                    {completedValueCount} / {totalCount} 完成
-                </span>
-            </div>
-            <TaskList tasks={taskList} setTasks={setTaskList} />
+            <TaskList tasks={tasksList} changeTask={handleTaskStatueChange} />
         </div>
     );
 };

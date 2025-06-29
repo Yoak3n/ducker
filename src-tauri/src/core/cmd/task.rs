@@ -83,7 +83,7 @@ pub async fn get_all_tasks(state: State<'_, AppState>) -> Result<Vec<TaskView>, 
         Ok(data) => {
             let mut tasks = Vec::new();
             for task in data {
-                tasks.push(task.into());
+                tasks.push(TaskView::try_from((task, state.inner())).unwrap());
             }
             Ok(tasks)
         }
@@ -105,7 +105,7 @@ pub async fn get_tasks_by_date_range(
         Ok(data) => {
             let mut tasks = Vec::new();
             for task in data {
-                tasks.push(task.into());
+                tasks.push(TaskView::try_from((task, state.inner())).unwrap());
             }
             Ok(tasks)
         }
@@ -138,7 +138,7 @@ pub async fn get_tasks(
         Ok(data) => {
             let mut tasks = Vec::new();
             for task in data {
-                tasks.push(task.into());
+                tasks.push(TaskView::try_from((task, state.inner())).unwrap());
             }
             Ok(tasks)
         }

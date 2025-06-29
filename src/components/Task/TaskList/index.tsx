@@ -1,35 +1,17 @@
 import type { Task } from "@/types";
+
 import TaskItem from "../TaskItem";
 
 interface Props {
     tasks: Task[],
-    setTasks: (tasks: Task[]) => void,
+    changeTask: (id: string) => void
 }
 
-export default function TaskList({ tasks, setTasks }: Props) {
+export default function TaskList({ tasks,changeTask }: Props) {
 
 
-    const handleTaskChange = (id: string, sub?: boolean) => {
-        if (sub) {
-            tasks.map(task => {
-                if (task.children && task.children.length > 0) {
-                    task.children = task.children.map(child => child.id === id ? { ...child, completed: !child.completed } : child)
-                }
-            })
-            setTasks([...tasks])
-        } else {
-            setTasks(tasks.map(task => {
-                if (task.id === id) {
-                    if (task.children && task.children.length > 0) {
-                        task.children = task.children.map(child => {
-                            return { ...child, completed: !child.completed }
-                        })
-                    }
-                    return { ...task, completed: !task.completed }
-                }
-                return task;
-            }))
-        }
+    const handleTaskChange = (id: string) => {
+        changeTask(id)
     }
     const sortedTasks = [...tasks].sort((a, b) => {
         if (a.completed && !b.completed) return 1;
