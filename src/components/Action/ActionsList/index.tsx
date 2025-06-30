@@ -12,6 +12,7 @@ import ActionCard from "../ActionCard";
 const ActionsList = () => {
     const [searchTerm, setSearchTerm] = useState("");
     const [selectedType, setSelectedType] = useState("all");
+    const [control, setControl] = useState(false);
     const navigate = useNavigate()
     const actionStore = useActionStore()
 

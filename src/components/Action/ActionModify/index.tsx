@@ -44,7 +44,6 @@ const ActionModify: React.FC = () => {
             name: "",
             type: "open_file",
             command: "",
-            args: "",
             desc: "",
             wait: 0,
         },
@@ -100,7 +99,8 @@ const ActionModify: React.FC = () => {
         const args = values.args?.split(",")
         const actionData = { ...values, args, type: values.type as Action['type'] }
         actionStore.createAction(actionData).then(() => {
-            toast.success("Action has been created.")
+            // toast.success("Action has been created.")
+            console.log("Action created successfully", actionData);
         }).catch(e => {
             toast.error(e)
         })
