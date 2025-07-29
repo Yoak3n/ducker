@@ -11,4 +11,5 @@ const simplifyPath = (path:string) => {
 };
 
 export * from './action'
+export * from './date'
 export {simplifyPath}

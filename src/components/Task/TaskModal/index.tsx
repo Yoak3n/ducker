@@ -157,8 +157,8 @@ export default function TaskModal({ isOpen, onClose, onSave, task, parentTask }:
       completed: formData.completed,
       auto: formData.auto,
       parent_id: formData.parent_id,
-      due_to: formData.due_to ? new Date(formData.due_to) : undefined,
-      reminder: formData.reminder ? new Date(formData.reminder) : undefined,
+      due_to: formData.due_to ? new Date(formData.due_to).toISOString() : undefined,
+      reminder: formData.reminder ? new Date(formData.reminder).toISOString() : undefined,
       // 将Action[]转换为string[]
       actions: formData.actions.map(action => action.id!)
     };

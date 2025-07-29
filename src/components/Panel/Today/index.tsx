@@ -1,11 +1,10 @@
 import { useEffect, useState } from "react";
-import "./index.css";
 import type { Task, TaskData } from "@/types";
 import TaskList from "@/components/Task/TaskList";
 import { TaskModal } from "@/components/Task";
 import { Button } from "@/components/ui/button";
 import { useTaskStore } from "@/store";
-
+import { extractDateViaDateObject } from "@/utils";
 
 const TodayView = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -13,13 +12,13 @@ const TodayView = () => {
     const [editingTask, setEditingTask] = useState<Task | null>(null);
 
     const taskStore = useTaskStore()
-    const tasksList = taskStore.tasks
+    const todayDate = new Date().toLocaleDateString()
     useEffect(() => {
         taskStore.fetchTasks()
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
     // const [taskList, setTaskList] = useState<Task[]>(tasks);
-
+    const tasksList = taskStore.tasks.filter(task => extractDateViaDateObject(task.due_to!) === todayDate)
     let completedValueCount = 0
     taskStore.tasks.forEach(item => {
         if (item.completed) completedValueCount += item.value || 0;
@@ -82,8 +81,8 @@ const TodayView = () => {
                 task={editingTask}
                 parentTask={parentTask}
             />
-            <div className="today-title">
-                <h2>今日任务 ({new Date().toLocaleDateString()})</h2>
+            <div className="today-title" style={{display: 'flex', justifyContent: 'space-between'}}>
+                <h2>今日任务 ({todayDate})</h2>
                 <Button variant="outline" onClick={handleCreateTask}>创建任务</Button>
             </div>
             {totalCount > 0 &&
