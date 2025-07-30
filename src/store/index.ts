@@ -10,9 +10,7 @@ export type {
   // 基础类型
   Task,
   Action,
-  CreateTaskData,
   CreateActionData,
-  UpdateTaskData,
   UpdateActionData,
   
   // 过滤器类型

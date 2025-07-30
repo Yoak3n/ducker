@@ -124,10 +124,15 @@ pub fn run() {
     let app = builder
         .invoke_handler(tauri::generate_handler![
             // Actions
+            #[cfg(target_os = "windows")]
             core::cmd::action::execute_actions,
+            #[cfg(target_os = "windows")]
             core::cmd::action::create_action,
+            #[cfg(target_os = "windows")]
             core::cmd::action::get_action,
+            #[cfg(target_os = "windows")]
             core::cmd::action::get_all_actions,
+            #[cfg(target_os = "windows")]
             core::cmd::action::select_file,
             // Tasks
             core::cmd::task::create_task,
@@ -152,7 +157,7 @@ pub fn run() {
                     .get_handle()
                     .get_webview_window("main")
                 {
-                    let _ = window.set_title("Clash Verge");
+                    let _ = window.set_title("ducker");
                 }
             }
         }

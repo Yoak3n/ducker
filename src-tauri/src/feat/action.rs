@@ -65,6 +65,7 @@ async fn execute_command(command: String, args: Option<Vec<String>>) -> Result<S
 
     Ok(output_message.to_string())
 }
+#[cfg(target_os = "windows")]
 use std::os::windows::process::CommandExt;
 #[cfg(target_os = "windows")]
 async fn execute_command_indepent(

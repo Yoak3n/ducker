@@ -77,7 +77,7 @@ pub async fn resolve_setup(app: &mut App) {
     // log::trace!(target: "app", "launch embed server");
     // server::embed_server();
 
-    #[cfg(desktop)]
+    #[cfg(target_os = "windows")]
     {
         log::trace!(target: "app", "Initial system tray");
         logging_error!(Type::Tray, true, tray::Tray::global().init());
@@ -91,10 +91,9 @@ pub async fn resolve_setup(app: &mut App) {
         //         create_window();
         //     }
         // } else {
-        window_manager::create_main_window();
         // }
     }
-
+    window_manager::create_main_window();
     // #[cfg(desktop)]
     logging_error!(Type::Tray, true, tray::Tray::global().update_part());
     // logging_error!(Type::System, true, timer::Timer::global().init());

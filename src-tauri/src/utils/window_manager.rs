@@ -172,6 +172,16 @@ pub fn create_main_window() {
                 .always_on_top(true)
                 .center()
                 .build();
+        #[cfg(target_os = "linux")]
+        let window = tauri::WebviewWindowBuilder::new(
+            &app_handle,
+            "main".to_string(),
+            tauri::WebviewUrl::App("/main".into())
+        )
+        .title("dida")
+        .focused(true)
+        .center()
+        .build();
         match window {
             Ok(w) => {
                 use crate::process::AsyncHandler;
