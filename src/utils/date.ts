@@ -10,6 +10,21 @@ function extractDateViaDateObject(dateTimeStr:string) {
 //   return `${year}-${month}-${day}`;
     return date.toLocaleDateString()
 }
+function extractTimeStampSecond(dateTimeStr:string) {
+    const date = new Date(dateTimeStr);
+    return date.getTime()/1000
+}
 
+function getTodayRange(): { start: number; end: number } {
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
+  const startOfDay = Math.floor(now.getTime() / 1000);
+  
+  now.setHours(23, 59, 59, 999);
+  const endOfDay = Math.floor(now.getTime() / 1000);
+  
+  return { start: startOfDay, end: endOfDay };
+}
 
-export {extractDateViaDateObject}
+export {extractDateViaDateObject,extractTimeStampSecond,getTodayRange}
+

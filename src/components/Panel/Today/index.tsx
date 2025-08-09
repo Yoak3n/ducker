@@ -1,10 +1,13 @@
 import { useEffect, useState } from "react";
 import type { Task, TaskData } from "@/types";
-import TaskList from "@/components/Task/TaskList";
+import TaskList from "./TaskList";
 import { TaskModal } from "@/components/Task";
 import { Button } from "@/components/ui/button";
 import { useTaskStore } from "@/store";
-import { extractDateViaDateObject } from "@/utils";
+import { extractTimeStampSecond,getTodayRange } from "@/utils";
+
+import "./index.css"
+
 
 const TodayView = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -12,13 +15,18 @@ const TodayView = () => {
     const [editingTask, setEditingTask] = useState<Task | null>(null);
 
     const taskStore = useTaskStore()
-    const todayDate = new Date().toLocaleDateString()
+    const todayDate = new Date()
+
+    const todayRange = getTodayRange()
+
     useEffect(() => {
         taskStore.fetchTasks()
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
     // const [taskList, setTaskList] = useState<Task[]>(tasks);
-    const tasksList = taskStore.tasks.filter(task => extractDateViaDateObject(task.due_to!) === todayDate)
+    const tasksList = taskStore.tasks.filter(task => (extractTimeStampSecond(task.due_to!) <= todayDate.getTime()/1000 && !task.completed) || (extractTimeStampSecond(task.due_to!) >= todayRange.start && extractTimeStampSecond(task.due_to!) <= todayRange.end))
+
+
     let completedValueCount = 0
     taskStore.tasks.forEach(item => {
         if (item.completed) completedValueCount += item.value || 0;
@@ -61,7 +69,6 @@ const TodayView = () => {
                 name: taskData.name!,
                 ...taskData
             };
-            console.log(newTask)
             taskStore.createTask(newTask)
 
         }
@@ -69,7 +76,6 @@ const TodayView = () => {
 
     const handleTaskStatueChange = (id: string) => {
         taskStore.toggleTaskCompletion(id)
-
     }
 
     return (
@@ -81,8 +87,9 @@ const TodayView = () => {
                 task={editingTask}
                 parentTask={parentTask}
             />
-            <div className="today-title" style={{display: 'flex', justifyContent: 'space-between'}}>
-                <h2>今日任务 ({todayDate})</h2>
+            <div className="today-title flex justify-between items-center">
+                <h2>今日任务 ({todayDate.toLocaleDateString()})</h2>
+
                 <Button variant="outline" onClick={handleCreateTask}>创建任务</Button>
             </div>
             {totalCount > 0 &&
@@ -96,7 +103,8 @@ const TodayView = () => {
                 </div>
             }
 
-            <TaskList tasks={tasksList} changeTask={handleTaskStatueChange} />
+            <TaskList tasks={tasksList} todayDate={todayDate} todayRange={todayRange} changeTask={handleTaskStatueChange} />
+
         </div>
     );
 };

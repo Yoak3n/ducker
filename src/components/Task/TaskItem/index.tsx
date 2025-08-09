@@ -1,4 +1,7 @@
 import { useState } from "react";
+
+import { Checkbox } from "@/components/ui/checkbox";
+
 import type { Task } from "@/types";
 import { execute_actions } from "@/api";
 import "./index.css";
@@ -7,18 +10,22 @@ interface Props {
     root?: boolean;
     task: Task,
     changeTask: (id: string,sub?:boolean) => void;
+    addedClassName?: string;
 }
 
-export default function TaskItem({ root = true, task,changeTask }: Props) {
+export default function TaskItem({ root = true, task,changeTask,addedClassName }: Props) {
     const [isExpanded, setIsExpanded] = useState(false);
     const itemClassName = (root ? "root-task" : "sub-task") +" "+ (task.completed ? "completed" : "")
     return (
-        <li className={itemClassName } key={task.id}>
+        <li className={itemClassName + " " + addedClassName} key={task.id}>
             <div className="task-item">
-                <input
-                    type="checkbox"
+                <Checkbox
                     checked={task.completed}
-                    onChange={() => root? changeTask(task.id):changeTask(task.id,true)}
+                    onCheckedChange={() => {
+                        return root? changeTask(task.id):changeTask(task.id,true)
+                    }
+
+                    }
                 />
                 <div className="task-item-content" onClick={(e)=>{e.preventDefault();execute_actions(task.actions)}}>
                     <div className="task-item-title">{task.name}</div>

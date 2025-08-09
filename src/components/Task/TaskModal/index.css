@@ -140,6 +140,8 @@
 
 /* 任务价值输入框样式 */
 input[type="number"] {
+  appearance: textfield;
+  -webkit-appearance: textfield;
   -moz-appearance: textfield;
 }
 

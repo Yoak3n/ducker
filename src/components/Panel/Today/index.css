@@ -1,0 +1,10 @@
+li:not(.today).dued{
+    .task-item-title{
+        color: #ffc107;
+        &::before{
+            content: "⚠";
+            margin-right: 5px;
+        }
+
+    }
+}
