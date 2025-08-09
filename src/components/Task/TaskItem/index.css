@@ -3,34 +3,44 @@
     width: 100%;
     padding: 10px;
     margin: 5px 0;
-    .task-item{
-        .task-item-content{
+
+    .task-item {
+        .task-item-content {
             width: 100%;
-            .task-item-title{
+
+            .task-item-title {
                 font-weight: bold;
             }
         }
     }
+
     button {
-        width: 1.5rem;
-        height: 1.5rem;
-        color: #000;
-        background-color: transparent;
-        border: none;
-        border-radius: 1.5rem;
-        cursor: pointer;
         &:hover {
+            cursor: pointer;
+        }
+
+        &.dropdown-button {
+            width: 1.5rem;
+            height: 1.5rem;
+            color: #000;
+            background-color: transparent;
+            border: none;
+            border-radius: 1.5rem;
+
             background-color: #e4e4e4;
         }
     }
+
 }
 
 .sub-task-list {
     list-style: none;
-    .sub-task{
+
+    .sub-task {
         margin-left: 1rem;
     }
-    .task-item-title{
+
+    .task-item-title {
         font-weight: normal;
         font-size: 14px;
         color: #555;
