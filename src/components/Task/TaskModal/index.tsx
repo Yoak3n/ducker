@@ -1,7 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import type { Task, TaskData, Action } from '@/types';
 import './index.css';
+import {
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog"
 import ActionSelect from '@/components/Action/ActionSelect';
+
 
 interface TaskModalProps {
   isOpen: boolean;
@@ -30,13 +37,14 @@ const initialFormData: TaskFormData = {
   auto: false,
   due_to: '',
   reminder: '',
-  reminderOffset: 'ontime', // 默认准时
+  reminderOffset: 'none', // 默认不提醒
   parent_id: undefined,
   actions: []
 };
 
 
 const reminderOptions = [
+  { value: 'none', label: '不提醒', offset: -1 },
   { value: 'ontime', label: '准时提醒', offset: 0 },
   { value: '5min', label: '提前5分钟', offset: 5 * 60 * 1000 },
   { value: '15min', label: '提前15分钟', offset: 15 * 60 * 1000 },
@@ -45,7 +53,8 @@ const reminderOptions = [
   { value: '2hour', label: '提前2小时', offset: 2 * 60 * 60 * 1000 },
   { value: '1day', label: '提前1天', offset: 24 * 60 * 60 * 1000 },
   { value: '3day', label: '提前3天', offset: 3 * 24 * 60 * 60 * 1000 },
-  { value: '1week', label: '提前1周', offset: 7 * 24 * 60 * 60 * 1000 }
+  { value: '1week', label: '提前1周', offset: 7 * 24 * 60 * 60 * 1000 },
+  { value: 'custom', label: '自定义时间', offset: -1 }
 ] as const;
 
 
@@ -53,6 +62,8 @@ export default function TaskModal({ isOpen, onClose, onSave, task, parentTask }:
   const [formData, setFormData] = useState<TaskFormData>(initialFormData);
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [isActionSelectOpen, setIsActionSelectOpen] = useState(false);
+
+
 
   // 处理键盘事件
   useEffect(() => {
@@ -84,14 +95,14 @@ export default function TaskModal({ isOpen, onClose, onSave, task, parentTask }:
   };
 
   const calculateReminderTime = (dueToStr: string, offsetValue: string): string => {
-    if (!dueToStr) return '';
+    if (!dueToStr || offsetValue === 'none') return '';
 
     try {
       const dueDate = new Date(dueToStr);
       if (isNaN(dueDate.getTime())) return '';
 
       const option = reminderOptions.find(opt => opt.value === offsetValue);
-      if (!option) return '';
+      if (!option || option.offset < 0) return '';
 
       const reminderDate = new Date(dueDate.getTime() - option.offset);
       return reminderDate.toISOString().slice(0, 16);
@@ -136,13 +147,15 @@ export default function TaskModal({ isOpen, onClose, onSave, task, parentTask }:
 
   // 当截止时间或提醒偏移量改变时，自动计算提醒时间
   useEffect(() => {
-    if (formData.due_to && formData.reminderOffset) {
+    if (formData.due_to && formData.reminderOffset && formData.reminderOffset !== 'custom') {
+      console.log('formData.due_to', formData.due_to);
+
       const newReminderTime = calculateReminderTime(formData.due_to, formData.reminderOffset);
       if (newReminderTime !== formData.reminder) {
         setFormData(prev => ({ ...prev, reminder: newReminderTime }));
       }
     }
-  }, [formData.due_to, formData.reminder, formData.reminderOffset]);
+  }, [formData.due_to, formData.reminderOffset]);
 
   const handleInputChange = (field: keyof TaskFormData, value: string | boolean | number | undefined | Action[]) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -181,190 +194,215 @@ export default function TaskModal({ isOpen, onClose, onSave, task, parentTask }:
 
   if (!isOpen) return null;
   return (
-    <div className="task-modal-overlay" onClick={handleClose}>
-      <div className="task-modal" onClick={(e) => e.stopPropagation()}>
-        <div className="task-modal-header">
-          <h2>
-            {task ? '编辑任务' : parentTask ? '创建子任务' : '创建任务'}
-          </h2>
-          <button className="close-button" onClick={handleClose}>
-            <span className="material-symbols-outlined">close</span>
-          </button>
+    <DialogContent className='task-dialog-content' showCloseButton={false}>
+      <DialogHeader>
+        <DialogTitle>
+          {task ? '编辑任务' : parentTask ? '创建子任务' : '创建任务'}
+        </DialogTitle>
+        <DialogDescription />
+      </DialogHeader>
+      <form onSubmit={handleSubmit} className="task-modal-form">
+        <div className="form-group">
+          <label htmlFor="title">任务标题 *</label>
+          <input
+            type="text"
+            id="title"
+            value={formData.name}
+            onChange={(e) => handleInputChange('name', e.target.value)}
+            placeholder="输入任务标题..."
+            autoComplete='off'
+            required
+            autoFocus
+          />
         </div>
-        <form onSubmit={handleSubmit} className="task-modal-form">
-          <div className="form-group">
-            <label htmlFor="title">任务标题 *</label>
-            <input
-              type="text"
-              id="title"
-              value={formData.name}
-              onChange={(e) => handleInputChange('name', e.target.value)}
-              placeholder="输入任务标题..."
-              autoComplete='off'
-              required
-              autoFocus
-            />
+
+        <div className="form-group">
+          <label htmlFor="task-value">任务价值</label>
+          <input
+            id="task-value"
+            type="number"
+            value={formData.value || ''}
+            onChange={(e) => handleInputChange('value', e.target.value ? Number(e.target.value) : undefined)}
+            placeholder="请输入任务价值（可选）"
+            min="0"
+            step="1"
+          />
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="parent-task">父任务ID</label>
+          <input
+            id="parent-task"
+            type="text"
+            value={formData.parent_id || ''}
+            onChange={(e) => handleInputChange('parent_id', e.target.value || undefined)}
+            placeholder="请输入父任务ID（可选）"
+          />
+        </div>
+
+        {parentTask && (
+          <div className="parent-task-info">
+            <span className="material-symbols-outlined">subdirectory_arrow_right</span>
+            <span>父任务: {parentTask.name}</span>
           </div>
+        )}
 
+        <div className="form-row">
           <div className="form-group">
-            <label htmlFor="task-value">任务价值</label>
-            <input
-              id="task-value"
-              type="number"
-              value={formData.value || ''}
-              onChange={(e) => handleInputChange('value', e.target.value ? Number(e.target.value) : undefined)}
-              placeholder="请输入任务价值（可选）"
-              min="0"
-              step="1"
-            />
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="parent-task">父任务ID</label>
-            <input
-              id="parent-task"
-              type="text"
-              value={formData.parent_id || ''}
-              onChange={(e) => handleInputChange('parent_id', e.target.value || undefined)}
-              placeholder="请输入父任务ID（可选）"
-            />
-          </div>
-
-          {parentTask && (
-            <div className="parent-task-info">
-              <span className="material-symbols-outlined">subdirectory_arrow_right</span>
-              <span>父任务: {parentTask.name}</span>
-            </div>
-          )}
-
-          <div className="form-row">
-            <div className="form-group">
-              <label htmlFor="due_to">截止时间</label>
+            <label htmlFor="due_to">截止时间</label>
+            <div className="datetime-input-wrapper">
               <input
                 type="datetime-local"
                 id="due_to"
                 value={formData.due_to}
                 onChange={(e) => handleInputChange('due_to', e.target.value)}
+                placeholder="选择截止时间"
               />
             </div>
-            <div className="form-group">
-              <label htmlFor="reminder-offset">提醒设置</label>
-              <select
-                id="reminder-offset"
-                value={formData.reminderOffset}
-                onChange={(e) => handleInputChange('reminderOffset', e.target.value)}
-                className="reminder-offset-select"
-              >
-                {reminderOptions.map(option => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
             </div>
-          </div>
-
-          <div className="form-group checkbox-group">
-            {task && <label className="checkbox-label">
-              <input
-                type="checkbox"
-                checked={formData.completed}
-                onChange={(e) => handleInputChange('completed', e.target.checked)}
-              />
-              <span>已完成</span>
-            </label>}
-            <label className="checkbox-label">
-              <input
-                type="checkbox"
-                checked={formData.auto}
-                onChange={(e) => handleInputChange('auto', e.target.checked)}
-              />
-              <span>自动执行</span>
-            </label>
-          </div>
-
-          <div className="advanced-section">
-            <button
-              type="button"
-              className="advanced-toggle"
-              onClick={() => setShowAdvanced(!showAdvanced)}
+          <div className="form-group">
+            <label htmlFor="reminder-offset">提醒设置</label>
+            <select
+              id="reminder-offset"
+              value={formData.reminderOffset}
+              onChange={(e) => handleInputChange('reminderOffset', e.target.value)}
+              className="reminder-offset-select"
             >
-              <span className="material-symbols-outlined">
-                {showAdvanced ? 'expand_less' : 'expand_more'}
-              </span>
-              高级设置
-            </button>
-
-            {showAdvanced && (
-              <div className="advanced-content">
-                <div className="actions-section">
-                  <div className="actions-header">
-                    <div className="actions-title">
-                      <span className="material-symbols-outlined">settings</span>
-                      <h3>关联动作</h3>
-                      <span className="actions-count">{formData.actions.length}</span>
-                    </div>
-                    <button
-                      type="button"
-                      className="add-action-button"
-                      onClick={() => setIsActionSelectOpen(true)}
-                    >
-                      <span className="material-symbols-outlined">add_circle</span>
-                      添加动作
-                    </button>
-                  </div>
-
-                  {formData.actions.length === 0 && (
-                    <div className="actions-empty-state">
-                      <span className="material-symbols-outlined">psychology_alt</span>
-                      <p>暂无关联动作</p>
-                      <span className="empty-hint">点击上方按钮添加动作</span>
-                    </div>
-                  )}
-                </div>
-
-                {/* 显示已选择的 Actions */}
-                {formData.actions.length > 0 && (
-                  <div className="selected-actions">
-                    <h4>已选择的动作 ({formData.actions.length})</h4>
-                    <div className="actions-list">
-                      {formData.actions.map((action, index) => (
-                        <div key={action.id} className="action-item-preview">
-                          <span className="action-order">{index + 1}.</span>
-                          <span className="action-name">{action.name}</span>
-                          <span className="action-type">({action.type})</span>
-                          <button
-                            type="button"
-                            className="remove-action-btn"
-                            onClick={() => {
-                              const newActions = formData.actions.filter((_, i) => i !== index);
-                              handleInputChange('actions', newActions);
-                            }}
-                          >
-                            <span className="material-symbols-outlined">close</span>
-                          </button>
-                        </div>
-                      ))}
-                    </div>
+              {reminderOptions.map(option => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+            {formData.reminderOffset !== 'none' && formData.due_to && (
+              <div className="reminder-container">
+                {/* <div className="datetime-input-wrapper reminder-wrapper">
+                  <input
+                    type="datetime-local"
+                    id="reminder"
+                    value={formData.reminder}
+                    onChange={(e) => handleInputChange('reminder', e.target.value)}
+                    placeholder="提醒时间"
+                    disabled={formData.reminderOffset !== 'custom'}
+                  />
+                </div> */}
+                {formData.reminder && (
+                  <div className="reminder-time-display">
+                    <span className="reminder-icon">⏰</span>
+                    <span>
+                      提醒时间：{new Date(formData.reminder).toLocaleString('zh-CN', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </span>
                   </div>
                 )}
               </div>
             )}
-
           </div>
+        </div>
 
-          <div className="form-actions">
-            <button type="button" className="cancel-btn" onClick={handleClose}>
-              取消
-            </button>
-            <button type="submit" className="save-btn" disabled={!formData.name.trim()}>
-              {task ? '保存' : '创建'}
-            </button>
-          </div>
-        </form>
+        <div className="form-group checkbox-group">
+          {task && <label className="checkbox-label">
+            <input
+              type="checkbox"
+              checked={formData.completed}
+              onChange={(e) => handleInputChange('completed', e.target.checked)}
+            />
+            <span>已完成</span>
+          </label>}
+          <label className="checkbox-label">
+            <input
+              type="checkbox"
+              checked={formData.auto}
+              onChange={(e) => handleInputChange('auto', e.target.checked)}
+            />
+            <span>自动执行</span>
+          </label>
+        </div>
 
-      </div>
+        <div className="advanced-section">
+          <button
+            type="button"
+            className="advanced-toggle"
+            onClick={() => setShowAdvanced(!showAdvanced)}
+          >
+            <span className="material-symbols-outlined">
+              {showAdvanced ? 'expand_less' : 'expand_more'}
+            </span>
+            高级设置
+          </button>
 
+          {showAdvanced && (
+            <div className="advanced-content">
+              <div className="actions-section">
+                <div className="actions-header">
+                  <div className="actions-title">
+                    <span className="material-symbols-outlined">settings</span>
+                    <h3>关联动作</h3>
+                    <span className="actions-count">{formData.actions.length}</span>
+                  </div>
+                  <button
+                    type="button"
+                    className="add-action-button"
+                    onClick={() => setIsActionSelectOpen(true)}
+                  >
+                    <span className="material-symbols-outlined">add_circle</span>
+                    添加动作
+                  </button>
+                </div>
+
+                {formData.actions.length === 0 && (
+                  <div className="actions-empty-state">
+                    <span className="material-symbols-outlined">psychology_alt</span>
+                    <p>暂无关联动作</p>
+                    <span className="empty-hint">点击上方按钮添加动作</span>
+                  </div>
+                )}
+              </div>
+
+              {/* 显示已选择的 Actions */}
+              {formData.actions.length > 0 && (
+                <div className="selected-actions">
+                  <h4>已选择的动作 ({formData.actions.length})</h4>
+                  <div className="actions-list">
+                    {formData.actions.map((action, index) => (
+                      <div key={action.id} className="action-item-preview">
+                        <span className="action-order">{index + 1}.</span>
+                        <span className="action-name">{action.name}</span>
+                        <span className="action-type">({action.type})</span>
+                        <button
+                          type="button"
+                          className="remove-action-btn"
+                          onClick={() => {
+                            const newActions = formData.actions.filter((_, i) => i !== index);
+                            handleInputChange('actions', newActions);
+                          }}
+                        >
+                          <span className="material-symbols-outlined">close</span>
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+        </div>
+
+        <div className="form-actions">
+          <button type="button" className="cancel-btn" onClick={handleClose}>
+            取消
+          </button>
+          <button type="submit" className="save-btn" disabled={!formData.name.trim()}>
+            {task ? '保存' : '创建'}
+          </button>
+        </div>
+      </form>
       {/* 独立的动作选择窗口 */}
       {isActionSelectOpen && (
         <div className="action-select-modal" onClick={() => setIsActionSelectOpen(false)}>
@@ -402,6 +440,6 @@ export default function TaskModal({ isOpen, onClose, onSave, task, parentTask }:
           </div>
         </div>
       )}
-    </div>
+    </DialogContent >
   );
 }

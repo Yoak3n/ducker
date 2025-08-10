@@ -4,9 +4,10 @@ import TaskList from "./TaskList";
 import { TaskModal } from "@/components/Task";
 import { Button } from "@/components/ui/button";
 import { useTaskStore } from "@/store";
-import { extractTimeStampSecond,getTodayRange } from "@/utils";
+import { extractTimeStampSecond, getTodayRange } from "@/utils";
 
 import "./index.css"
+import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 
 
 const TodayView = () => {
@@ -24,11 +25,11 @@ const TodayView = () => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
     // const [taskList, setTaskList] = useState<Task[]>(tasks);
-    const tasksList = taskStore.tasks.filter(task => (extractTimeStampSecond(task.due_to!) <= todayDate.getTime()/1000 && !task.completed) || (extractTimeStampSecond(task.due_to!) >= todayRange.start && extractTimeStampSecond(task.due_to!) <= todayRange.end))
+    const tasksList = taskStore.tasks.filter(task => (extractTimeStampSecond(task.due_to!) <= todayDate.getTime() / 1000 && !task.completed) || (extractTimeStampSecond(task.due_to!) >= todayRange.start && extractTimeStampSecond(task.due_to!) <= todayRange.end))
 
 
     let completedValueCount = 0
-    taskStore.tasks.forEach(item => {
+    tasksList.forEach(item => {
         if (item.completed) completedValueCount += item.value || 0;
         if (item.children) {
             item.children.filter(child => {
@@ -80,17 +81,21 @@ const TodayView = () => {
 
     return (
         <div className="today-view">
-            <TaskModal
-                isOpen={isModalOpen}
-                onClose={() => setIsModalOpen(false)}
-                onSave={handleSaveTask}
-                task={editingTask}
-                parentTask={parentTask}
-            />
+
             <div className="today-title flex justify-between items-center">
                 <h2>今日任务 ({todayDate.toLocaleDateString()})</h2>
-
-                <Button variant="outline" onClick={handleCreateTask}>创建任务</Button>
+                <Dialog>
+                    <DialogTrigger>
+                        <Button variant="outline" className="cursor-pointer" onClick={handleCreateTask}>创建任务</Button>
+                    </DialogTrigger>
+                    <TaskModal
+                        isOpen={isModalOpen}
+                        onClose={() => setIsModalOpen(false)}
+                        onSave={handleSaveTask}
+                        task={editingTask}
+                        parentTask={parentTask}
+                    />
+                </Dialog>
             </div>
             {totalCount > 0 &&
                 <div className="progress-bar">

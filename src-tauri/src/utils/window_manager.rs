@@ -38,6 +38,7 @@ pub enum WindowState {
     /// 窗口不存在
     NotExist,
 }
+
 // 窗口操作防抖机制
 static WINDOW_OPERATION_DEBOUNCE: OnceCell<Mutex<Instant>> = OnceCell::new();
 static WINDOW_OPERATION_IN_PROGRESS: AtomicBool = AtomicBool::new(false);
@@ -85,6 +86,25 @@ pub enum WindowLabel {
     Setting,
 }
 
+// TODO 统一的窗口操作函数
+pub fn toggle_window_by_label(label: &str) {
+    let app_handle = handle::Handle::global().app_handle().unwrap();
+    if let Some(window) = app_handle.get_webview_window(label) {
+        let visible = window.is_visible().unwrap_or(false);
+        tray::Tray::global().update_menu_visible(!visible);
+        if visible {
+            window.close().unwrap();
+        } else {
+            window.show().unwrap();
+            window.set_focus().unwrap();
+        }
+    } else {
+        create_main_window();
+        logging!(info, Type::Window, true, "Creating main window");
+        tray::Tray::global().update_menu_visible(true);
+    }
+}
+
 pub fn toggle_main_window() {
     let app_handle = handle::Handle::global().app_handle().unwrap();
     if let Some(window) = app_handle.get_webview_window("main") {
@@ -99,6 +119,24 @@ pub fn toggle_main_window() {
     } else {
         create_main_window();
         logging!(info, Type::Window, true, "Creating main window");
+        tray::Tray::global().update_menu_visible(true);
+    }
+}
+
+pub fn toggle_dashboard_window() {
+    let app_handle = handle::Handle::global().app_handle().unwrap();
+    if let Some(window) = app_handle.get_webview_window("dashboard") {
+        let visible = window.is_visible().unwrap_or(false);
+        tray::Tray::global().update_menu_visible(!visible);
+        if visible {
+            window.close().unwrap();
+        } else {
+            window.show().unwrap();
+            window.set_focus().unwrap();
+        }
+    } else {
+        create_dashboard_window();
+        logging!(info, Type::Window, true, "Creating dashboard window");
         tray::Tray::global().update_menu_visible(true);
     }
 }
@@ -176,7 +214,7 @@ pub fn create_main_window() {
         let window = tauri::WebviewWindowBuilder::new(
             &app_handle,
             "main".to_string(),
-            tauri::WebviewUrl::App("/main".into())
+            tauri::WebviewUrl::App("/main".into()),
         )
         .title("dida")
         .focused(true)
@@ -411,10 +449,45 @@ impl WindowManager {
         }
     }
 
+    pub fn get_dashboard_window_state() -> WindowState {
+        match Self::get_dashboard_window() {
+            Some(window) => {
+                let is_minimized = window.is_minimized().unwrap_or(false);
+                let is_visible = window.is_visible().unwrap_or(false);
+                let is_focused = window.is_focused().unwrap_or(false);
+
+                if is_minimized {
+                    return WindowState::Minimized;
+                }
+                if !is_visible {
+                    return WindowState::Hidden;
+                }
+
+                if is_focused {
+                    WindowState::VisibleFocused
+                } else {
+                    WindowState::VisibleUnfocused
+                }
+            }
+            None => WindowState::NotExist,
+        }
+    }
+
     pub fn get_main_window() -> Option<WebviewWindow<Wry>> {
         handle::Handle::global()
             .app_handle()
             .and_then(|app| app.get_webview_window("main"))
+    }
+    pub fn get_dashboard_window() -> Option<WebviewWindow<Wry>> {
+        handle::Handle::global()
+            .app_handle()
+            .and_then(|app| app.get_webview_window("dashboard"))
+    }
+
+    fn get_window_by_label(label: &str) -> Option<WebviewWindow<Wry>> {
+        handle::Handle::global()
+            .app_handle()
+            .and_then(|app| app.get_webview_window(label))
     }
 
     pub fn show_main_window() -> WindowOperationResult {
@@ -467,6 +540,85 @@ impl WindowManager {
                     }
                     Self::activate_window(&window)
                 } else {
+                    WindowOperationResult::Failed
+                }
+            }
+        }
+    }
+    pub fn toggle_dashboard_window() -> WindowOperationResult {
+        // 防抖检查
+        if !should_handle_window_operation() {
+            return WindowOperationResult::NoAction;
+        }
+        let _guard = scopeguard::guard((), |_| {
+            finish_window_operation();
+        });
+
+        logging!(info, Type::Window, true, "开始切换任务面板窗口显示状态");
+
+        let current_state = Self::get_main_window_state();
+        logging!(
+            info,
+            Type::Window,
+            true,
+            "当前窗口状态: {:?} | 详细状态: {}",
+            current_state,
+            Self::get_window_status_info()
+        );
+
+        match current_state {
+            WindowState::NotExist => {
+                // 窗口不存在，创建新窗口
+                logging!(info, Type::Window, true, "窗口不存在，将创建新窗口");
+                // 由于已经有防抖保护，直接调用内部方法
+                if Self::create_new_window() {
+                    tray::Tray::global().update_menu_visible(true);
+                    WindowOperationResult::Created
+                } else {
+                    WindowOperationResult::Failed
+                }
+            }
+            WindowState::VisibleFocused | WindowState::VisibleUnfocused => {
+                logging!(
+                    info,
+                    Type::Window,
+                    true,
+                    "窗口可见（焦点状态: {}），将隐藏窗口",
+                    if current_state == WindowState::VisibleFocused {
+                        "有焦点"
+                    } else {
+                        "无焦点"
+                    }
+                );
+                tray::Tray::global().update_menu_visible(false);
+                if let Some(window) = Self::get_main_window() {
+                    match window.hide() {
+                        Ok(_) => {
+                            logging!(info, Type::Window, true, "窗口已成功隐藏");
+                            WindowOperationResult::Hidden
+                        }
+                        Err(e) => {
+                            logging!(warn, Type::Window, true, "隐藏窗口失败: {}", e);
+                            WindowOperationResult::Failed
+                        }
+                    }
+                } else {
+                    logging!(warn, Type::Window, true, "无法获取窗口实例");
+                    WindowOperationResult::Failed
+                }
+            }
+            WindowState::Minimized | WindowState::Hidden => {
+                logging!(
+                    info,
+                    Type::Window,
+                    true,
+                    "窗口存在但被隐藏或最小化，将激活窗口"
+                );
+                if let Some(window) = Self::get_main_window() {
+                    tray::Tray::global().update_menu_visible(true);
+                    Self::activate_window(&window)
+                } else {
+                    logging!(warn, Type::Window, true, "无法获取窗口实例");
                     WindowOperationResult::Failed
                 }
             }
@@ -542,7 +694,7 @@ impl WindowManager {
                     true,
                     "窗口存在但被隐藏或最小化，将激活窗口"
                 );
-                if let Some(window) = Self::get_main_window() {                    
+                if let Some(window) = Self::get_main_window() {
                     tray::Tray::global().update_menu_visible(true);
                     Self::activate_window(&window)
                 } else {

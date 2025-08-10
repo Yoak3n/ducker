@@ -123,6 +123,9 @@ pub fn run() {
         });
     let app = builder
         .invoke_handler(tauri::generate_handler![
+            // Window
+            core::cmd::window::toggle_main_window,
+            core::cmd::window::toggle_dashboard_window,
             // Actions
             #[cfg(target_os = "windows")]
             core::cmd::action::execute_actions,

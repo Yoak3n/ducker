@@ -1,8 +1,15 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef } from 'react';
 import * as PIXI from 'pixi.js';
 // Import specifically from cubism4 module for model3.json files
 import { Live2DModel, InternalModel } from 'pixi-live2d-display/cubism4';
-import ContextMenu from './ContextMenu';
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuTrigger,
+} from "@/components/ui/context-menu"
+import ContextItems from "./ContextItems"
+
+
 import './index.css';
 
 // 注册Live2D模型加载器
@@ -20,11 +27,6 @@ interface Live2DModelProps {
   scale?: number;
 }
 
-// 自定义右键菜单项接口
-interface MenuItem {
-  label: string;
-  action: () => void;
-}
 
 const Live2DModelComponent: React.FC<Live2DModelProps> = ({
   modelPath,
@@ -37,10 +39,8 @@ const Live2DModelComponent: React.FC<Live2DModelProps> = ({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const appRef = useRef<PIXI.Application | null>(null);
   const modelRef = useRef<Live2DModel<InternalModel>>(null);
-  
-  // 右键菜单状态
-  const [showMenu, setShowMenu] = useState(false);
-  const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 });
+
+
   const loadModel = useCallback(async () => {
     try {
       console.log('Loading model from path:', modelPath);
@@ -97,58 +97,8 @@ const Live2DModelComponent: React.FC<Live2DModelProps> = ({
       console.error('Failed to load Live2D model:', error);
     }
   }, [modelPath, position, scale]);
-  // 菜单项定义
-  const menuItems: MenuItem[] = [
-    {
-      label: '重新加载模型',
-      action: () => {
-        if (appRef.current && modelRef.current) {
-          // 移除当前模型
-          appRef.current.stage.removeChild(modelRef.current);
-          modelRef.current.destroy();
-          modelRef.current = null;
-          
-          // 重新加载模型
-          loadModel();
-        }
-      }
-    },
-    {
-      label: '隐藏模型',
-      action: () => {
-        if (modelRef.current) {
-          modelRef.current.visible = !modelRef.current.visible;
-        }
-      }
-    },
-    {
-      label: '关闭菜单',
-      action: () => setShowMenu(false)
-    }
-  ];
 
-  // 处理右键点击事件
-  const handleContextMenu = (e: React.MouseEvent) => {
-    e.preventDefault(); // 阻止默认右键菜单
-    setMenuPosition({ x: e.clientX, y: e.clientY });
-    setShowMenu(true);
-  };
   
-  // 处理点击其他区域关闭菜单
-  const handleClickOutside = () => {
-    if (showMenu) {
-      setShowMenu(false);
-    }
-  };
-
-  useEffect(() => {
-    // 添加全局点击事件监听器来关闭菜单
-    document.addEventListener('click', handleClickOutside);
-    return () => {
-      document.removeEventListener('click', handleClickOutside);
-    };
-  }, [handleClickOutside, showMenu]);
-
   useEffect(() => {
     if (!canvasRef.current) return;
     
@@ -188,23 +138,19 @@ const Live2DModelComponent: React.FC<Live2DModelProps> = ({
 
 
   return (
-    <div ref={containerRef} className="live2d-container">
-      <canvas 
-        ref={canvasRef} 
-        data-tauri-drag-region 
-        onContextMenu={handleContextMenu} 
-      />
-      
-      {/* 自定义右键菜单 */}
-      {showMenu && (
-        <ContextMenu
-          menuItems={menuItems}
-          position={menuPosition}
-          hideMenuCallback={setShowMenu}
-        />
-      )
-      }
-    </div>
+    <ContextMenu>
+      <ContextMenuTrigger>
+        <div ref={containerRef} className="live2d-container">
+          <canvas 
+            ref={canvasRef} 
+            data-tauri-drag-region 
+          />
+        </div>
+      </ContextMenuTrigger>
+      <ContextMenuContent>
+        <ContextItems/>
+      </ContextMenuContent>
+    </ContextMenu>
   );
 };
 
