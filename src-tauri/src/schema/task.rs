@@ -7,7 +7,7 @@ use crate::{
     },
 };
 use serde::{Deserialize, Serialize};
-
+use chrono::{Local,Duration};
 
 #[derive(Deserialize, Serialize, Debug)]
 pub struct TaskRecord {
@@ -19,7 +19,7 @@ pub struct TaskRecord {
     pub name: String,
     pub actions: Vec<String>,
     pub created_at: i64,
-    pub due_to: Option<i64>,
+    pub due_to: i64,
     pub reminder: Option<i64>,
 }
 
@@ -46,7 +46,7 @@ impl TryFrom<(TaskRecord, &AppState)> for TaskView {
             .collect::<Result<Vec<_>, _>>()?;
         
         let created_at = to_datetime_str(record.created_at);
-        let due_to = record.due_to.map(to_datetime_str);
+        let due_to = Some(to_datetime_str(record.due_to));
         let reminder = record.reminder.map(to_datetime_str);
 
 
@@ -68,16 +68,23 @@ impl TryFrom<(TaskRecord, &AppState)> for TaskView {
 
 impl From<TaskData> for TaskRecord {
     fn from(data: TaskData) -> Self {
+        // 随机生成id
         let id = match &data.id {
             Some(id) => id.clone(),
             None => format!("task{}", random_string(6)),
         };
+        let now = Local::now();
         let created_at = if let Some(s) = data.created_at {
             str_to_datetime(s.as_str()).timestamp()
         } else {
-            chrono::Local::now().timestamp()
+            now.timestamp()
         };
-
+        // 截止时间默认为三个小时后
+        let due_to = if let Some(s) = data.due_to {
+            str_to_datetime(s.as_str()).timestamp()
+        }else{
+            (now + Duration::hours(12)).timestamp()
+        };
         Self {
             id,
             // TODO 添加更复杂的默认值逻辑
@@ -88,7 +95,7 @@ impl From<TaskData> for TaskRecord {
             name: data.name,
             actions: data.actions,
             created_at,
-            due_to:data.due_to.map(|s| str_to_datetime(s.as_str()).timestamp()),
+            due_to,
             reminder: data.reminder.map(|s| str_to_datetime(s.as_str()).timestamp()),
         }
     }

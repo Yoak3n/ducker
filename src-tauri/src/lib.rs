@@ -4,6 +4,7 @@ mod process;
 mod schema;
 mod store;
 mod utils;
+mod service;
 use std::sync::{Arc, Mutex, Once};
 
 use tauri::{AppHandle,Manager};

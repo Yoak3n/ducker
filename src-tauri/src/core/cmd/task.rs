@@ -97,11 +97,10 @@ pub async fn get_all_tasks(state: State<'_, AppState>) -> Result<Vec<TaskView>, 
 #[tauri::command]
 pub async fn get_tasks_by_date_range(
     state: State<'_, AppState>,
-    start_date: String,
-    end_date: String,
+    start_date: i64,
+    end_date: i64,
 ) -> Result<Vec<TaskView>, String> {
-    let res = state.db.get_tasks_by_date_range(&start_date, &end_date);
-    match res {
+    match state.db.get_tasks_by_date_range(start_date, end_date) {
         Ok(data) => {
             let mut tasks = Vec::new();
             for task in data {
@@ -133,8 +132,7 @@ pub async fn get_tasks(
     state: State<'_, AppState>,
     ids: Vec<String>,
 ) -> Result<Vec<TaskView>, String> {
-    let res = state.db.get_tasks(&ids);
-    match res {
+    match state.db.get_tasks(&ids) {
         Ok(data) => {
             let mut tasks = Vec::new();
             for task in data {

@@ -81,13 +81,10 @@ impl Database {
     // 私有方法：从数据库行构建TaskRecord，减少重复代码
     fn build_task_record_from_row(row: &rusqlite::Row) -> rusqlite::Result<TaskRecord> {
         let actions_json: String = row.get(5)?;
-        let actions: Vec<String> = match serde_json::from_str(&actions_json) {
-            Ok(actions) => actions,
-            Err(e) => {
-                logging!(warn, Type::Database, "JSON反序列化失败，使用默认值: {e}");
-                Vec::new()
-            }
-        };
+        let actions: Vec<String> = serde_json::from_str(&actions_json).unwrap_or_else(|e| {
+            logging!(warn, Type::Database, "JSON反序列化失败，使用默认值: {e}");
+            Vec::new()
+        });
         
         Ok(TaskRecord {
             id: row.get(0)?,
@@ -412,6 +409,23 @@ impl TaskManager for Database {
 
         Ok(tasks)
     }
+    fn get_tasks_by_status(&self, completed: bool) -> Result<Vec<TaskRecord>> {
+        let conn = self.conn.read();
+        let mut stmt = conn.prepare(
+            "SELECT id, completed, parent_id, name, auto, actions, created_at, due_to, reminder, value 
+            FROM tasks WHERE completed = ?1",
+        )?;
+        let tasks = stmt.query_map([completed], |row| {
+            Self::build_task_record_from_row(row)
+        })?;
+
+        let mut result = Vec::new();
+        for task in tasks {
+            result.push(task?);
+        }
+        Ok(result)
+    }
+
     fn get_tasks_by_parent_id(&self, parent_id: &str) -> Result<Vec<TaskRecord>> {
         let conn = self.conn.read();
         let mut stmt = conn.prepare("
@@ -429,32 +443,15 @@ impl TaskManager for Database {
         Ok(result)
     }
 
+
     // 有点想在前端直接进行过滤，不想写这么多重复的查询接口
-    fn get_tasks_by_date_range(&self, start_date: &str, end_date: &str) -> Result<Vec<TaskRecord>> {
+    fn get_tasks_by_date_range(&self, start_date: i64, end_date: i64) -> Result<Vec<TaskRecord>> {
         let conn = self.conn.read();
         let mut stmt = conn.prepare(
             "SELECT id, completed, parent_id, name, auto, actions, created_at, due_to, reminder, value 
             FROM tasks WHERE created_at BETWEEN ?1 AND ?2",
         )?;
         let tasks = stmt.query_map([start_date, end_date], |row| {
-            Self::build_task_record_from_row(row)
-        })?;
-
-        let mut result = Vec::new();
-        for task in tasks {
-            result.push(task?);
-        }
-        Ok(result)
-    }
-
-
-    fn get_tasks_by_status(&self, completed: bool) -> Result<Vec<TaskRecord>> {
-        let conn = self.conn.read();
-        let mut stmt = conn.prepare(
-            "SELECT id, completed, parent_id, name, auto, actions, created_at, due_to, reminder, value 
-            FROM tasks WHERE completed = ?1",
-        )?;
-        let tasks = stmt.query_map([completed], |row| {
             Self::build_task_record_from_row(row)
         })?;
 

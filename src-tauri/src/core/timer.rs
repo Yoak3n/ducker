@@ -1,8 +1,8 @@
-use crate::{logging, logging_error,singleton, utils::logging::Type};
+use crate::{logging, logging_error,singleton, utils::logging::Type,service::schedule};
 use anyhow::{Context, Result};
 use delay_timer::prelude::{DelayTimer, DelayTimerBuilder, TaskBuilder};
 use parking_lot::RwLock;
-use chrono::Utc;
+use chrono::Local;
 use std::{
     collections::HashMap, sync::{
         atomic::{AtomicBool, AtomicU64, Ordering},
@@ -87,9 +87,9 @@ impl Timer {
                 task.task_id
             );
         }
-
+        schedule::create_scheduled_tasks();
         // let cur_timestamp = chrono::Local::now().timestamp();
-
+        
         // Collect profiles that need immediate update
         // let profiles_to_update = if let Some(items) = Config::profiles().latest_ref().get_items() {
         //     items
@@ -435,7 +435,7 @@ impl Timer {
     // Async task with better error handling and logging
     async fn async_task(uid: String) {
         // let task_start = std::time::Instant::now();
-        let task_start = Utc::now().timestamp();
+        let task_start = Local::now().timestamp();
 
         logging!(info, Type::Timer, "Running timer task for profile: {}", uid);
         logging!(info, Type::Timer, "Running timer task at: {}", task_start);

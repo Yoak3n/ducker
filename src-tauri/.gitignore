@@ -3,3 +3,5 @@
 /target/
 /gen/schemas
 *.db
+.idea/
+
