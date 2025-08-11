@@ -1,28 +1,27 @@
-import {ContextMenuItem} from "@/components/ui/context-menu"
+import { ContextMenuItem } from "@/components/ui/context-menu"
 import { invoke } from "@tauri-apps/api/core"
 
-const toggleMainWindow = async () => {
-  const result = await invoke("toggle_main_window");
-  console.log(result);
-}
 const toggleDashboardWindow = async () => {
   const result = await invoke("toggle_dashboard_window");
   console.log(result);
 }
 
+interface Props {
+  isSettingOpen: boolean;
+  setIsSettingOpen: (isOpen: boolean) => void;
+}
 
-
-export default function ContextItems() {
+export default function ContextItems({ setIsSettingOpen }: Props) {
   return (
     <>
       <ContextMenuItem onClick={toggleDashboardWindow}>
         打开任务面板
       </ContextMenuItem>
-      <ContextMenuItem>
+      <ContextMenuItem onClick={toggleDashboardWindow}>
         打开Action面板
       </ContextMenuItem>
-      <ContextMenuItem onClick={toggleMainWindow}>
-        关闭Live2D
+      <ContextMenuItem onClick={() => setIsSettingOpen(true)}>
+        设置Live2D
       </ContextMenuItem>
     </>
   )

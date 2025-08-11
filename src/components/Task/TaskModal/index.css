@@ -17,6 +17,7 @@
     opacity: 0;
     transform: translateY(-20px) scale(0.95);
   }
+
   to {
     opacity: 1;
     transform: translateY(0) scale(1);
@@ -103,6 +104,7 @@
   from {
     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
   }
+
   to {
     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
   }
@@ -122,7 +124,7 @@
   left: 0;
   width: 100%;
   height: 100%;
-  background: linear-gradient(135deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0) 100%);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.1) 50%, rgba(255, 255, 255, 0) 100%);
   transform: translateX(-100%);
   transition: transform 0.6s ease;
   pointer-events: none;
@@ -156,10 +158,33 @@ input[type="datetime-local"] {
   cursor: pointer;
   padding-right: 36px;
   transition: all 0.3s ease;
+
   /* box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05); */
   /* perspective: 1000px;
   transform-style: preserve-3d; */
   /* backface-visibility: hidden; */
+  &::-webkit-date-and-time-picker {
+    color: red;
+    background: #0e141c;
+    border: 1px solid #7ad0e5;
+    border-radius: 6px;
+  }
+
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator {
+  display: inline-block;
+  width: 15px;
+  height: 15px;
+  /* position: absolute;         top: 12px;
+        right: 0px; */
+  border: 1px solid #ccc;
+  border-radius: 2px;
+  box-shadow: inset 0 1px #fff, 0 1px #eee;
+  background-color: #eee;
+  /* background:url('../images/icon.png') -188px -99px; */
+  background-image: -webkit-linear-gradient(top, #f0f0f0, #e6e6e6);
+  color: #666;
 }
 
 input[type="datetime-local"]:hover {
@@ -184,15 +209,19 @@ input[type="datetime-local"]:active {
   border-color: #6366f1;
 }
 
+
+
 @keyframes glow {
   0% {
     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1), 0 8px 16px rgba(0, 0, 0, 0.1);
     border-color: #3b82f6;
   }
+
   50% {
     box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.2), 0 8px 16px rgba(0, 0, 0, 0.1);
     border-color: #6366f1;
   }
+
   100% {
     box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.3), 0 8px 16px rgba(0, 0, 0, 0.1);
     border-color: #4f46e5;
@@ -275,6 +304,7 @@ input[type="datetime-local"]:focus::-webkit-datetime-edit-minute-field:hover {
   from {
     transform: translateY(0);
   }
+
   to {
     transform: translateY(-3px);
   }
@@ -300,6 +330,7 @@ input[type="datetime-local"]:active::after {
     transform: translate(-50%, -50%) scale(0);
     opacity: 1;
   }
+
   100% {
     transform: translate(-50%, -50%) scale(20);
     opacity: 0;
@@ -308,9 +339,17 @@ input[type="datetime-local"]:active::after {
 
 /* 添加动画效果 */
 @keyframes pulse {
-  0% { transform: translateY(-50%) scale(1); }
-  50% { transform: translateY(-50%) scale(1.1); }
-  100% { transform: translateY(-50%) scale(1); }
+  0% {
+    transform: translateY(-50%) scale(1);
+  }
+
+  50% {
+    transform: translateY(-50%) scale(1.1);
+  }
+
+  100% {
+    transform: translateY(-50%) scale(1);
+  }
 }
 
 .datetime-input-wrapper:active::after {
@@ -364,6 +403,7 @@ input[type="datetime-local"]:active::after {
   from {
     transform: rotate(-5deg);
   }
+
   to {
     transform: rotate(5deg);
   }
@@ -374,6 +414,7 @@ input[type="datetime-local"]:active::after {
     opacity: 0;
     transform: translateX(-10px);
   }
+
   to {
     opacity: 1;
     transform: translateX(0);
@@ -385,6 +426,7 @@ input[type="datetime-local"]:active::after {
     opacity: 0;
     transform: translateY(-5px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -409,9 +451,11 @@ input[type="datetime-local"]:active::after {
   0% {
     transform: translateY(-50%) scale(1);
   }
+
   50% {
     transform: translateY(-50%) scale(1.2);
   }
+
   100% {
     transform: translateY(-50%) scale(1);
   }
@@ -473,20 +517,6 @@ input[type="number"]::-webkit-inner-spin-button {
   align-items: center;
 }
 
-.checkbox-label {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  cursor: pointer;
-  font-size: 0.875rem;
-  color: #374151;
-}
-
-.checkbox-label input[type="checkbox"] {
-  width: auto;
-  margin: 0;
-  cursor: pointer;
-}
 
 .parent-task-info {
   display: flex;
@@ -527,13 +557,6 @@ input[type="number"]::-webkit-inner-spin-button {
   color: #374151;
 }
 
-.advanced-content {
-  margin-top: 16px;
-  padding: 16px;
-  background: #f9fafb;
-  border-radius: 8px;
-  border: 1px solid #e5e7eb;
-}
 
 .actions-section {
   margin-bottom: 20px;
@@ -1009,6 +1032,7 @@ input[type="number"]::-webkit-inner-spin-button {
   .reminder-offset-select {
     padding: 0.875rem;
     font-size: 1rem;
+    margin-right: 0.5rem;
   }
 
   /* 任务价值输入框移动端样式 */
@@ -1020,73 +1044,73 @@ input[type="number"]::-webkit-inner-spin-button {
     flex-wrap: wrap;
     gap: 0.25rem;
   }
-  
+
   .action-name {
-     min-width: 100%;
-     order: -1;
-   }
-   
-   .actions-section {
-      padding: 1rem;
-      margin: 0 -1rem;
-    }
-    
-    .actions-header {
-      flex-direction: column;
-      align-items: stretch;
-      gap: 0.75rem;
-    }
-    
-    .actions-title {
-      justify-content: center;
-    }
-    
-    .add-action-button {
-      width: 100%;
-    }
-    
-    .actions-empty-state {
-      padding: 1.5rem 1rem;
-    }
-    
-    .actions-empty-state .material-symbols-outlined {
-      font-size: 2rem;
-    }
-    
-    .actions-summary {
-      flex-direction: column;
-      align-items: stretch;
-      gap: 0.75rem;
-    }
-    
-    .edit-actions-btn {
-      width: 100%;
-      padding: 0.75rem 1rem;
-    }
-   
-   /* 动作选择模态窗口移动端样式 */
-   .action-select-modal-content {
-     width: 95%;
-     max-width: none;
-     margin: 1rem;
-     max-height: calc(100vh - 2rem);
-   }
-   
-   .action-select-modal-header,
-   .action-select-modal-body,
-   .action-select-modal-footer {
-     padding: 1rem;
-   }
-   
-   .action-select-modal-footer {
-     flex-direction: column;
-     gap: 0.75rem;
-   }
-   
-   .action-select-modal-footer button {
-      width: 100%;
-    }
+    min-width: 100%;
+    order: -1;
   }
+
+  .actions-section {
+    padding: 1rem;
+    margin: 0 -1rem;
+  }
+
+  .actions-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+  }
+
+  .actions-title {
+    justify-content: center;
+  }
+
+  .add-action-button {
+    width: 100%;
+  }
+
+  .actions-empty-state {
+    padding: 1.5rem 1rem;
+  }
+
+  .actions-empty-state .material-symbols-outlined {
+    font-size: 2rem;
+  }
+
+  .actions-summary {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+  }
+
+  .edit-actions-btn {
+    width: 100%;
+    padding: 0.75rem 1rem;
+  }
+
+  /* 动作选择模态窗口移动端样式 */
+  .action-select-modal-content {
+    width: 95%;
+    max-width: none;
+    margin: 1rem;
+    max-height: calc(100vh - 2rem);
+  }
+
+  .action-select-modal-header,
+  .action-select-modal-body,
+  .action-select-modal-footer {
+    padding: 1rem;
+  }
+
+  .action-select-modal-footer {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .action-select-modal-footer button {
+    width: 100%;
+  }
+}
 
 /* Material Icons 样式调整 */
 .material-symbols-outlined {

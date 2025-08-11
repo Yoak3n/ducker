@@ -8,6 +8,13 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog"
 import ActionSelect from '@/components/Action/ActionSelect';
+import DatetimePicker from '@/components/Date/DatetimePicker';
+import { Label } from '@/components/ui/label';
+import { formatDatetime } from '@/utils';
+import { Collapsible } from '@radix-ui/react-collapsible';
+import { CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
 
 
 interface TaskModalProps {
@@ -37,14 +44,13 @@ const initialFormData: TaskFormData = {
   auto: false,
   due_to: '',
   reminder: '',
-  reminderOffset: 'none', // 默认不提醒
+  reminderOffset: 'ontime', // 默认不提醒
   parent_id: undefined,
   actions: []
 };
 
 
 const reminderOptions = [
-  { value: 'none', label: '不提醒', offset: -1 },
   { value: 'ontime', label: '准时提醒', offset: 0 },
   { value: '5min', label: '提前5分钟', offset: 5 * 60 * 1000 },
   { value: '15min', label: '提前15分钟', offset: 15 * 60 * 1000 },
@@ -54,7 +60,6 @@ const reminderOptions = [
   { value: '1day', label: '提前1天', offset: 24 * 60 * 60 * 1000 },
   { value: '3day', label: '提前3天', offset: 3 * 24 * 60 * 60 * 1000 },
   { value: '1week', label: '提前1周', offset: 7 * 24 * 60 * 60 * 1000 },
-  { value: 'custom', label: '自定义时间', offset: -1 }
 ] as const;
 
 
@@ -147,15 +152,14 @@ export default function TaskModal({ isOpen, onClose, onSave, task, parentTask }:
 
   // 当截止时间或提醒偏移量改变时，自动计算提醒时间
   useEffect(() => {
-    if (formData.due_to && formData.reminderOffset && formData.reminderOffset !== 'custom') {
-      console.log('formData.due_to', formData.due_to);
-
+    if (formData.due_to && formData.reminderOffset) {
       const newReminderTime = calculateReminderTime(formData.due_to, formData.reminderOffset);
       if (newReminderTime !== formData.reminder) {
         setFormData(prev => ({ ...prev, reminder: newReminderTime }));
       }
     }
-  }, [formData.due_to, formData.reminderOffset]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formData.reminderOffset, formData.due_to]);
 
   const handleInputChange = (field: keyof TaskFormData, value: string | boolean | number | undefined | Action[]) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -170,8 +174,8 @@ export default function TaskModal({ isOpen, onClose, onSave, task, parentTask }:
       completed: formData.completed,
       auto: formData.auto,
       parent_id: formData.parent_id,
-      due_to: formData.due_to ? new Date(formData.due_to).toISOString() : undefined,
-      reminder: formData.reminder ? new Date(formData.reminder).toISOString() : undefined,
+      due_to: formData.due_to ? formatDatetime(new Date(formData.due_to)) : undefined,
+      reminder: formData.reminder ? formatDatetime(new Date(formData.reminder)) : undefined,
       // 将Action[]转换为string[]
       actions: formData.actions.map(action => action.id!)
     };
@@ -249,34 +253,32 @@ export default function TaskModal({ isOpen, onClose, onSave, task, parentTask }:
 
         <div className="form-row">
           <div className="form-group">
-            <label htmlFor="due_to">截止时间</label>
-            <div className="datetime-input-wrapper">
-              <input
-                type="datetime-local"
-                id="due_to"
-                value={formData.due_to}
-                onChange={(e) => handleInputChange('due_to', e.target.value)}
-                placeholder="选择截止时间"
-              />
-            </div>
-            </div>
+            <DatetimePicker
+              datetime={formData.due_to}
+              setDatetime={(datetime) => handleInputChange('due_to', datetime)}
+            />
+          </div>
           <div className="form-group">
-            <label htmlFor="reminder-offset">提醒设置</label>
-            <select
-              id="reminder-offset"
+            <Label className='py-1'>提醒设置</Label>
+            <Select
               value={formData.reminderOffset}
-              onChange={(e) => handleInputChange('reminderOffset', e.target.value)}
-              className="reminder-offset-select"
+              onValueChange={(value) => handleInputChange('reminderOffset', value)}
             >
-              {reminderOptions.map(option => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-            {formData.reminderOffset !== 'none' && formData.due_to && (
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="选择提醒设置" />
+              </SelectTrigger>
+
+              <SelectContent>
+                {reminderOptions.map(option => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {/* {formData.reminderOffset !== 'none' && formData.due_to && (
               <div className="reminder-container">
-                {/* <div className="datetime-input-wrapper reminder-wrapper">
+                <div className="datetime-input-wrapper reminder-wrapper">
                   <input
                     type="datetime-local"
                     id="reminder"
@@ -285,23 +287,17 @@ export default function TaskModal({ isOpen, onClose, onSave, task, parentTask }:
                     placeholder="提醒时间"
                     disabled={formData.reminderOffset !== 'custom'}
                   />
-                </div> */}
+                </div>
                 {formData.reminder && (
                   <div className="reminder-time-display">
                     <span className="reminder-icon">⏰</span>
                     <span>
-                      提醒时间：{new Date(formData.reminder).toLocaleString('zh-CN', {
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      })}
+                      提醒时间：{formatDatetime(new Date(formData.reminder))}
                     </span>
                   </div>
                 )}
               </div>
-            )}
+            )} */}
           </div>
         </div>
 
@@ -314,30 +310,34 @@ export default function TaskModal({ isOpen, onClose, onSave, task, parentTask }:
             />
             <span>已完成</span>
           </label>}
-          <label className="checkbox-label">
-            <input
-              type="checkbox"
+          <div className='flex items-center gap-3 justify-center'>
+            <Checkbox
               checked={formData.auto}
-              onChange={(e) => handleInputChange('auto', e.target.checked)}
+              onCheckedChange={(v) => handleInputChange('auto', v)}
             />
-            <span>自动执行</span>
-          </label>
+            {/* <Label className="flex items-center content-center"> */}
+              自动执行
+            {/* </Label> */}
+          </div>
+
+
         </div>
 
         <div className="advanced-section">
-          <button
-            type="button"
-            className="advanced-toggle"
-            onClick={() => setShowAdvanced(!showAdvanced)}
-          >
-            <span className="material-symbols-outlined">
-              {showAdvanced ? 'expand_less' : 'expand_more'}
-            </span>
-            高级设置
-          </button>
-
-          {showAdvanced && (
-            <div className="advanced-content">
+          <Collapsible>
+            <CollapsibleTrigger>
+              <button
+                type="button"
+                className="advanced-toggle"
+                onClick={() => setShowAdvanced(!showAdvanced)}
+              >
+                <span className="material-symbols-outlined">
+                  {showAdvanced ? 'expand_less' : 'expand_more'}
+                </span>
+                高级设置
+              </button>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
               <div className="actions-section">
                 <div className="actions-header">
                   <div className="actions-title">
@@ -389,9 +389,8 @@ export default function TaskModal({ isOpen, onClose, onSave, task, parentTask }:
                   </div>
                 </div>
               )}
-            </div>
-          )}
-
+            </CollapsibleContent>
+          </Collapsible>
         </div>
 
         <div className="form-actions">

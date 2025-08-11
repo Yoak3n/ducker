@@ -1,9 +1,7 @@
 /* Live2D Styles */
 .live2d-wrapper {
   position: relative;
-  width: 300px;
-  height: 500px;
-  margin: 0 auto 2rem;
+  /* margin: 0 auto 2rem; */
   overflow: hidden;
 }
 

@@ -66,3 +66,12 @@ export interface ActionState extends BaseState {
   executionResults: ExecutionResult[];
   filters: ActionFilters;
 }
+
+export interface Live2DState extends BaseState {
+  show: boolean;
+  modelPath: string;
+  width: number;
+  height: number;
+  position: { x: number; y: number };
+  scale: number;
+}

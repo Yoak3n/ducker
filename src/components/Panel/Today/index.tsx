@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import type { Task, TaskData } from "@/types";
 import TaskList from "./TaskList";
+
 import { TaskModal } from "@/components/Task";
 import { Button } from "@/components/ui/button";
 import { useTaskStore } from "@/store";
@@ -26,7 +27,6 @@ const TodayView = () => {
     }, [])
     // const [taskList, setTaskList] = useState<Task[]>(tasks);
     const tasksList = taskStore.tasks.filter(task => (extractTimeStampSecond(task.due_to!) <= todayDate.getTime() / 1000 && !task.completed) || (extractTimeStampSecond(task.due_to!) >= todayRange.start && extractTimeStampSecond(task.due_to!) <= todayRange.end))
-
 
     let completedValueCount = 0
     tasksList.forEach(item => {
@@ -81,11 +81,10 @@ const TodayView = () => {
 
     return (
         <div className="today-view">
-
             <div className="today-title flex justify-between items-center">
                 <h2>今日任务 ({todayDate.toLocaleDateString()})</h2>
                 <Dialog>
-                    <DialogTrigger>
+                    <DialogTrigger asChild>
                         <Button variant="outline" className="cursor-pointer" onClick={handleCreateTask}>创建任务</Button>
                     </DialogTrigger>
                     <TaskModal
@@ -107,9 +106,7 @@ const TodayView = () => {
                     </span>
                 </div>
             }
-
             <TaskList tasks={tasksList} todayDate={todayDate} todayRange={todayRange} changeTask={handleTaskStatueChange} />
-
         </div>
     );
 };

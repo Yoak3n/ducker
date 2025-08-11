@@ -187,11 +187,12 @@ fn create_tray_menu(app_handle: &AppHandle, visiable: bool) -> Result<Menu<Wry>>
     let separator = &PredefinedMenuItem::separator(app_handle).unwrap();
     let action_item = &MenuItem::with_id(app_handle, "action", "Action", true, None::<&str>).unwrap();
     let about_item = &MenuItem::with_id(app_handle, "about", format!("About v{version}"), true, None::<&str>).unwrap();
+    let setting_item = &MenuItem::with_id(app_handle, "setting", "Setting", true, None::<&str>).unwrap();
     let quit =
         &MenuItem::with_id(app_handle, "quit", "Exit", true, Some("")).unwrap();
 
     let menu = tauri::menu::MenuBuilder::new(app_handle)
-        .items(&[show_item, dashboard_item, action_item, about_item, separator, quit])
+        .items(&[show_item, dashboard_item, action_item, about_item, setting_item, separator, quit])
         .build()
         .unwrap();
     logging!(info, Type::Tray, true, "Creating tray menu");
@@ -203,6 +204,9 @@ fn on_menu_event(_: &AppHandle, event: MenuEvent) {
         "open_window" => window_manager::toggle_main_window(),
         "dashboard" => window_manager::create_window_by_label(&window_manager::WindowLabel::Dashboard),
         "action" => window_manager::create_window_by_label(&window_manager::WindowLabel::Action),
+        // "about" => window_manager::create_window_by_label(&window_manager::WindowLabel::About),
+        "setting" => window_manager::create_window_by_label(&window_manager::WindowLabel::Setting),
+
         "quit" => feat::quit(Some(0)),
         _ => {}
     }

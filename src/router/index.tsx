@@ -4,6 +4,7 @@ import { createBrowserRouter } from 'react-router-dom';
 import Layout from '@/pages/Layout';
 import ActionsList from '@/components/Action/ActionsList';
 import ActionModify from '@/components/Action/ActionModify';
+import Setting from '@/pages/Setting';
 
 const Dashboard = lazy(() => import('@/pages/Dashboard'));
 const Action = lazy(() => import('@/pages/Action'));
@@ -16,7 +17,6 @@ const Home = lazy(() => import('@/pages/Home'));
 const router = createBrowserRouter([
   {
     path: '/main',
-    index: true,
     element: <Home />,
   },{
     path: "/",
@@ -41,6 +41,10 @@ const router = createBrowserRouter([
       },{
         path: "about",
         element: <About />
+      },{
+        path: "setting",
+        element: <Setting />
+
       }
     ],
   },

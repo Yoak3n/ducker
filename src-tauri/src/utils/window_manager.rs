@@ -198,8 +198,8 @@ pub fn create_main_window() {
                     tauri::WebviewUrl::App("/main".into()),
                 )
                 .title("dida")
-                .inner_size(890.0, 700.0)
-                .min_inner_size(620.0, 550.0)
+                .inner_size(300.0, 480.0)
+                .min_inner_size(300.0, 480.0)
                 .decorations(false)
                 .focused(true)
                 .maximizable(true)
@@ -283,6 +283,7 @@ fn create_dashboard_window() {
                     &app_handle,
                     "dashboard".to_string(),
                     tauri::WebviewUrl::App("/".into()),
+
                 )
                 .title("dida")
                 .inner_size(1080.0, 900.0)
@@ -369,7 +370,7 @@ fn create_action_window() {
 }
 pub fn create_settings_window() {
     let app_handle = handle::Handle::global().app_handle().unwrap();
-    if let Some(window) = app_handle.get_webview_window("settings") {
+    if let Some(window) = app_handle.get_webview_window("setting") {
         logging!(
             info,
             Type::Window,
@@ -389,10 +390,10 @@ pub fn create_settings_window() {
     }
     let window = tauri::WebviewWindowBuilder::new(
                     &app_handle,
-                    "settings".to_string(),
-                    tauri::WebviewUrl::App("/settings".into()),
+                    "setting".to_string(),
+                    tauri::WebviewUrl::App("/setting".into()),
                 )
-                .title("dida")
+                .title("Setting")
                 .inner_size(890.0, 700.0)
                 .min_inner_size(620.0, 550.0)
                 .decorations(false)

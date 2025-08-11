@@ -5,7 +5,9 @@
   "windows": [
     "main",
     "dashboard",
-    "action"
+    "action",
+    "settings"
+
   ],
   "permissions": [
     "core:default",
