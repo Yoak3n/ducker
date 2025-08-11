@@ -4,9 +4,8 @@ use tauri::{App, Manager};
 #[cfg(desktop)]
 use crate::core::tray;
 use crate::{
-    core::handle, logging, logging_error, process::AsyncHandler,
+    core::{handle,timer}, logging, logging_error, process::AsyncHandler,
     utils::{logging::Type,window_manager},
-
 };
 
 pub static VERSION: OnceCell<String> = OnceCell::new();
@@ -96,5 +95,5 @@ pub async fn resolve_setup(app: &mut App) {
     window_manager::create_main_window();
     // #[cfg(desktop)]
     logging_error!(Type::Tray, true, tray::Tray::global().update_part());
-    // logging_error!(Type::System, true, timer::Timer::global().init());
+    logging_error!(Type::System, true, timer::Timer::global().init());
 }
