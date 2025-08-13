@@ -201,11 +201,11 @@ fn create_tray_menu(app_handle: &AppHandle, visiable: bool) -> Result<Menu<Wry>>
 
 fn on_menu_event(_: &AppHandle, event: MenuEvent) {
     match event.id.as_ref() {
-        "open_window" => window_manager::toggle_main_window(),
-        "dashboard" => window_manager::create_window_by_label(&window_manager::WindowLabel::Dashboard),
-        "action" => window_manager::create_window_by_label(&window_manager::WindowLabel::Action),
+        "open_window" => window_manager::toggle_window_by_label("main"),
+        "dashboard" => window_manager::toggle_window_by_label("dashboard"),
+        "action" => window_manager::toggle_window_by_label("action"),
         // "about" => window_manager::create_window_by_label(&window_manager::WindowLabel::About),
-        "setting" => window_manager::create_window_by_label(&window_manager::WindowLabel::Setting),
+        "setting" => window_manager::toggle_window_by_label("setting"),
 
         "quit" => feat::quit(Some(0)),
         _ => {}

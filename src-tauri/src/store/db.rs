@@ -449,7 +449,9 @@ impl TaskManager for Database {
         let conn = self.conn.read();
         let mut stmt = conn.prepare(
             "SELECT id, completed, parent_id, name, auto, actions, created_at, due_to, reminder, value 
-            FROM tasks WHERE created_at BETWEEN ?1 AND ?2",
+            FROM tasks 
+            WHERE due_to BETWEEN ?1 AND ?2
+            ORDER BY due_to DESC",
         )?;
         let tasks = stmt.query_map([start_date, end_date], |row| {
             Self::build_task_record_from_row(row)

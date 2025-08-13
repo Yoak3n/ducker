@@ -68,6 +68,11 @@ pub fn save_yaml<T: Serialize>(path: &PathBuf, data: &T, prefix: Option<&str>) -
         .with_context(|| format!("failed to save file \"{path_str}\""))
 }
 
+pub fn get_uid(prefix: &str) -> String {
+    let id = random_string(11);
+    format!("{prefix}{id}")
+}
+
 pub fn random_string(len: usize) -> String {
     use chrono::prelude::Local;
     use rand::distributions::Alphanumeric;

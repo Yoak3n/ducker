@@ -2,6 +2,7 @@ use std::collections::HashMap;
 
 use tauri::Manager;
 use chrono::{Local,TimeZone, Datelike};
+use anyhow::Result;
 use crate::{
     core::handle::Handle,
     logging,
@@ -38,8 +39,6 @@ fn get_actions_info_by_ids(ids: Vec<String>) -> Vec<Action> {
     actions
 }
 
-
-
 pub fn create_scheduled_tasks()-> HashMap<i64, Vec<Action>> {
     let now = Local::now();
     let start_date = now.timestamp();
@@ -59,7 +58,7 @@ pub fn create_scheduled_tasks()-> HashMap<i64, Vec<Action>> {
         })
         .collect();
     let actions = get_actions_info_by_ids(all_ids);
-    // 时间戳映射actions
+    // 时间戳映射为actions
     let mut i2a_map = HashMap::new();
     for action in actions {
         if let Some(id) = &action.id {
@@ -75,3 +74,38 @@ pub fn create_scheduled_tasks()-> HashMap<i64, Vec<Action>> {
     });
     actions_map
 }
+
+pub async fn execute_action_by_id(id: &str) -> Result<(), String> {
+    let app_handle = Handle::global().app_handle().unwrap();
+    let db = app_handle.state::<AppState>().db.clone();
+    let action = db.get_action(id);
+    if let Ok(action) = action {
+        let action = Action::from(action);
+        super::execute::execute_single_action(&action).await;
+        Ok(())
+
+    }else {
+        logging!(
+            error,
+            Type::Database,
+            "execute_action_by_id error: {}",
+            id
+        );
+        Err(format!("execute_action_by_id error: {}", id))
+    }
+}
+
+pub async fn execute_actions_by_ids(ids: Vec<String>) -> Result<()> {
+    let actions = get_actions_info_by_ids(ids.clone());
+    super::execute::execute_plural_actions(actions).await?;
+    logging!(
+        info,
+        Type::Service,
+        true,
+        "execute_actions_by_ids success, ids: {:?}",
+        ids
+    );
+
+    Ok(())
+}
+

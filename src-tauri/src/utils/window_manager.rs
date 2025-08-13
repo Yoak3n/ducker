@@ -91,7 +91,9 @@ pub fn toggle_window_by_label(label: &str) {
     let app_handle = handle::Handle::global().app_handle().unwrap();
     if let Some(window) = app_handle.get_webview_window(label) {
         let visible = window.is_visible().unwrap_or(false);
-        tray::Tray::global().update_menu_visible(!visible);
+        if label == "main"{
+            tray::Tray::global().update_menu_visible(!visible);
+        }
         if visible {
             window.close().unwrap();
         } else {
@@ -99,28 +101,21 @@ pub fn toggle_window_by_label(label: &str) {
             window.set_focus().unwrap();
         }
     } else {
-        create_main_window();
-        logging!(info, Type::Window, true, "Creating main window");
-        tray::Tray::global().update_menu_visible(true);
+        create_window_by_label(label);
+        logging!(info, Type::Window, true, "Creating {} window", label);
+        if label == "main"{
+            tray::Tray::global().update_menu_visible(true);
+        }
     }
 }
 
+
 pub fn toggle_main_window() {
-    let app_handle = handle::Handle::global().app_handle().unwrap();
-    if let Some(window) = app_handle.get_webview_window("main") {
-        let visible = window.is_visible().unwrap_or(false);
-        tray::Tray::global().update_menu_visible(!visible);
-        if visible {
-            window.close().unwrap();
-        } else {
-            window.show().unwrap();
-            window.set_focus().unwrap();
-        }
-    } else {
-        create_main_window();
-        logging!(info, Type::Window, true, "Creating main window");
-        tray::Tray::global().update_menu_visible(true);
-    }
+    toggle_window_by_label("main");
+}
+
+pub fn toggle_action_window() {
+    toggle_window_by_label("action");
 }
 
 pub fn toggle_dashboard_window() {
@@ -141,23 +136,27 @@ pub fn toggle_dashboard_window() {
     }
 }
 
-pub fn create_window_by_label(label: &WindowLabel) {
+pub fn create_window_by_label(label: &str) {
     match label {
-        WindowLabel::Main => {
+        "main" => {
             logging!(info, Type::Window, true, "Creating main window");
             create_main_window();
         }
-        WindowLabel::Dashboard => {
+        "dashboard" => {
             logging!(info, Type::Window, true, "Creating dashboard window");
             create_dashboard_window();
         }
-        WindowLabel::Action => {
+        "action" => {
             logging!(info, Type::Window, true, "Creating action window");
             create_action_window();
         }
-        WindowLabel::Setting => {
+        "setting" => {
             logging!(info, Type::Window, true, "Creating setting window");
             create_settings_window();
+        }
+        _ => {
+            logging!(error, Type::Window, true, "Creating {} window error", label);
+            return;
         }
     }
 }
@@ -208,7 +207,7 @@ pub fn create_main_window() {
                 .skip_taskbar(true)
                 .shadow(false)
                 .always_on_top(true)
-                .center()
+                // .center()
                 .build();
         #[cfg(target_os = "linux")]
         let window = tauri::WebviewWindowBuilder::new(
