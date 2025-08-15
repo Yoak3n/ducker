@@ -1,4 +1,4 @@
-use crate::{logging, logging_error, service::{hub::Hub, schedule}, singleton, utils::logging::Type};
+use crate::{logging, logging_error, module::lightweight, service::{hub::Hub, schedule}, singleton, utils::logging::Type};
 use anyhow::{Context, Result};
 use delay_timer::prelude::{DelayTimer, DelayTimerBuilder, TaskBuilder};
 use parking_lot::RwLock;
@@ -11,6 +11,7 @@ use std::{
 };
 
 type TaskID = u64;
+const AUTO_REFRESH_ID: &str = "auto_refresh_task";
 
 #[derive(Debug, Clone)]
 pub struct TimerTask {
@@ -68,12 +69,6 @@ impl Timer {
             logging_error!(Type::Timer, false, "Failed to initialize timer: {}", e);
             return Err(e);
         }
-
-        // self.timer_map
-        //     .write()
-        //     .insert(auto_refresh_task.task_id.to_string(), auto_refresh_task);
-
-        // let timer_map = self.timer_map.read();
         let mut timer_map = self.timer_map.write();
         logging!(
             info,
@@ -94,31 +89,30 @@ impl Timer {
         }
 
         // 定时每一分钟刷新待办动作
-        let auto_refresh_id = String::from("auto_refresh_task");
-        let auto_refresh_task_id = self.timer_count.fetch_add(1, Ordering::Relaxed);
+        let auto_refrsh_task_id = self.timer_count.fetch_add(1, Ordering::Relaxed);
 
         let mut delay_timer = self.delay_timer.write();
         if let Err(e) = self.add_task(
             &mut delay_timer,
-            auto_refresh_id.clone(),
-            auto_refresh_task_id,
+            AUTO_REFRESH_ID.to_string(),
+            auto_refrsh_task_id,
             60,
         ) {
             logging_error!(
                 Type::Timer,
                 "Failed to add task for uid: {} {}",
-                auto_refresh_id,
+                AUTO_REFRESH_ID,
                 e
             );
-            timer_map.remove(&auto_refresh_id); // Rollback on failure
+            timer_map.remove(AUTO_REFRESH_ID); // Rollback on failure
         } else {
             logging!(
                 info,
                 Type::Timer,
                 true,
                 "Added task {} for uid {}",
-                auto_refresh_task_id,
-                auto_refresh_id
+                auto_refrsh_task_id,
+                AUTO_REFRESH_ID
             );
         }
 
@@ -436,33 +430,29 @@ impl Timer {
             }
         }
     }
-
+    // TODO 感觉可以改成通过任务id来获取Action
     // Async task with better error handling and logging
-    async fn async_task(uid: String) {
+    async fn async_task(id: String) {
         let task_start = std::time::Instant::now();
         // let task_start = Local::now();
 
-        logging!(info, Type::Timer, "Running timer task for action: {}", uid);
-        if uid == "auto_refresh_task" {
-            Hub::global().refresh().await;
-            let _ = Self::global().refresh();
-            return;
-        }
+        logging!(info, Type::Timer, "Running timer task for action: {}", id);
+        match id.as_str() {
+            AUTO_REFRESH_ID => {
+                Hub::global().refresh().await;
+                let _ = Self::global().refresh();
+                return;
+            }
+            lightweight::LIGHT_WEIGHT_TASK_UID => {
+                // logging!(info, Type::Timer, true, "计时器到期，开始进入轻量模式");
+                // lightweight::entry_lightweight_mode();
 
-        match tokio::time::timeout(std::time::Duration::from_secs(40), async {
-            Self::emit_update_event(&uid, true);
-
-            // let is_current = Config::profiles().latest_ref().current.as_ref() == Some(&uid);
-            // logging!(
-            //     info,
-            //     Type::Timer,
-            //     "配置 {} 是否为当前激活配置: {}",
-            //     uid,
-            //     is_current
-            // );
-            // TODO 没办法在定时器内部直接运行任务，需要调用外部的回调函数
+            }
+            _ => {
+                match tokio::time::timeout(std::time::Duration::from_secs(40), async {
+            Self::emit_update_event(&id, true);
             // feat::update_profile(uid.clone(), None, Some(is_current)).await
-            schedule::execute_action_by_id(&uid).await
+            schedule::execute_action_by_id(&id).await
         })
         .await
         {
@@ -472,22 +462,26 @@ impl Timer {
                     logging!(
                         info,
                         Type::Timer,
-                        "Timer task completed successfully for uid: {} (took {}ms)",
-                        uid,
+                        "Timer task completed successfully for id: {} (took {}ms)",
+                        id,
                         duration
                     );
                 }
                 Err(e) => {
-                    logging_error!(Type::Timer, "Failed to update profile uid {}: {}", uid, e);
+                    logging_error!(Type::Timer, "Failed to update profile uid {}: {}", id, e);
                 }
             },
             Err(_) => {
-                logging_error!(Type::Timer, false, "Timer task timed out for uid: {}", uid);
+                logging_error!(Type::Timer, false, "Timer task timed out for uid: {}", id);
             }
         }
 
         // Emit completed event
-        Self::emit_update_event(&uid, false);
+        Self::emit_update_event(&id, false);
+            }
+        }
+
+
     }
 }
 

@@ -6,6 +6,12 @@ const toggleDashboardWindow = async () => {
   console.log(result);
 }
 
+const toggleActionWindow = async () => {
+  const result = await invoke("toggle_action_window");
+  console.log(result);
+}
+
+
 interface Props {
   isSettingOpen: boolean;
   setIsSettingOpen: (isOpen: boolean) => void;
@@ -17,7 +23,7 @@ export default function ContextItems({ setIsSettingOpen }: Props) {
       <ContextMenuItem onClick={toggleDashboardWindow}>
         打开任务面板
       </ContextMenuItem>
-      <ContextMenuItem onClick={toggleDashboardWindow}>
+      <ContextMenuItem onClick={toggleActionWindow}>
         打开Action面板
       </ContextMenuItem>
       <ContextMenuItem onClick={() => setIsSettingOpen(true)}>

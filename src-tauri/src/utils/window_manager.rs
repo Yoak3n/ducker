@@ -207,7 +207,7 @@ pub fn create_main_window() {
                 .skip_taskbar(true)
                 .shadow(false)
                 .always_on_top(true)
-                // .center()
+                .center()
                 .build();
         #[cfg(target_os = "linux")]
         let window = tauri::WebviewWindowBuilder::new(
@@ -672,7 +672,7 @@ impl WindowManager {
                 );
                 tray::Tray::global().update_menu_visible(false);
                 if let Some(window) = Self::get_main_window() {
-                    match window.hide() {
+                    match window.close() {
                         Ok(_) => {
                             logging!(info, Type::Window, true, "窗口已成功隐藏");
                             WindowOperationResult::Hidden

@@ -5,6 +5,8 @@ mod schema;
 mod store;
 mod utils;
 mod service;
+mod module;
+
 use std::sync::{Arc, Mutex, Once};
 
 use tauri::{AppHandle,Manager};
@@ -18,7 +20,9 @@ use tauri_plugin_single_instance;
 use schema::state::AppState;
 use store::db::Database;
 use utils::resolve;
+use core::handle::Handle;
 
+use crate::schema::LightWeightState;
 pub struct AppHandleManager {
     inner: Mutex<Option<AppHandle>>,
     init: Once,
@@ -84,7 +88,11 @@ impl AppHandleManager {
 pub fn run() {
     #[cfg(desktop)]
     let db = Database::new(".".into()).expect("Failed to initialize database");
-    let app_state = AppState { db: Arc::new(db) };
+    let app_state = AppState { 
+        db: Arc::new(db),
+        lightweight: Arc::new(Mutex::new(LightWeightState::default())),
+
+    };
     let builder = tauri::Builder::default()
         .plugin(tauri_plugin_single_instance::init(|app, _, _| {
             let _ = app.get_webview_window("main")
@@ -106,6 +114,8 @@ pub fn run() {
         }))
         .plugin(tauri_plugin_opener::init())
         .setup(|app| {
+            AppHandleManager::global().init(app.handle().clone());
+            Handle::global().init(&app.handle());
             tauri::async_runtime::block_on(async move {
                 resolve::resolve_setup(app).await;
             });
@@ -127,6 +137,8 @@ pub fn run() {
             // Window
             core::cmd::window::toggle_main_window,
             core::cmd::window::toggle_dashboard_window,
+            core::cmd::window::toggle_action_window,
+
             // Actions
             #[cfg(target_os = "windows")]
             core::cmd::action::execute_actions,
@@ -152,9 +164,8 @@ pub fn run() {
         ])
         .build(tauri::generate_context!())
         .expect("error while running tauri application");
-    app.run(|app_handle, e| match e {
+    app.run(|_, e| match e {
         tauri::RunEvent::Ready | tauri::RunEvent::Resumed => {
-            AppHandleManager::global().init(app_handle.clone());
             #[cfg(target_os = "macos")]
             {
                 if let Some(window) = AppHandleManager::global()
@@ -180,12 +191,14 @@ pub fn run() {
                 api.prevent_exit();
             }
         }
-        #[cfg(desktop)]
         tauri::RunEvent::WindowEvent { label, event, .. } => {
             if label == "main" {
                 match event {
                     tauri::WindowEvent::CloseRequested { api, .. } => {
                         // use crate::core::handle;
+
+                        use crate::utils::logging::Type;
+                        logging!(info, Type::Window, true, "窗口关闭请求");
 
                         #[cfg(target_os = "macos")]
                         AppHandleManager::global().set_activation_policy_accessory();
