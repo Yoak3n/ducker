@@ -1,5 +1,5 @@
 use std::path::PathBuf;
-
+use std::collections::VecDeque;
 use anyhow::Result;
 use parking_lot::RwLock;
 use rusqlite::{Connection, params};
@@ -247,12 +247,13 @@ impl ActionManager for Database {
             })
         })?;
 
-        let mut actions = Vec::new();
+        let mut actions = VecDeque::new();
         for action in action_iter {
-            actions.push(action?);
+            actions.push_front(action?);
         }
 
-        Ok(actions)
+        Ok(actions.into())
+
     }
 
     fn get_all_actions(&self) -> anyhow::Result<Vec<crate::schema::ActionRecord>> {
@@ -443,8 +444,6 @@ impl TaskManager for Database {
         Ok(result)
     }
 
-
-    // 有点想在前端直接进行过滤，不想写这么多重复的查询接口
     fn get_tasks_by_date_range(&self, start_date: i64, end_date: i64) -> Result<Vec<TaskRecord>> {
         let conn = self.conn.read();
         let mut stmt = conn.prepare(
@@ -463,6 +462,26 @@ impl TaskManager for Database {
         }
         Ok(result)
     }
+
+    fn get_uncompleted_tasks_by_date_range(&self, start_date: i64, end_date: i64) -> Result<Vec<TaskRecord>> { 
+        let conn = self.conn.read();
+        let mut stmt = conn.prepare(
+            "SELECT id, completed, parent_id, name, auto, actions, created_at, due_to, reminder, value 
+            FROM tasks 
+            WHERE (due_to BETWEEN ?1 AND ?2) AND completed = 0
+            ORDER BY due_to DESC",
+        )?;
+        let tasks = stmt.query_map([start_date, end_date], |row| {
+            Self::build_task_record_from_row(row)
+        })?;
+
+        let mut result = Vec::new();
+        for task in tasks {
+            result.push(task?);
+        }
+        Ok(result)
+     }
+
     fn get_all_tasks(&self) -> Result<Vec<TaskRecord>> {
         let conn = self.conn.read();
         let mut stmt = conn.prepare(

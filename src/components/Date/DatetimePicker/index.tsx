@@ -23,15 +23,18 @@ export default function DatetimePicker({ datetime, setDatetime }: Props) {
     const [open, setOpen] = useState(false)
     const [date, setDate] = useState<Date | undefined>(undefined)
     const [time, setTime] = useState<string>("00:00:00")
-
+    
     useEffect(() => {
         if (datetime) {
             const [date, time] = datetime.split(" ")
             setDate(new Date(date))
             setTime(time)
         } else {
-            setDate(undefined)
-            setTime("00:00:00")
+            const now = new Date()
+            const formattedDatetime = formatDatetime(now)
+            setDate(now)
+            setTime(formattedDatetime.split(" ")[1])
+
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])

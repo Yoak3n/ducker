@@ -25,10 +25,10 @@ pub struct TaskRecord {
 
 
 
-impl TryFrom<(TaskRecord, &AppState)> for TaskView {
+impl TryFrom<(&TaskRecord, &AppState)> for TaskView {
     type Error = anyhow::Error;
 
-    fn try_from((record, state): (TaskRecord, &AppState)) -> Result<Self, Self::Error> {
+    fn try_from((record, state): (&TaskRecord, &AppState)) -> Result<Self, Self::Error> {
         // 获取关联的 actions
         let action_records = state.db.get_actions(&record.actions)?;
         let actions = Some(
@@ -37,12 +37,13 @@ impl TryFrom<(TaskRecord, &AppState)> for TaskView {
                 .map(|record| Action::from(record))
                 .collect(),
         );
+        // println!("{:?}", actions);
 
         let children = state
             .db
             .get_tasks_by_parent_id(&record.id)?
             .into_iter()
-            .map(|child| Self::try_from((child, state)))
+            .map(|child| Self::try_from((&child, state)))
             .collect::<Result<Vec<_>, _>>()?;
         
         let created_at = to_datetime_str(record.created_at);
@@ -51,9 +52,9 @@ impl TryFrom<(TaskRecord, &AppState)> for TaskView {
 
 
         Ok(Self {
-            id: record.id,
+            id: record.id.clone(),
             value: record.value,
-            name: record.name,
+            name: record.name.clone(),
             completed: record.completed,
             auto: record.auto,
             actions,
@@ -117,7 +118,7 @@ pub struct TaskData {
     pub reminder: Option<String>,
 }
 use super::Action;
-#[derive(Deserialize, Serialize, Debug)]
+#[derive(Deserialize, Serialize, Debug, Clone)]
 pub struct TaskView {
     pub id: String,
     pub name: String,

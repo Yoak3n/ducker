@@ -1,5 +1,7 @@
 use crate::feat::action::execute_action;
+use crate::logging;
 use crate::schema::{Action, AppState};
+use crate::utils::logging::Type;
 use anyhow::Result;
 use std::time::Duration;
 use tauri::{async_runtime, AppHandle, State};
@@ -10,7 +12,6 @@ pub async fn execute_actions(actions: Vec<Action>) -> Result<(), String> {
     for action in actions {
         // 检查 action 类型是否需要同步执行
         let is_sync = action.wait > 0;
-        println!("{:?}", action);
         if is_sync {
             // 同步执行 - 等待任务完成
             println!("同步执行任务: {}", &action.name);
@@ -23,22 +24,28 @@ pub async fn execute_actions(actions: Vec<Action>) -> Result<(), String> {
 
             while retry_count <= max_retries {
                 // 使用 timeout 包装 execute_action 调用
-                match timeout(timeout_duration, execute_action(action.clone())).await {
+                match timeout(timeout_duration, execute_action(action.clone())).await 
+                {
                     Ok(result) => {
                         // 任务在超时前完成
                         match result {
                             Ok(_) => {
-                                println!("任务执行成功");
+                                logging!(info, Type::Service, true, "任务执行成功");
                                 break;
                             }
                             Err(e) => {
+                                logging!(error, Type::Service, true, "任务执行失败:{}", e);
                                 last_error = e.to_string();
+
                                 if max_retries <= 0 {
                                     return Err(format!("任务执行失败:{}", &last_error));
                                 }
                                 retry_count += 1;
                                 if retry_count < max_retries {
-                                    println!(
+                                    logging!(
+                                        info,
+                                        Type::Service,
+                                        true,
                                         "任务执行失败，正在重试 ({}/{}): {}",
                                         retry_count, max_retries, &last_error
                                     );

@@ -68,7 +68,7 @@ pub async fn delete_task(state: State<'_, AppState>, id: &str) -> Result<(), Str
 pub async fn get_task(state: State<'_, AppState>, id: &str) -> Result<TaskView, String> {
     let res = state.db.get_task(id);
     match res {
-        Ok(data) => Ok(TaskView::try_from((data, state.inner())).unwrap()),
+        Ok(data) => Ok(TaskView::try_from((&data, state.inner())).unwrap()),
         Err(e) => {
             println!("获取任务失败: {:?}", e);
             Err(e.to_string())
@@ -83,7 +83,7 @@ pub async fn get_all_tasks(state: State<'_, AppState>) -> Result<Vec<TaskView>, 
         Ok(data) => {
             let mut tasks = Vec::new();
             for task in data {
-                tasks.push(TaskView::try_from((task, state.inner())).unwrap());
+                tasks.push(TaskView::try_from((&task, state.inner())).unwrap());
             }
             Ok(tasks)
         }
@@ -104,7 +104,7 @@ pub async fn get_tasks_by_date_range(
         Ok(data) => {
             let mut tasks = Vec::new();
             for task in data {
-                tasks.push(TaskView::try_from((task, state.inner())).unwrap());
+                tasks.push(TaskView::try_from((&task, state.inner())).unwrap());
             }
             Ok(tasks)
         }
@@ -136,7 +136,7 @@ pub async fn get_tasks(
         Ok(data) => {
             let mut tasks = Vec::new();
             for task in data {
-                tasks.push(TaskView::try_from((task, state.inner())).unwrap());
+                tasks.push(TaskView::try_from((&task, state.inner())).unwrap());
             }
             Ok(tasks)
         }

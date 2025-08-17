@@ -7,6 +7,7 @@ async function execute_actions(actions: Action[]|undefined) {
             return;
         }
         await invoke('execute_actions', { actions });
+
     }catch (err) {
         console.error('Error executing actions:', err);
     }

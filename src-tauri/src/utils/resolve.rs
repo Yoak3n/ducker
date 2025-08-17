@@ -1,16 +1,15 @@
-use std::time::{Duration, Instant};
+use std::time::Instant;
 
 use once_cell::sync::OnceCell;
 use parking_lot::{Mutex, RwLock};
-use tauri::{App, Manager};
+use tauri::App;
 // use anyhow::{bail, Result};
 #[cfg(desktop)]
 use crate::core::tray;
 use crate::{
     core::{handle, timer},
     logging, logging_error,
-    module::lightweight::{self, auto_lightweight_mode_init},
-    process::AsyncHandler,
+    module::lightweight::auto_lightweight_mode_init,
     utils::{logging::Type, window_manager},
 };
 

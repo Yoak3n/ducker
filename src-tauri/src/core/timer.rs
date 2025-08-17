@@ -1,5 +1,5 @@
-use crate::{logging, logging_error, module::lightweight, service::{hub::Hub, schedule}, singleton, utils::logging::Type};
 use anyhow::{Context, Result};
+use chrono::Local;
 use delay_timer::prelude::{DelayTimer, DelayTimerBuilder, TaskBuilder};
 use parking_lot::RwLock;
 use std::{
@@ -8,6 +8,15 @@ use std::{
         atomic::{AtomicBool, AtomicU64, Ordering},
         Arc,
     },
+};
+
+use crate::{
+    core::handle::Handle,
+    logging, logging_error,
+    module::lightweight,
+    service::{execute, hub::Hub},
+    singleton,
+    utils::logging::Type,
 };
 
 type TaskID = u64;
@@ -97,6 +106,7 @@ impl Timer {
             AUTO_REFRESH_ID.to_string(),
             auto_refrsh_task_id,
             60,
+            0,
         ) {
             logging_error!(
                 Type::Timer,
@@ -161,19 +171,20 @@ impl Timer {
                     }
                 }
                 DiffFlag::Add(tid, interval) => {
+                    let now = Local::now().timestamp();
                     let task = TimerTask {
                         task_id: tid,
                         interval_seconds: interval,
-                        last_run: chrono::Local::now().timestamp(),
+                        last_run: now,
                     };
 
                     timer_map.insert(uid.clone(), task);
 
-                    if let Err(e) = self.add_task(&mut delay_timer, uid.clone(), tid, interval) {
+                    if let Err(e) = self.add_task(&mut delay_timer, uid.clone(), tid, interval, now + interval) {
                         logging_error!(Type::Timer, "Failed to add task for uid {}: {}", uid, e);
                         timer_map.remove(&uid); // Rollback on failure
                     } else {
-                        logging!(debug, Type::Timer, "Added task {} for uid {}", tid, uid);
+                        logging!(debug, Type::Timer, "Added task {} for uid {} at {}", tid, uid, now + interval);
                     }
                 }
                 DiffFlag::Mod(tid, interval) => {
@@ -188,16 +199,17 @@ impl Timer {
                             e
                         );
                     }
+                    let now = Local::now().timestamp();
                     // Then add the new one
                     let task = TimerTask {
                         task_id: tid,
                         interval_seconds: interval,
-                        last_run: chrono::Local::now().timestamp(),
+                        last_run: now,
                     };
 
                     timer_map.insert(uid.clone(), task);
-
-                    if let Err(e) = self.add_task(&mut delay_timer, uid.clone(), tid, interval) {
+                    // 这样时间戳加间隔可靠吗？
+                    if let Err(e) = self.add_task(&mut delay_timer, uid.clone(), tid, interval, now + interval) {
                         logging_error!(Type::Timer, "Failed to update task for uid {}: {}", uid, e);
                         timer_map.remove(&uid); // Rollback on failure
                     } else {
@@ -213,34 +225,33 @@ impl Timer {
     /// Generate map of profile UIDs to update intervals
     fn gen_map(&self) -> HashMap<String, i64> {
         let mut new_map = HashMap::new();
-        let cur_time = chrono::Local::now().timestamp();
+        let cur_time = Local::now().timestamp();
         if let Some(items) = Hub::global().latest_schedule() {
-            for (timestamp, actions) in items.iter() {
+            for (timestamp, tasks) in items.iter() {
                 let interval = timestamp - cur_time;
-                for action in actions.iter() {
-                    if let Some(id) = &action.id {
-                        if interval > 0 {
+                for task in tasks.iter() {
+                    let id = task.id.clone();
+                    if interval > 0 {
+                        logging!(
+                            debug,
+                            Type::Timer,
+                            "找到定时更新配置: id={}, interval={}seconds",
+                            id,
+                            interval
+                        );
+                        // 新的配置的时间间隔大于当前的时间间隔，说明不需要更新
+                        if new_map.contains_key(&id) && new_map.get(&id).unwrap() < &interval {
                             logging!(
                                 debug,
                                 Type::Timer,
-                                "找到定时更新配置: id={}, interval={}seconds",
-                                id,
+                                "定时更新配置已存在: id={}, interval={}seconds",
+                                task.id,
                                 interval
                             );
-                            // 新的配置的时间间隔大于当前的时间间隔，说明不需要更新
-                            if new_map.contains_key(id) && new_map.get(id).unwrap() < &interval {
-                                logging!(
-                                    debug,
-                                    Type::Timer,
-                                    "定时更新配置已存在: id={}, interval={}seconds",
-                                    id,
-                                    interval
-                                );
-                                continue;
-                            }
-                            // 这样就不支持在同一个时间戳执行同一个action
-                            new_map.insert(id.clone(), interval);
+                            continue;
                         }
+                        // 这样就不支持在同一个时间戳执行同一个action
+                        new_map.insert(id, interval);
                     }
                 }
             }
@@ -291,13 +302,13 @@ impl Timer {
                 }
                 _ => {
                     // Task exists with same interval, no change needed
-                    logging!(debug, Type::Timer,true, "定时任务保持不变: uid={}", uid);
+                    logging!(debug, Type::Timer, true, "定时任务保持不变: uid={}", uid);
                 }
             }
         }
 
         // Find new tasks to add
-        // 我去，你这taks_id竟然是自增的吗
+        // 我去，你这task_id竟然是自增的吗
         let mut next_id = self.timer_count.load(Ordering::Relaxed);
         let original_id = next_id;
 
@@ -332,6 +343,7 @@ impl Timer {
         uid: String,
         tid: TaskID,
         seconds: i64,
+        timestamp: i64,
     ) -> Result<()> {
         logging!(
             info,
@@ -350,7 +362,7 @@ impl Timer {
             .spawn_async_routine(move || {
                 let uid = uid.clone();
                 async move {
-                    Self::async_task(uid).await;
+                    Self::async_task(uid, timestamp).await;
                 }
             })
             .context("failed to create timer task")?;
@@ -358,85 +370,22 @@ impl Timer {
         delay_timer
             .add_task(task)
             .context("failed to add timer task")?;
-
         Ok(())
     }
 
-    /// Get next update time for a profile
-    // pub fn get_next_update_time(&self, uid: &str) -> Option<i64> {
-    //     logging!(info, Type::Timer, "获取下次更新时间，uid={}", uid);
-
-    //     let timer_map = self.timer_map.read();
-    //     let task = match timer_map.get(uid) {
-    //         Some(t) => t,
-    //         None => {
-    //             logging!(warn, Type::Timer, "找不到对应的定时任务，uid={}", uid);
-    //             return None;
-    //         }
-    //     };
-
-    //     // Get the profile updated timestamp
-    //     let profiles_config = Config::profiles();
-    //     let profiles = profiles_config.latest_ref();
-    //     let items = match profiles.get_items() {
-    //         Some(i) => i,
-    //         None => {
-    //             logging!(warn, Type::Timer, "获取配置列表失败");
-    //             return None;
-    //         }
-    //     };
-
-    //     let profile = match items.iter().find(|item| item.uid.as_deref() == Some(uid)) {
-    //         Some(p) => p,
-    //         None => {
-    //             logging!(warn, Type::Timer, "找不到对应的配置，uid={}", uid);
-    //             return None;
-    //         }
-    //     };
-
-    //     let updated = profile.updated.unwrap_or(0) as i64;
-
-    //     // Calculate next update time
-    //     if updated > 0 && task.interval_minutes > 0 {
-    //         let next_time = updated + (task.interval_minutes as i64 * 60);
-    //         logging!(
-    //             info,
-    //             Type::Timer,
-    //             "计算得到下次更新时间: {}, uid={}",
-    //             next_time,
-    //             uid
-    //         );
-    //         Some(next_time)
-    //     } else {
-    //         logging!(
-    //             warn,
-    //             Type::Timer,
-    //             "更新时间或间隔无效，updated={}, interval={}",
-    //             updated,
-    //             task.interval_minutes
-    //         );
-    //         None
-    //     }
-    // }
-
-    /// Emit update events for frontend notification
-    fn emit_update_event(_uid: &str, _is_start: bool) {
-        #[cfg(any(feature = "verge-dev", feature = "default"))]
-        {
-            if _is_start {
-                super::handle::Handle::notify_profile_update_started(_uid.to_string());
-            } else {
-                super::handle::Handle::notify_profile_update_completed(_uid.to_string());
-            }
-        }
-    }
-    // TODO 感觉可以改成通过任务id来获取Action
     // Async task with better error handling and logging
-    async fn async_task(id: String) {
+    async fn async_task(id: String, timestamp: i64) {
         let task_start = std::time::Instant::now();
         // let task_start = Local::now();
 
-        logging!(info, Type::Timer, "Running timer task for action: {}", id);
+        logging!(
+            info,
+            Type::Timer,
+            true,
+            "Running timer task for action: {}, timestamp: {}",
+            id,
+            timestamp
+        );
         match id.as_str() {
             AUTO_REFRESH_ID => {
                 Hub::global().refresh().await;
@@ -446,42 +395,41 @@ impl Timer {
             lightweight::LIGHT_WEIGHT_TASK_UID => {
                 // logging!(info, Type::Timer, true, "计时器到期，开始进入轻量模式");
                 // lightweight::entry_lightweight_mode();
-
             }
             _ => {
                 match tokio::time::timeout(std::time::Duration::from_secs(40), async {
-            Self::emit_update_event(&id, true);
-            // feat::update_profile(uid.clone(), None, Some(is_current)).await
-            schedule::execute_action_by_id(&id).await
-        })
-        .await
-        {
-            Ok(result) => match result {
-                Ok(_) => {
-                    let duration = task_start.elapsed().as_millis();
-                    logging!(
-                        info,
-                        Type::Timer,
-                        "Timer task completed successfully for id: {} (took {}ms)",
-                        id,
-                        duration
-                    );
+                    // feat::update_profile(uid.clone(), None, Some(is_current)).await
+                    execute::execute_tasks(&id, timestamp).await
+                })
+                .await
+                {
+                    Ok(result) => match result {
+                        Ok(_) => {
+                            let duration = task_start.elapsed().as_millis();
+                            logging!(
+                                info,
+                                Type::Timer,
+                                "Timer task completed successfully for id: {} (took {}ms)",
+                                id,
+                                duration
+                            );
+                        }
+                        Err(e) => {
+                            logging_error!(
+                                Type::Timer,
+                                "Failed to update profile uid {}: {}",
+                                id,
+                                e
+                            );
+                            Handle::notice_message("Error", format!("定时任务执行失败:{}", e));
+                        }
+                    },
+                    Err(_) => {
+                        logging_error!(Type::Timer, false, "Timer task timed out for uid: {}", id);
+                    }
                 }
-                Err(e) => {
-                    logging_error!(Type::Timer, "Failed to update profile uid {}: {}", id, e);
-                }
-            },
-            Err(_) => {
-                logging_error!(Type::Timer, false, "Timer task timed out for uid: {}", id);
             }
         }
-
-        // Emit completed event
-        Self::emit_update_event(&id, false);
-            }
-        }
-
-
     }
 }
 

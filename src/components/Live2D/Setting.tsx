@@ -4,6 +4,7 @@ import { Button } from '../ui/button';
 
 import { invoke } from '@tauri-apps/api/core';
 
+
 interface Props {
     scale: number;
     updateScale: (scale: number) => void;
@@ -25,7 +26,7 @@ const Setting: FC<Props> = ({ scale, updateScale, position, updatePosition }) =>
     }, [modelPosition])
 
     return (
-        <div className="flex flex-col gap-1 mx-3">
+        <div className="flex flex-col gap-2 mx-3 py-2">
             <div className="flex col gap-3 mx-1">
                 <span>Scale</span>
                 <Slider
@@ -68,7 +69,7 @@ const Setting: FC<Props> = ({ scale, updateScale, position, updatePosition }) =>
                 <span>{modelPosition.y}</span>
             </div>
             <div className="flex justify-center w-full">
-                <Button className='w-1/2 h-6' onClick={() => invoke('toggle_main_window')}>关闭Live2D</Button>
+                <Button className='w-1/2 h-6 cursor-pointer' onClick={() => invoke('toggle_main_window')}>关闭Live2D</Button>
             </div>
 
         </div>

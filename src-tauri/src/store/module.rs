@@ -18,5 +18,6 @@ pub trait TaskManager {
     fn get_tasks_by_status(&self, completed: bool) -> Result<Vec<TaskRecord>>;
     fn get_tasks_by_parent_id(&self, parent_id: &str) -> Result<Vec<TaskRecord>>;
     fn get_tasks_by_date_range(&self, start_date: i64, end_date: i64) -> Result<Vec<TaskRecord>>;
+    fn get_uncompleted_tasks_by_date_range(&self, start_date: i64, end_date: i64) -> Result<Vec<TaskRecord>>;
     fn get_all_tasks(&self) -> Result<Vec<TaskRecord>>;
 }

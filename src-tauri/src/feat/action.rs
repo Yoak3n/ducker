@@ -2,30 +2,35 @@ use crate::schema::Action;
 use std::process::Command;
 use tauri_plugin_opener::OpenerExt;
 
-pub async fn execute_action(action: Action) -> Result<(), String> {
+pub async fn execute_action(action: Action) -> Result<String, String> {
     match action.typ.as_str() {
         "open_dir" => {
             open_path(action.command).await?;
+            Ok(format!("open_dir: ok"))
+
         }
         "open_file" => {
             open_path(action.command).await?;
+            Ok(format!("open_file: ok"))
         }
         "open_url" => {
             open_url(action.command).await?;
+            Ok(format!("open_url: ok"))
+
         }
         "exec_command" => {
             if action.wait > 0 {
-                execute_command(action.command, action.args).await?;
+                let output = execute_command(action.command, action.args).await?;
+                Ok(output)
             } else {
-                execute_command_indepent(action.command, action.args).await?;
+                let output = execute_command_indepent(action.command, action.args).await?;
+                Ok(output)
             }
         }
         _ => {
             return Err("未知操作类型".to_string());
         }
     }
-
-    Ok(())
 }
 use crate::core::handle::Handle;
 async fn open_path(path: String) -> Result<(), String> {
