@@ -26,53 +26,55 @@ const Setting: FC<Props> = ({ scale, updateScale, position, updatePosition }) =>
     }, [modelPosition])
 
     return (
-        <div className="flex flex-col gap-2 mx-3 py-2">
-            <div className="flex col gap-3 mx-1">
-                <span>Scale</span>
-                <Slider
-                    defaultValue={[modelScale]}
-                    max={100}
-                    min={10}
-                    step={10}
-                    onValueChange={(value) => setModelScale(value[0])}
-                />
-                <span>{modelScale / 100}</span>
+        <>
+            <div className="flex flex-col gap-1 mx-2 py-1">
+                <div className="flex col gap-3 mx-1">
+                    <span>Scale</span>
+                    <Slider
+                        defaultValue={[modelScale]}
+                        max={100}
+                        min={10}
+                        step={10}
+                        onValueChange={(value) => setModelScale(value[0])}
+                    />
+                    <span>{modelScale / 100}</span>
 
-            </div>
-            <div className="flex col gap-3 mx-1">
-                <span>PosX</span>
-                <Slider
-                    defaultValue={[modelPosition.x]}
-                    max={100}
-                    min={-100}
-                    step={5}
-                    onValueChange={(value) => setModelPosition({
-                        x: value[0],
-                        y: modelPosition.y,
-                    })}
-                />
-                <span>{modelPosition.x}</span>
+                </div>
+                <div className="flex col gap-3 mx-1">
+                    <span>PosX</span>
+                    <Slider
+                        defaultValue={[modelPosition.x]}
+                        max={100}
+                        min={-100}
+                        step={5}
+                        onValueChange={(value) => setModelPosition({
+                            x: value[0],
+                            y: modelPosition.y,
+                        })}
+                    />
+                    <span>{modelPosition.x}</span>
 
+                </div>
+                <div className="flex col gap-3 mx-1">
+                    <span>PosY</span>
+                    <Slider
+                        defaultValue={[position.y]}
+                        max={100}
+                        min={-100}
+                        step={5}
+                        onValueChange={(value) => setModelPosition({
+                            x: modelPosition.x,
+                            y: value[0],
+                        })}
+                    />
+                    <span>{modelPosition.y}</span>
+                </div>
             </div>
-            <div className="flex col gap-3 mx-1">
-                <span>PosY</span>
-                <Slider
-                    defaultValue={[position.y]}
-                    max={100}
-                    min={-100}
-                    step={5}
-                    onValueChange={(value) => setModelPosition({
-                        x: modelPosition.x,
-                        y: value[0],
-                    })}
-                />
-                <span>{modelPosition.y}</span>
-            </div>
-            <div className="flex justify-center w-full">
+
+            <div className="flex justify-center w-full mt-2">
                 <Button className='w-1/2 h-6 cursor-pointer' onClick={() => invoke('toggle_main_window')}>关闭Live2D</Button>
             </div>
-
-        </div>
+        </>
     )
 }
 export default Setting;

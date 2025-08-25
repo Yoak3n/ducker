@@ -219,30 +219,40 @@ export default function TaskModal({ isOpen, onClose, onSave, task, parentTask }:
             autoFocus
           />
         </div>
-
-        <div className="form-group">
-          <label htmlFor="task-value">任务价值</label>
-          <input
-            id="task-value"
-            type="number"
-            value={formData.value || ''}
-            onChange={(e) => handleInputChange('value', e.target.value ? Number(e.target.value) : undefined)}
-            placeholder="请输入任务价值（可选）"
-            min="0"
-            step="1"
-          />
+        <div className="flex justify-between">
+          <div className='flex items-center gap-3 justify-start'>
+            <Checkbox
+              checked={formData.auto}
+              onCheckedChange={(v) => handleInputChange('auto', v)}
+            />
+            自动执行
+          </div>
+          <div className="form-group">
+            <label htmlFor="task-value">任务价值</label>
+            <input
+              id="task-value"
+              type="number"
+              value={formData.value || ''}
+              onChange={(e) => handleInputChange('value', e.target.value ? Number(e.target.value) : undefined)}
+              placeholder="请输入任务价值（可选）"
+              min="0"
+              step="1"
+            />
+          </div>
+          <div className="form-group">
+            <label htmlFor="parent-task">父任务ID</label>
+            <input
+              id="parent-task"
+              type="text"
+              value={formData.parent_id || ''}
+              onChange={(e) => handleInputChange('parent_id', e.target.value || undefined)}
+              placeholder="请输入父任务ID（可选）"
+            />
+          </div>
         </div>
 
-        <div className="form-group">
-          <label htmlFor="parent-task">父任务ID</label>
-          <input
-            id="parent-task"
-            type="text"
-            value={formData.parent_id || ''}
-            onChange={(e) => handleInputChange('parent_id', e.target.value || undefined)}
-            placeholder="请输入父任务ID（可选）"
-          />
-        </div>
+
+
 
         {parentTask && (
           <div className="parent-task-info">
@@ -276,28 +286,6 @@ export default function TaskModal({ isOpen, onClose, onSave, task, parentTask }:
                 ))}
               </SelectContent>
             </Select>
-            {/* {formData.reminderOffset !== 'none' && formData.due_to && (
-              <div className="reminder-container">
-                <div className="datetime-input-wrapper reminder-wrapper">
-                  <input
-                    type="datetime-local"
-                    id="reminder"
-                    value={formData.reminder}
-                    onChange={(e) => handleInputChange('reminder', e.target.value)}
-                    placeholder="提醒时间"
-                    disabled={formData.reminderOffset !== 'custom'}
-                  />
-                </div>
-                {formData.reminder && (
-                  <div className="reminder-time-display">
-                    <span className="reminder-icon">⏰</span>
-                    <span>
-                      提醒时间：{formatDatetime(new Date(formData.reminder))}
-                    </span>
-                  </div>
-                )}
-              </div>
-            )} */}
           </div>
         </div>
 
@@ -310,17 +298,6 @@ export default function TaskModal({ isOpen, onClose, onSave, task, parentTask }:
             />
             <span>已完成</span>
           </label>}
-          <div className='flex items-center gap-3 justify-center'>
-            <Checkbox
-              checked={formData.auto}
-              onCheckedChange={(v) => handleInputChange('auto', v)}
-            />
-            {/* <Label className="flex items-center content-center"> */}
-              自动执行
-            {/* </Label> */}
-          </div>
-
-
         </div>
 
         <div className="advanced-section">

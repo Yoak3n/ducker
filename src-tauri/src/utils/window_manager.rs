@@ -111,11 +111,11 @@ pub fn toggle_window_by_label(label: &str) {
 
 
 pub fn toggle_main_window() {
-    toggle_window_by_label("main");
+    toggle_window_by_label("main")
 }
 
 pub fn toggle_action_window() {
-    toggle_window_by_label("action");
+    toggle_window_by_label("action")
 }
 
 pub fn toggle_dashboard_window() {

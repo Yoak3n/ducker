@@ -143,13 +143,20 @@ pub fn run() {
             #[cfg(target_os = "windows")]
             core::cmd::action::execute_actions,
             #[cfg(target_os = "windows")]
+            core::cmd::action::execute_single_action,
+            #[cfg(target_os = "windows")]
             core::cmd::action::create_action,
             #[cfg(target_os = "windows")]
             core::cmd::action::get_action,
             #[cfg(target_os = "windows")]
+            core::cmd::action::delete_action,
+            #[cfg(target_os = "windows")]
+            core::cmd::action::update_action,
+            #[cfg(target_os = "windows")]
             core::cmd::action::get_all_actions,
             #[cfg(target_os = "windows")]
             core::cmd::action::select_file,
+            
             // Tasks
             core::cmd::task::create_task,
             core::cmd::task::gen_random_task_id,

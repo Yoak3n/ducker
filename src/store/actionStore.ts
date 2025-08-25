@@ -135,6 +135,10 @@ export const useActionStore = create<ActionStore>()(
 
         updateAction: async (id, actionData) => {
           // 验证动作
+          if (!id) {
+            set({ error: '动作ID不能为空' }, false);
+            throw new Error('动作ID不能为空');
+          }
           const currentAction = get().getActionById(id);
           if (!currentAction) throw new Error('动作不存在');
 
@@ -144,7 +148,6 @@ export const useActionStore = create<ActionStore>()(
             url: currentAction.url,
             ...actionData
           };
-
           const errors = get().validateAction(fullActionData);
           if (errors.length > 0) {
             set({ error: errors.join(', ') }, false, 'action/updateAction/validation');
@@ -160,7 +163,6 @@ export const useActionStore = create<ActionStore>()(
 
             // 重新获取动作列表以确保数据同步
             const actions = await actionApi.get_all_actions();
-
             set(state => ({
               actions: actions || [],
               currentAction: state.currentAction?.id === id ? updatedAction : state.currentAction,
@@ -231,46 +233,14 @@ export const useActionStore = create<ActionStore>()(
           set({ executing: true, error: null }, false, 'action/executeSingleAction/start');
           try {
             let result: ExecutionResult;
-
-            // 模拟API调用延迟
-            await new Promise(resolve => setTimeout(resolve, 500));
-
-            switch (action.type) {
-              case 'exec_command':
-                if (!action.command) throw new Error('命令不能为空');
-                // 模拟命令执行
-                console.log(`模拟执行命令: ${action.command}`);
-                result = {
-                  actionId: action.id,
-                  success: true,
-                  output: `模拟执行命令: ${action.command}\n执行成功！`,
-                  executedAt: new Date().toISOString(),
-                };
-                break;
-
-              case 'open_url':
-                if (!action.url) throw new Error('URL不能为空');
-                // 模拟打开URL
-                console.log(`模拟打开URL: ${action.url}`);
-                // 如果在浏览器环境中，可以尝试实际打开URL
-                if (typeof window !== 'undefined') {
-                  try {
-                    window.open(action.url, '_blank');
-                  } catch (e) {
-                    console.error('无法打开URL:', e);
-                  }
-                }
-                result = {
-                  actionId: action.id,
-                  success: true,
-                  executedAt: new Date().toISOString(),
-                };
-                break;
-
-              default:
-                throw new Error(`不支持的动作类型: ${action.type}`);
+            // 调用 Rust 命令执行函数
+            let executionMsg = await actionApi.execute_single_action(action);
+            result = {
+              actionId: action.id,
+              success: true,
+              output: executionMsg,
+              executedAt: new Date().toISOString(),
             }
-
             // 添加执行结果
             set(state => ({
               executionResults: [result, ...state.executionResults],

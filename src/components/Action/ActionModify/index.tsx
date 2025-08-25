@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams,useNavigate } from 'react-router-dom';
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
@@ -7,13 +7,13 @@ import { useForm } from "react-hook-form"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Tooltip, TooltipContent, TooltipTrigger, } from "@/components/ui/tooltip"
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, } from "@/components/ui/card"
+import { Card, CardAction, CardContent, CardHeader, CardTitle, } from "@/components/ui/card"
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue, } from "@/components/ui/select"
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from "@/components/ui/skeleton"
-import { toast } from 'sonner';
+import { toast } from "sonner"
 
 import { useActionStore } from '@/store';
 import { open_file_select_dialog, simplifyPath } from '@/utils';
@@ -34,7 +34,9 @@ const ActionModify: React.FC = () => {
     const [isFileType, setIsFileType] = useState<boolean>(true);
     const [isUrlType, setIsUrlType] = useState<boolean>(false);
     const [isCommandType, setIsCommandType] = useState<boolean>(false);
+
     const actionStore = useActionStore();
+    const navigate = useNavigate();
     const params = useParams()
     const id = params.id;
 
@@ -50,7 +52,6 @@ const ActionModify: React.FC = () => {
     })
 
     const handleTypeChange = useCallback((type: string) => {
-        console.log("type", type)
         setIsFileType(type === "open_file" || type === "open_dir");
         setIsUrlType(type === "open_url");
         setIsCommandType(type === "exec_command");
@@ -60,9 +61,12 @@ const ActionModify: React.FC = () => {
         const action = id !== "add" ? actionStore.actions.find(action => action.id === id) : null;
         return action;
     }, [id, actionStore.actions]);
+    const isAddAction = useMemo(() => {
+        return id === "add";
+    }, [id]);
 
     useEffect(() => {
-        if (id === "add") {
+        if (isAddAction) {
             const defaultValues = {
                 name: "",
                 type: "open_file" as const,
@@ -95,15 +99,23 @@ const ActionModify: React.FC = () => {
         { value: "open_url", label: "Open URL" },
     ];
     const onSubmit = (values: z.infer<typeof formSchema>) => {
-        console.log(values)
         const args = values.args?.split(",")
         const actionData = { ...values, args, type: values.type as Action['type'] }
-        actionStore.createAction(actionData).then(() => {
-            // toast.success("Action has been created.")
-            console.log("Action created successfully", actionData);
-        }).catch(e => {
-            toast.error(e)
-        })
+        if (isAddAction) {
+            actionStore.createAction(actionData).then(() => {
+                navigate("/action");
+                toast.success("Action created successfully");
+            }).catch(e => {
+                console.error(e)
+            })
+        } else {
+            actionStore.updateAction(id!, actionData).then(() => {
+                navigate("/action");
+                toast.success("Action updated successfully");
+            }).catch(e => {
+                console.error(e)
+            })
+        }
     }
 
     const handleSelectFile = useCallback(async () => {
@@ -114,7 +126,16 @@ const ActionModify: React.FC = () => {
 
 
     return (
+        <>
         <Card className="action-modify" >
+            <CardHeader>
+                <CardTitle>{isAddAction ? "Add Action" : "Modify Action"}</CardTitle>
+                <CardAction className='cursor-pointer' onClick={() => navigate("/action")}>
+                    <span className="material-symbols-outlined">
+                        arrow_back
+                    </span>
+                </CardAction>
+            </CardHeader>
             <CardContent>
                 <Form {...form} >
                     <form
@@ -266,15 +287,14 @@ const ActionModify: React.FC = () => {
                                 )}
                             />
                         </div>
-                        <div className="divider">
+                        <div className="flex mt-5">
                             <Button className="col-span-2 w-1/2 mx-auto cursor-pointer">Submit</Button>
                         </div>
-
-
                     </form>
                 </Form>
             </CardContent>
         </Card>
+        </>
     );
 };
 

@@ -1,12 +1,19 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
+import {
+    ContextMenu,
+    ContextMenuTrigger,
+    ContextMenuContent,
+    ContextMenuItem,
+} from '@/components/ui/context-menu'
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
 import { actionTypes } from "@/types";
 import { useActionStore } from "@/store";
 import ActionCard from "../ActionCard";
+import { toast } from "sonner";
 
 
 const ActionsList = () => {
@@ -15,18 +22,16 @@ const ActionsList = () => {
     // const [control, setControl] = useState(false);
     const navigate = useNavigate()
     const actionStore = useActionStore()
-
+    const loadActions = async () => {
+        try {
+            await actionStore.fetchActions();
+        } catch (error) {
+            console.error('加载动作失败:', error);
+        }
+    };
 
     useEffect(() => {
-        const loadActions = async () => {
-            try {
-                await actionStore.fetchActions();
-            } catch (error) {
-                console.error('加载动作失败:', error);
-            }
-        };
         loadActions();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
 
 
@@ -47,6 +52,7 @@ const ActionsList = () => {
                 <Button variant="outline" size="icon" onClick={(e) => {
                     e.preventDefault();
                     navigate("/action/modify/add");
+                    // loadActions();
                 }}>
                     <span className="material-symbols-outlined">
                         add
@@ -71,14 +77,41 @@ const ActionsList = () => {
             </div>
             <div className="grid grid-cols-3 gap-4">
                 {
-                    actionStore.actions.map(action => (
-                        <ActionCard
-                            key={action.id}
-                            action={action}
-                            selectable
-                            onSelect={() => navigate(`/action/modify/${action.id}`)}
+                    actionStore.actions.filter(action => {
+                        if (selectedType === "all") {
+                            return action.name.toLowerCase().includes(searchTerm.toLowerCase())
+                        }
+                        return action.type === selectedType && action.name.toLowerCase().includes(searchTerm.toLowerCase())
+                    }).map(action => (
+                        <ContextMenu key={action.id}>
+                            <ContextMenuTrigger>
+                                <ActionCard
+                                    key={action.id}
+                                    action={action}
+                                    selectable
+                                    onSelect={() => navigate(`/action/modify/${action.id}`)}
+                                />
+                            </ContextMenuTrigger>
+                            <ContextMenuContent>
+                                <ContextMenuItem onClick={
+                                    async (e) => {
+                                        e.preventDefault();
+                                        const result = await actionStore.executeSingleAction(action)
+                                        if (result.success) {
+                                            toast.success('动作执行成功');
+                                        } else {
+                                            toast.error(`动作执行失败: ${result.error}`);
+                                        }
+                                    }
+                                    }>
+                                    运行
+                                </ContextMenuItem>
+                                <ContextMenuItem className="text-red-500" onClick={() => actionStore.deleteAction(action.id)}>
+                                    删除
+                                </ContextMenuItem>
+                            </ContextMenuContent>
+                        </ContextMenu>
 
-                        />
                     ))
                 }
             </div>

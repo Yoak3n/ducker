@@ -8,13 +8,18 @@ use tauri::{async_runtime, AppHandle, State};
 use tokio::time::timeout;
 
 #[tauri::command]
+pub async fn execute_single_action(action: Action) -> Result<String, String> {
+    execute_action(action).await
+}
+
+
+#[tauri::command]
 pub async fn execute_actions(actions: Vec<Action>) -> Result<(), String> {
     for action in actions {
         // 检查 action 类型是否需要同步执行
         let is_sync = action.wait > 0;
         if is_sync {
             // 同步执行 - 等待任务完成
-            println!("同步执行任务: {}", &action.name);
             let max_retries = action.retry.unwrap_or(0); // 最大重试次数
             let mut retry_count = 0;
             let mut last_error = String::new();
@@ -109,6 +114,18 @@ pub async fn execute_actions(actions: Vec<Action>) -> Result<(), String> {
     Ok(())
 }
 
+#[tauri::command]
+pub async fn create_action(state: State<'_, AppState>, action: Action) -> Result<String, String> {
+    let res = state.db.create_action(&action);
+    match res {
+        Ok(data) => Ok(data.id),
+        Err(e) => {
+            println!("创建action失败: {:?}", e);
+            Err(e.to_string())
+        }
+    }
+}
+
 use crate::store::module::ActionManager;
 #[tauri::command]
 pub async fn get_action(state: State<'_, AppState>, id: &str) -> Result<Action, String> {
@@ -126,12 +143,26 @@ pub async fn get_action(state: State<'_, AppState>, id: &str) -> Result<Action, 
 }
 
 #[tauri::command]
-pub async fn create_action(state: State<'_, AppState>, action: Action) -> Result<String, String> {
-    let res = state.db.create_action(&action);
+pub async fn update_action(state: State<'_, AppState>,id:&str,  action: Action) -> Result<Action, String> {
+    let res = state.db.update_action(id,&action);
     match res {
-        Ok(data) => Ok(data.id),
+        Ok(data) => {
+            let view = Action::try_from(data).unwrap();
+            Ok(view)
+        },
         Err(e) => {
-            println!("创建action失败: {:?}", e);
+            println!("更新action失败: {:?}", e);
+            Err(e.to_string())
+        }
+    }
+}
+
+#[tauri::command]
+pub async fn delete_action(state: State<'_, AppState>, id: &str) -> Result<(), String> {
+    let res = state.db.delete_action(id);
+    match res {
+        Ok(_) => Ok(()),
+        Err(e) => {
             Err(e.to_string())
         }
     }
@@ -168,7 +199,6 @@ pub async fn get_all_actions(state: State<'_, AppState>) -> Result<Vec<Action>, 
             Ok(views)
         }
         Err(e) => {
-            println!("获取actions失败: {:?}", e);
             Err(e.to_string())
         }
     }

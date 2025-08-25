@@ -162,7 +162,18 @@ impl ActionManager for Database {
                 &action.timeout,
                 id
             ))?;
-        self.get_action(id)
+        let record = ActionRecord {
+            id: id.to_string(),
+            name: action.name.clone(),
+            desc: action.desc.clone(),
+            wait: action.wait,
+            command: action.command.clone(),
+            args: args_text.clone(),
+            typ: ActionType::try_from(action.typ.as_str())?,
+            retry: action.retry,
+            timeout: action.timeout,
+        };
+        Ok(record)
     }
 
     fn delete_action(&self, id: &str) -> Result<()> {
@@ -287,12 +298,11 @@ impl ActionManager for Database {
                 timeout,
             })
         })?;
-
+        
         let mut actions = Vec::new();
         for action in action_iter {
             actions.push(action?);
         }
-
         Ok(actions)
     }
 }

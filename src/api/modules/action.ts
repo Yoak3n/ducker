@@ -13,6 +13,16 @@ async function execute_actions(actions: Action[]|undefined) {
     }
 }
 
+async function execute_single_action(action: Action) {
+    try {
+        const result = await invoke<string>('execute_single_action', { action });
+        return result;
+    } catch (err) {
+        console.error('Error executing single action:', err);
+        throw err;
+    }
+}
+
 async function create_action(action: CreateActionData): Promise<Action> {
     return await invoke<Action>('create_action', { action });
 }
@@ -37,6 +47,7 @@ async function get_all_actions() {
 
 export {
     execute_actions,
+    execute_single_action,
     create_action,
     update_action,
     delete_action,
