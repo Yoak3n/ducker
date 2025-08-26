@@ -6,7 +6,7 @@ mod schema;
 mod service;
 mod store;
 mod utils;
-
+mod config;
 use std::sync::{Arc, Mutex, Once};
 
 use tauri::{AppHandle, Manager};
@@ -166,7 +166,11 @@ pub fn run() {
             core::cmd::task::get_all_tasks,
             core::cmd::task::get_tasks_by_date_range,
             core::cmd::task::get_tasks_by_status,
-            core::cmd::task::get_tasks
+            core::cmd::task::get_tasks,
+            // Config
+            core::cmd::config::save_config,
+            core::cmd::config::get_config,
+            core::cmd::config::update_config
         ])
         .build(tauri::generate_context!())
         .expect("error while running tauri application");

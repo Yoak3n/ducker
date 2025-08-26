@@ -10,12 +10,15 @@ import "./index.css"
 
 const SettingLayout: FC = () => {
   return (
-    <SidebarProvider >
-      <AppSidebar />
-      <div className="setting-layout">
-        <SettingItems />
-      </div>
-    </SidebarProvider>
+    <div className="setting">
+      <SidebarProvider defaultOpen={false} className="text-lg">
+        <AppSidebar />
+        <div className="setting-layout">
+          <SettingItems />
+        </div>
+      </SidebarProvider>
+    </div>
+
   )
 }
 

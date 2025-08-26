@@ -1,5 +1,5 @@
 // 统一类型定义
-import type { Task, Action, TaskData, CreateActionData, UpdateActionData } from "@/types";
+import type { Task, Action, TaskData, CreateActionData, UpdateActionData, Config } from "@/types";
 export type { Task, Action, TaskData, CreateActionData, UpdateActionData }
 
 // 过滤器类型
@@ -16,6 +16,8 @@ export interface ActionFilters {
   type?: Action['type'];
   search?: string;
 }
+
+export interface ConfigFilters {}
 
 // 统计信息类型
 export interface TaskStats {
@@ -74,4 +76,8 @@ export interface Live2DState extends BaseState {
   height: number;
   position: { x: number; y: number };
   scale: number;
+}
+
+export interface ConfigState extends BaseState, Config {
+  filters: ConfigFilters;
 }

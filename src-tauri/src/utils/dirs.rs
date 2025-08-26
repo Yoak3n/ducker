@@ -1,11 +1,14 @@
 use std::path::PathBuf;
-
+use tauri::Manager;
 use anyhow::Result;
 use once_cell::sync::OnceCell;
+
+use crate::core::handle;
 
 // use crate::core::handle;
 
 pub static SETUP_CONFIG: &str = "config.yaml";
+pub static APP_ID: &str = "com.Yoaken.ducker";
 pub static PORTABLE_FLAG: OnceCell<bool> = OnceCell::new();
 
 pub fn init_portable_flag() -> Result<()> {
@@ -23,21 +26,70 @@ pub fn init_portable_flag() -> Result<()> {
     Ok(())
 }
 pub fn app_home_dir() -> Result<PathBuf> {
-    use std::env::current_exe;
-    let exe_path = current_exe()?;
-    let install_dir = if cfg!(target_os = "macos") {
-        // macOS: 可执行文件位于 .app/Contents/MacOS/ 下
-        exe_path
-            .parent() // MacOS 目录
-            .and_then(|p| p.parent()) // Contents 目录
-            .and_then(|p| p.parent()) // .app 目录
-            .unwrap()
-            .to_path_buf()
-    } else {
-        // Windows 和 Linux: 可执行文件在安装目录的子目录或根目录
-        exe_path.parent().unwrap().to_path_buf()
+    use tauri::utils::platform::current_exe;
+    let flag = PORTABLE_FLAG.get().unwrap_or(&false);
+    if *flag {
+        let app_exe = current_exe()?;
+        let app_exe = dunce::canonicalize(app_exe)?;
+        let app_dir = app_exe
+            .parent()
+            .ok_or(anyhow::anyhow!("failed to get the portable app dir"))?;
+        return Ok(PathBuf::from(app_dir).join(".config").join(APP_ID));
+    }
+    let app_handle = match handle::Handle::global().app_handle() {
+        Some(handle) => handle,
+        None => {
+            log::warn!(target: "app", "app_handle not initialized, using default path");
+            // 使用可执行文件目录作为备用
+            let exe_path = tauri::utils::platform::current_exe()?;
+            let exe_dir = exe_path
+                .parent()
+                .ok_or(anyhow::anyhow!("failed to get executable directory"))?;
+
+            // 使用系统临时目录 + 应用ID
+            #[cfg(target_os = "windows")]
+            {
+                if let Some(local_app_data) = std::env::var_os("LOCALAPPDATA") {
+                    let path = PathBuf::from(local_app_data).join(APP_ID);
+                    return Ok(path);
+                }
+            }
+
+            #[cfg(target_os = "macos")]
+            {
+                if let Some(home) = std::env::var_os("HOME") {
+                    let path = PathBuf::from(home)
+                        .join("Library")
+                        .join("Application Support")
+                        .join(APP_ID);
+                    return Ok(path);
+                }
+            }
+
+            #[cfg(target_os = "linux")]
+            {
+                if let Some(home) = std::env::var_os("HOME") {
+                    let path = PathBuf::from(home)
+                        .join(".local")
+                        .join("share")
+                        .join(APP_ID);
+                    return Ok(path);
+                }
+            }
+
+            // 如果无法获取系统目录，则回退到可执行文件目录
+            let fallback_dir = PathBuf::from(exe_dir).join(".config").join(APP_ID);
+            log::warn!(target: "app", "Using fallback data directory: {fallback_dir:?}");
+            return Ok(fallback_dir);
+        }
     };
-    Ok(install_dir)
+    match app_handle.path().data_dir() {
+        Ok(dir) => Ok(dir.join(APP_ID)),
+        Err(e) => {
+            log::error!(target: "app", "Failed to get the app home directory: {e}");
+            Err(anyhow::anyhow!("Failed to get the app homedirectory"))
+        }
+    }
 }
 
 pub fn config_path() -> Result<PathBuf> {

@@ -21,10 +21,13 @@ const ActionsList = () => {
     const [selectedType, setSelectedType] = useState("all");
     // const [control, setControl] = useState(false);
     const navigate = useNavigate()
-    const actionStore = useActionStore()
+    const fetchActions = useActionStore(state=>state.fetchActions)
+    const executeSingleAction = useActionStore(state=>state.executeSingleAction)
+    const deleteAction = useActionStore(state=>state.deleteAction)
+    const actions = useActionStore(state=>state.actions)
     const loadActions = async () => {
         try {
-            await actionStore.fetchActions();
+            await fetchActions();
         } catch (error) {
             console.error('加载动作失败:', error);
         }
@@ -77,7 +80,7 @@ const ActionsList = () => {
             </div>
             <div className="grid grid-cols-3 gap-4">
                 {
-                    actionStore.actions.filter(action => {
+                    actions.filter(action => {
                         if (selectedType === "all") {
                             return action.name.toLowerCase().includes(searchTerm.toLowerCase())
                         }
@@ -96,7 +99,7 @@ const ActionsList = () => {
                                 <ContextMenuItem onClick={
                                     async (e) => {
                                         e.preventDefault();
-                                        const result = await actionStore.executeSingleAction(action)
+                                        const result = await executeSingleAction(action)
                                         if (result.success) {
                                             toast.success('动作执行成功');
                                         } else {
@@ -106,7 +109,7 @@ const ActionsList = () => {
                                     }>
                                     运行
                                 </ContextMenuItem>
-                                <ContextMenuItem className="text-red-500" onClick={() => actionStore.deleteAction(action.id)}>
+                                <ContextMenuItem className="text-red-500" onClick={() => deleteAction(action.id)}>
                                     删除
                                 </ContextMenuItem>
                             </ContextMenuContent>

@@ -1,3 +1,12 @@
+.setting {
+    font-size: large;
+    width: 100%;
+
+    .setting-layout {
+        width: 100%;
+    }
+}
+
 .float_trigger {
     position: absolute;
     cursor: pointer;
@@ -5,20 +14,33 @@
     right: -1rem;
     z-index: 1000;
 }
-.setting-item{
-    width: 100%;
-    .setting-item-title{
-        font-size: 1.2rem;
-        font-weight: 600;
-        margin-bottom: 1rem;
-        width: 100%;
-        &::after{
-            content: '';
-            display: block;
-            background: #000;
-            width: 100%;
-            height: 1px;
-            margin-top: 0.5rem;
+
+.setting-item {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    padding: 24px 32px;
+    margin-bottom: 24px;
+    transition: box-shadow 0.2s;
+
+    .setting-item-title-wrapper {
+        display: flex;
+        .setting-item-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: #222;
+            letter-spacing: 0.02em;
+
+            &::after {
+                content: '';
+                display: block;
+                background: #000;
+                width: 110%;
+                height: 1px;
+                margin-top: 0.5rem;
+            }
         }
     }
+
 }

@@ -4,7 +4,7 @@
 export { useAppStore } from './appStore';
 export { useTaskStore } from './taskStore';
 export { useActionStore } from './actionStore';
-
+export { useConfigStore } from './configStore';
 // 导出类型
 export type {
   // 基础类型
@@ -40,11 +40,13 @@ export type {
 import { useAppStore } from './appStore';
 import { useTaskStore } from './taskStore';
 import { useActionStore } from './actionStore';
+import { useConfigStore } from './configStore';
 export const getAllStores = () => {
   return {
     app: useAppStore.getState(),
     task: useTaskStore.getState(),
     action: useActionStore.getState(),
+    config: useConfigStore.getState(),
   };
 };
 
@@ -55,6 +57,7 @@ export const resetAllStores = () => {
   useAppStore.getState().reset();
   useTaskStore.getState().reset();
   useActionStore.getState().reset();
+  useConfigStore.getState().reset();
 };
 
 /**
@@ -76,6 +79,9 @@ export const persistStoreState = () => {
       action: {
         filters: stores.action.filters,
       },
+      // config: {
+      //   filters: stores.config.silent_launch,
+      // }
     };
     localStorage.setItem('ducker-store-state', JSON.stringify(persistData));
   } catch (error) {
@@ -108,6 +114,12 @@ export const restoreStoreState = () => {
     if (persistData.action?.filters) {
       useActionStore.getState().setFilters(persistData.action.filters);
     }
+
+    // 其实config的内容存储在配置文件
+    // if (persistData.config?.filters) {
+    //   useConfigStore.getState().setConfig({ silent_launch: persistData.config.filters });
+    // }
+
   } catch (error) {
     console.warn('Failed to restore store state:', error);
   }
@@ -135,6 +147,12 @@ export const setupAutoPersist = () => {
     (state) => state.filters,
     () => persistStoreState()
   );
+
+  // useConfigStore.subscribe(
+  //   (state) => state.silent_launch,
+  //   () => persistStoreState()
+  // );
+
 };
 
 /**
@@ -143,6 +161,7 @@ export const setupAutoPersist = () => {
 export const getGlobalStats = () => {
   const taskStats = useTaskStore.getState().getTaskStats();
   const actionStats = useActionStore.getState().getActionStats();
+  // const appStore = useAppStore.getState();
   
   return {
     tasks: taskStats,
@@ -164,6 +183,7 @@ export const clearAllErrors = () => {
   useAppStore.getState().clearError();
   useTaskStore.getState().clearError();
   useActionStore.getState().clearError();
+  useConfigStore.getState().clearError();
 };
 
 /**
@@ -171,7 +191,7 @@ export const clearAllErrors = () => {
  */
 export const isAnyStoreLoading = () => {
   const stores = getAllStores();
-  return stores.app.loading || stores.task.loading || stores.action.loading || stores.action.executing;
+  return stores.app.loading || stores.task.loading || stores.action.loading || stores.action.executing || stores.config.loading;
 };
 
 /**
@@ -184,7 +204,7 @@ export const getAllErrors = () => {
   if (stores.app.error) errors.push({ store: 'app', error: stores.app.error });
   if (stores.task.error) errors.push({ store: 'task', error: stores.task.error });
   if (stores.action.error) errors.push({ store: 'action', error: stores.action.error });
-  
+  if (stores.config.error) errors.push({ store: 'config', error: stores.config.error });
   return errors;
 };
 
