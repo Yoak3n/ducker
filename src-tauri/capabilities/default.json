@@ -6,7 +6,7 @@
     "main",
     "dashboard",
     "action",
-    "settings"
+    "setting"
 
   ],
   "permissions": [

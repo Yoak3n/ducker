@@ -6,9 +6,11 @@
     "linux"
   ],
   "windows": [
-    "main"
+    "setting"
   ],
   "permissions": [
-    "global-shortcut:default"
+    "autostart:allow-enable",
+    "autostart:allow-disable",
+    "autostart:allow-is-enabled"
   ]
 }

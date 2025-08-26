@@ -1,42 +1,45 @@
 use std::collections::HashMap;
 
-use tauri::Manager;
-use chrono::{Local,TimeZone, Datelike};
 use crate::{
     core::handle::Handle,
     logging,
     schema::{
-        state::AppState, 
+        state::AppState,
         task::{TaskRecord, TaskView},
     },
     store::module::TaskManager,
     utils::logging::Type,
 };
+use chrono::{Datelike, Local, TimeZone};
+use tauri::Manager;
 
-fn get_uncompleted_tasks_by_date_range_timestamp(start_date: i64, end_date: i64) -> Vec<TaskRecord> {
+fn get_uncompleted_tasks_by_date_range_timestamp(
+    start_date: i64,
+    end_date: i64,
+) -> Vec<TaskRecord> {
     let app_handle = Handle::global().app_handle().unwrap();
-    let db = app_handle.state::<AppState>().db.clone();
-
-    let res = db.get_uncompleted_tasks_by_date_range(start_date, end_date);
+    let state = app_handle.state::<AppState>();
+    let db_guard = state.db.lock().unwrap();
+    let res = db_guard.get_uncompleted_tasks_by_date_range(start_date, end_date);
     res.unwrap_or_else(|e| {
         logging!(
-                warn,
-                Type::Database,
-                "get_tasks_by_date_range_timestamp error: {}",
-                e
-            );
+            warn,
+            Type::Database,
+            "get_tasks_by_date_range_timestamp error: {}",
+            e
+        );
         Vec::new()
     })
 }
 
-
-pub fn create_scheduled_tasks()-> HashMap<i64, Vec<TaskView>> {
+pub fn create_scheduled_tasks() -> HashMap<i64, Vec<TaskView>> {
     let now = Local::now();
     // 获取一分钟前开始的任务，防止某些任务未执行而因刷新被删除
     let start_date = now.timestamp() - 60;
     let end_of_day = Local
         .with_ymd_and_hms(now.year(), now.month(), now.day(), 23, 59, 59)
-        .unwrap().timestamp();
+        .unwrap()
+        .timestamp();
     // 考虑一下这一秒的刷新
     if start_date == end_of_day {
         return HashMap::new();
@@ -51,8 +54,10 @@ pub fn create_scheduled_tasks()-> HashMap<i64, Vec<TaskView>> {
             continue;
         }
         let task_view = TaskView::try_from((task, app_state.inner())).unwrap();
-        t2i_map.entry(task.due_to).or_insert_with(Vec::new).push(task_view);
+        t2i_map
+            .entry(task.due_to)
+            .or_insert_with(Vec::new)
+            .push(task_view);
     }
     t2i_map
 }
-

@@ -1,6 +1,10 @@
 use crate::{
     // config::Config,
-    core::{handle, timer::Timer, tray::Tray}, log_err, logging, schema::{state::LightWeightState, AppState}, utils::logging::Type
+    core::{handle, timer::Timer, tray::Tray},
+    log_err,
+    logging,
+    schema::{state::LightWeightState, AppState},
+    utils::logging::Type,
 };
 
 #[cfg(target_os = "macos")]
@@ -81,7 +85,7 @@ pub fn auto_lightweight_mode_init() {
         let is_silent_start = false;
         // { Config::verge().latest_ref().enable_silent_start }.unwrap_or(false);
         let enable_auto = true;
-            // { Config::verge().latest_ref().enable_auto_light_weight_mode }.unwrap_or(false);
+        // { Config::verge().latest_ref().enable_auto_light_weight_mode }.unwrap_or(false);
 
         if enable_auto && !is_silent_start {
             logging!(

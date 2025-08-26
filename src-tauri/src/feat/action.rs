@@ -7,7 +7,6 @@ pub async fn execute_action(action: Action) -> Result<String, String> {
         "open_dir" => {
             open_path(action.command).await?;
             Ok(format!("open_dir: ok"))
-
         }
         "open_file" => {
             open_path(action.command).await?;
@@ -16,7 +15,6 @@ pub async fn execute_action(action: Action) -> Result<String, String> {
         "open_url" => {
             open_url(action.command).await?;
             Ok(format!("open_url: ok"))
-
         }
         "exec_command" => {
             if action.wait > 0 {

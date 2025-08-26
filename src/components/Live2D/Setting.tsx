@@ -27,7 +27,7 @@ const Setting: FC<Props> = ({ scale, updateScale, position, updatePosition }) =>
 
     return (
         <>
-            <div className="flex flex-col gap-1 mx-2 py-1">
+            <div className="flex flex-col gap-1 mx-3 py-1">
                 <div className="flex col gap-3 mx-1">
                     <span>Scale</span>
                     <Slider
@@ -55,7 +55,7 @@ const Setting: FC<Props> = ({ scale, updateScale, position, updatePosition }) =>
                     <span>{modelPosition.x}</span>
 
                 </div>
-                <div className="flex col gap-3 mx-1">
+                <div className="flex col gap-3 px-1">
                     <span>PosY</span>
                     <Slider
                         defaultValue={[position.y]}

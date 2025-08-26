@@ -1,16 +1,12 @@
-
-use std::sync::{Arc, Mutex, Once, OnceLock};
-
-use crate::{logging, utils::logging::Type};
 use crate::store::db::Database;
+use crate::{logging, utils::logging::Type};
+use std::sync::{Arc, Mutex, Once, OnceLock};
 
 #[derive(Clone)]
 pub struct AppState {
-    pub db: Arc<Database>,
+    pub db: Arc<Mutex<Database>>,
     pub lightweight: Arc<Mutex<LightWeightState>>,
 }
-
-
 
 #[derive(Clone)]
 pub struct LightWeightState {

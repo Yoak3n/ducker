@@ -180,11 +180,20 @@ impl Timer {
 
                     timer_map.insert(uid.clone(), task);
 
-                    if let Err(e) = self.add_task(&mut delay_timer, uid.clone(), tid, interval, now + interval) {
+                    if let Err(e) =
+                        self.add_task(&mut delay_timer, uid.clone(), tid, interval, now + interval)
+                    {
                         logging_error!(Type::Timer, "Failed to add task for uid {}: {}", uid, e);
                         timer_map.remove(&uid); // Rollback on failure
                     } else {
-                        logging!(debug, Type::Timer, "Added task {} for uid {} at {}", tid, uid, now + interval);
+                        logging!(
+                            debug,
+                            Type::Timer,
+                            "Added task {} for uid {} at {}",
+                            tid,
+                            uid,
+                            now + interval
+                        );
                     }
                 }
                 DiffFlag::Mod(tid, interval) => {
@@ -209,7 +218,9 @@ impl Timer {
 
                     timer_map.insert(uid.clone(), task);
                     // 这样时间戳加间隔可靠吗？
-                    if let Err(e) = self.add_task(&mut delay_timer, uid.clone(), tid, interval, now + interval) {
+                    if let Err(e) =
+                        self.add_task(&mut delay_timer, uid.clone(), tid, interval, now + interval)
+                    {
                         logging_error!(Type::Timer, "Failed to update task for uid {}: {}", uid, e);
                         timer_map.remove(&uid); // Rollback on failure
                     } else {

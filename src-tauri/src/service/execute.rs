@@ -3,16 +3,12 @@ use std::time::Duration;
 use tauri::async_runtime;
 
 use crate::{
-    feat::action::execute_action,
-    logging,
-    schema::{action::Action},
-    service::hub::Hub,
-    core::handle::Handle,
-    utils::logging::Type,
+    core::handle::Handle, feat::action::execute_action, logging, schema::action::Action,
+    service::hub::Hub, utils::logging::Type,
 };
 use tokio::time::timeout;
 
-pub async fn execute_single_action(action: &Action) ->Result<(),String>{
+pub async fn execute_single_action(action: &Action) -> Result<(), String> {
     let is_sync = action.wait > 0;
     Ok(if is_sync {
         // 同步执行 - 等待任务完成
@@ -52,7 +48,9 @@ pub async fn execute_single_action(action: &Action) ->Result<(),String>{
                                     Type::Service,
                                     true,
                                     "任务执行失败，正在重试 ({}/{}): {}",
-                                    retry_count, max_retries, &last_error
+                                    retry_count,
+                                    max_retries,
+                                    &last_error
                                 );
                                 tokio::time::sleep(tokio::time::Duration::from_millis(1000)).await;
                             }
@@ -127,14 +125,14 @@ pub async fn execute_single_action(action: &Action) ->Result<(),String>{
     })
 }
 
-pub async fn execute_plural_actions(actions: Vec<Action>) -> Result<(),String> {
+pub async fn execute_plural_actions(actions: Vec<Action>) -> Result<(), String> {
     for action in actions {
         let _: () = execute_single_action(&action).await?;
     }
     return Ok(());
 }
 
-pub async fn execute_tasks(id: &str, ts: i64) -> Result<(),String> {
+pub async fn execute_tasks(id: &str, ts: i64) -> Result<(), String> {
     let tasks = Hub::global().get_schedule(id, ts).unwrap_or_default();
     if tasks.is_empty() {
         return Ok(());
@@ -145,6 +143,6 @@ pub async fn execute_tasks(id: &str, ts: i64) -> Result<(),String> {
         tasks_name.push(task.name.clone());
         let _: () = execute_plural_actions(actions).await?;
     }
-    Handle::notice_message("Task", format!("任务{}执行完成",tasks_name.join(",")));
+    Handle::notice_message("Task", format!("任务{}执行完成", tasks_name.join(",")));
     Ok(())
 }

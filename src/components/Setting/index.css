@@ -1,0 +1,24 @@
+.float_trigger {
+    position: absolute;
+    cursor: pointer;
+    top: 45%;
+    right: -1rem;
+    z-index: 1000;
+}
+.setting-item{
+    width: 100%;
+    .setting-item-title{
+        font-size: 1.2rem;
+        font-weight: 600;
+        margin-bottom: 1rem;
+        width: 100%;
+        &::after{
+            content: '';
+            display: block;
+            background: #000;
+            width: 100%;
+            height: 1px;
+            margin-top: 0.5rem;
+        }
+    }
+}

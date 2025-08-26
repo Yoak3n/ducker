@@ -1,19 +1,14 @@
-use std::path::PathBuf;
-use std::collections::VecDeque;
 use anyhow::Result;
 use parking_lot::RwLock;
-use rusqlite::{Connection, params};
-
+use rusqlite::{params, Connection};
+use std::collections::VecDeque;
+use std::path::PathBuf;
 
 use super::module::*;
 use crate::{
     logging,
     schema::{Action, ActionRecord, ActionType, TaskData, TaskRecord},
-    utils::{
-        help::random_string,
-        logging::Type
-    },
-
+    utils::{help::random_string, logging::Type},
 };
 pub struct Database {
     conn: RwLock<Connection>,
@@ -78,14 +73,20 @@ impl Database {
         })
     }
 
-    // 私有方法：从数据库行构建TaskRecord，减少重复代码
+    pub fn none() -> Self {
+        let conn = Connection::open_in_memory().unwrap();
+        Self {
+            conn: RwLock::new(conn),
+        }
+    }
+
     fn build_task_record_from_row(row: &rusqlite::Row) -> rusqlite::Result<TaskRecord> {
         let actions_json: String = row.get(5)?;
         let actions: Vec<String> = serde_json::from_str(&actions_json).unwrap_or_else(|e| {
             logging!(warn, Type::Database, "JSON反序列化失败，使用默认值: {e}");
             Vec::new()
         });
-        
+
         Ok(TaskRecord {
             id: row.get(0)?,
             completed: row.get(1)?,
@@ -264,7 +265,6 @@ impl ActionManager for Database {
         }
 
         Ok(actions.into())
-
     }
 
     fn get_all_actions(&self) -> anyhow::Result<Vec<crate::schema::ActionRecord>> {
@@ -298,7 +298,7 @@ impl ActionManager for Database {
                 timeout,
             })
         })?;
-        
+
         let mut actions = Vec::new();
         for action in action_iter {
             actions.push(action?);
@@ -312,42 +312,42 @@ impl TaskManager for Database {
         let conn = self.conn.write();
         let actions = serde_json::to_string(&task.actions)?;
         let record = TaskRecord::from(task.clone());
-        let mut stmt = conn.prepare("
+        let mut stmt = conn.prepare(
+            "
         INSERT INTO tasks (id, value, auto, parent_id, name, actions, created_at, due_to, reminder) 
-        VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9  )")?;
-
+        VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9  )",
+        )?;
 
         if let Ok(id) = stmt.insert(params![
-            &record.id, 
+            &record.id,
             &record.value,
-            &record.auto, 
-            &record.parent_id, 
-            &record.name, 
-            &actions, 
-            &record.created_at, 
+            &record.auto,
+            &record.parent_id,
+            &record.name,
+            &actions,
+            &record.created_at,
             &record.due_to,
             &record.reminder
-        ]){
+        ]) {
             logging!(info, Type::Database, "创建任务成功: {id}");
-        }else{
+        } else {
             return Err(anyhow::anyhow!("创建任务失败"));
         };
 
         Ok(record)
-
     }
 
     fn update_task(&self, id: &str, task: &TaskData) -> Result<TaskRecord> {
         let conn = self.conn.write();
         let actions = serde_json::to_string(&task.actions)?;
-        let record = TaskRecord::from(task.clone());    
+        let record = TaskRecord::from(task.clone());
         conn.execute(
             "UPDATE tasks 
             SET name = ?1, value = ?2, actions = ?3, due_to = ?4, reminder = ?5, completed = ?6, auto = ?7, parent_id = ?8
             WHERE id = ?9",
             params![
-                &task.name, 
-                &task.value, 
+                &task.name,
+                &task.value,
                 &actions,
                 &record.due_to,
                 &record.reminder,
@@ -365,8 +365,7 @@ impl TaskManager for Database {
             "UPDATE tasks 
             SET completed = ?1
             WHERE id = ?2",
-            params![
-                &completed, id],
+            params![&completed, id],
         )?;
         Ok(true)
     }
@@ -379,12 +378,12 @@ impl TaskManager for Database {
 
     fn get_task(&self, id: &str) -> Result<TaskRecord> {
         let conn = self.conn.read();
-        let mut stmt = conn.prepare("
+        let mut stmt = conn.prepare(
+            "
         SELECT id, completed, parent_id, name, auto, actions, created_at, due_to, reminder, value 
-        FROM tasks WHERE id = ?1")?;
-        let task = stmt.query_row([id], |row| {
-            Self::build_task_record_from_row(row)
-        })?;
+        FROM tasks WHERE id = ?1",
+        )?;
+        let task = stmt.query_row([id], |row| Self::build_task_record_from_row(row))?;
         Ok(task)
     }
 
@@ -411,7 +410,7 @@ impl TaskManager for Database {
             Self::build_task_record_from_row(row)
         })?;
         let mut tasks = Vec::new();
-        
+
         for task_result in task_iter {
             if let Ok(task) = task_result {
                 tasks.push(task);
@@ -426,9 +425,7 @@ impl TaskManager for Database {
             "SELECT id, completed, parent_id, name, auto, actions, created_at, due_to, reminder, value 
             FROM tasks WHERE completed = ?1",
         )?;
-        let tasks = stmt.query_map([completed], |row| {
-            Self::build_task_record_from_row(row)
-        })?;
+        let tasks = stmt.query_map([completed], |row| Self::build_task_record_from_row(row))?;
 
         let mut result = Vec::new();
         for task in tasks {
@@ -439,13 +436,13 @@ impl TaskManager for Database {
 
     fn get_tasks_by_parent_id(&self, parent_id: &str) -> Result<Vec<TaskRecord>> {
         let conn = self.conn.read();
-        let mut stmt = conn.prepare("
+        let mut stmt = conn.prepare(
+            "
         SELECT id, completed, parent_id, name, auto, actions, created_at, due_to, reminder, value 
         FROM tasks 
-        WHERE parent_id = ?1")?;
-        let tasks = stmt.query_map([parent_id], |row| {
-            Self::build_task_record_from_row(row)
-        })?;
+        WHERE parent_id = ?1",
+        )?;
+        let tasks = stmt.query_map([parent_id], |row| Self::build_task_record_from_row(row))?;
 
         let mut result = Vec::new();
         for task in tasks {
@@ -473,7 +470,11 @@ impl TaskManager for Database {
         Ok(result)
     }
 
-    fn get_uncompleted_tasks_by_date_range(&self, start_date: i64, end_date: i64) -> Result<Vec<TaskRecord>> { 
+    fn get_uncompleted_tasks_by_date_range(
+        &self,
+        start_date: i64,
+        end_date: i64,
+    ) -> Result<Vec<TaskRecord>> {
         let conn = self.conn.read();
         let mut stmt = conn.prepare(
             "SELECT id, completed, parent_id, name, auto, actions, created_at, due_to, reminder, value 
@@ -490,7 +491,7 @@ impl TaskManager for Database {
             result.push(task?);
         }
         Ok(result)
-     }
+    }
 
     fn get_all_tasks(&self) -> Result<Vec<TaskRecord>> {
         let conn = self.conn.read();
@@ -498,9 +499,7 @@ impl TaskManager for Database {
             "SELECT id, completed, parent_id, name, auto, actions, created_at, due_to, reminder, value 
             FROM tasks",
         )?;
-        let tasks = stmt.query_map([], |row| {
-            Self::build_task_record_from_row(row)
-        })?;
+        let tasks = stmt.query_map([], |row| Self::build_task_record_from_row(row))?;
 
         let mut result = Vec::new();
         for task in tasks {

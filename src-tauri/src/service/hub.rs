@@ -22,7 +22,7 @@ impl Hub {
         let schedule = self.schedule.read().unwrap();
         if schedule.is_empty() {
             None
-        } else { 
+        } else {
             Some(schedule.clone())
         }
     }

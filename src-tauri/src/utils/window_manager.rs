@@ -91,7 +91,7 @@ pub fn toggle_window_by_label(label: &str) {
     let app_handle = handle::Handle::global().app_handle().unwrap();
     if let Some(window) = app_handle.get_webview_window(label) {
         let visible = window.is_visible().unwrap_or(false);
-        if label == "main"{
+        if label == "main" {
             tray::Tray::global().update_menu_visible(!visible);
         }
         if visible {
@@ -103,12 +103,11 @@ pub fn toggle_window_by_label(label: &str) {
     } else {
         create_window_by_label(label);
         logging!(info, Type::Window, true, "Creating {} window", label);
-        if label == "main"{
+        if label == "main" {
             tray::Tray::global().update_menu_visible(true);
         }
     }
 }
-
 
 pub fn toggle_main_window() {
     toggle_window_by_label("main")

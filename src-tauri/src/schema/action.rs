@@ -12,7 +12,6 @@ pub struct Action {
     pub timeout: Option<u64>,
     pub command: String,
     pub args: Option<Vec<String>>,
-
 }
 // impl From<ActionRecord> for Action {
 //     fn from(value: ActionRecord) -> Self {

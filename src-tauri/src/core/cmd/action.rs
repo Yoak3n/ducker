@@ -12,7 +12,6 @@ pub async fn execute_single_action(action: Action) -> Result<String, String> {
     execute_action(action).await
 }
 
-
 #[tauri::command]
 pub async fn execute_actions(actions: Vec<Action>) -> Result<(), String> {
     for action in actions {
@@ -29,8 +28,7 @@ pub async fn execute_actions(actions: Vec<Action>) -> Result<(), String> {
 
             while retry_count <= max_retries {
                 // 使用 timeout 包装 execute_action 调用
-                match timeout(timeout_duration, execute_action(action.clone())).await 
-                {
+                match timeout(timeout_duration, execute_action(action.clone())).await {
                     Ok(result) => {
                         // 任务在超时前完成
                         match result {
@@ -52,7 +50,9 @@ pub async fn execute_actions(actions: Vec<Action>) -> Result<(), String> {
                                         Type::Service,
                                         true,
                                         "任务执行失败，正在重试 ({}/{}): {}",
-                                        retry_count, max_retries, &last_error
+                                        retry_count,
+                                        max_retries,
+                                        &last_error
                                     );
                                     tokio::time::sleep(tokio::time::Duration::from_millis(1000))
                                         .await;
@@ -116,7 +116,9 @@ pub async fn execute_actions(actions: Vec<Action>) -> Result<(), String> {
 
 #[tauri::command]
 pub async fn create_action(state: State<'_, AppState>, action: Action) -> Result<String, String> {
-    let res = state.db.create_action(&action);
+    let db = state.db.lock().unwrap();
+    
+    let res = db.create_action(&action);
     match res {
         Ok(data) => Ok(data.id),
         Err(e) => {
@@ -129,7 +131,9 @@ pub async fn create_action(state: State<'_, AppState>, action: Action) -> Result
 use crate::store::module::ActionManager;
 #[tauri::command]
 pub async fn get_action(state: State<'_, AppState>, id: &str) -> Result<Action, String> {
-    let res = state.db.get_action(id);
+    let db = state.db.lock().unwrap();
+    
+    let res = db.get_action(id);
     match res {
         Ok(data) => {
             let view = Action::try_from(data).unwrap();
@@ -143,13 +147,19 @@ pub async fn get_action(state: State<'_, AppState>, id: &str) -> Result<Action, 
 }
 
 #[tauri::command]
-pub async fn update_action(state: State<'_, AppState>,id:&str,  action: Action) -> Result<Action, String> {
-    let res = state.db.update_action(id,&action);
+pub async fn update_action(
+    state: State<'_, AppState>,
+    id: &str,
+    action: Action,
+) -> Result<Action, String> {
+    let db = state.db.lock().unwrap();
+    
+    let res = db.update_action(id, &action);
     match res {
         Ok(data) => {
             let view = Action::try_from(data).unwrap();
             Ok(view)
-        },
+        }
         Err(e) => {
             println!("更新action失败: {:?}", e);
             Err(e.to_string())
@@ -159,12 +169,12 @@ pub async fn update_action(state: State<'_, AppState>,id:&str,  action: Action) 
 
 #[tauri::command]
 pub async fn delete_action(state: State<'_, AppState>, id: &str) -> Result<(), String> {
-    let res = state.db.delete_action(id);
+    let db = state.db.lock().unwrap();
+    
+    let res = db.delete_action(id);
     match res {
         Ok(_) => Ok(()),
-        Err(e) => {
-            Err(e.to_string())
-        }
+        Err(e) => Err(e.to_string()),
     }
 }
 
@@ -191,15 +201,15 @@ pub async fn select_file(app: AppHandle, file: bool) -> Result<String, String> {
 
 #[tauri::command]
 pub async fn get_all_actions(state: State<'_, AppState>) -> Result<Vec<Action>, String> {
-    let res = state.db.get_all_actions();
+    let db = state.db.lock().unwrap();
+    
+    let res = db.get_all_actions();
     match res {
         Ok(data) => {
             let views =
                 Vec::from_iter(data.into_iter().map(|item| Action::try_from(item).unwrap()));
             Ok(views)
         }
-        Err(e) => {
-            Err(e.to_string())
-        }
+        Err(e) => Err(e.to_string()),
     }
 }

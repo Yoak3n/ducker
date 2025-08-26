@@ -6,8 +6,11 @@ use std::{
 use anyhow::Result;
 use once_cell::sync::OnceCell;
 use parking_lot::Mutex;
-use tauri::{menu::CheckMenuItem, tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent}};
 use tauri::Wry;
+use tauri::{
+    menu::CheckMenuItem,
+    tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
+};
 use tauri::{
     menu::{Menu, MenuEvent, MenuItem, PredefinedMenuItem},
     AppHandle,
@@ -140,7 +143,8 @@ impl Tray {
     pub fn update_menu_visible(&self, visible: bool) {
         let app_handle = handle::Handle::global().app_handle().unwrap();
         let tray = app_handle.tray_by_id("main").unwrap();
-        tray.set_menu(Some(create_tray_menu(&app_handle, visible).unwrap())).unwrap();
+        tray.set_menu(Some(create_tray_menu(&app_handle, visible).unwrap()))
+            .unwrap();
     }
 
     pub fn create_tray_from_handle(&self, app_handle: &AppHandle) -> Result<()> {
@@ -182,17 +186,42 @@ impl Tray {
 
 fn create_tray_menu(app_handle: &AppHandle, visiable: bool) -> Result<Menu<Wry>> {
     let version = resolve::VERSION.get().unwrap();
-    let show_item = &CheckMenuItem::with_id(app_handle, "open_window", "Live2D", true, visiable, Some("Show")).unwrap();
-    let dashboard_item = &MenuItem::with_id(app_handle, "dashboard", "Dashboard", true, None::<&str>).unwrap();
+    let show_item = &CheckMenuItem::with_id(
+        app_handle,
+        "open_window",
+        "Live2D",
+        true,
+        visiable,
+        Some("Show"),
+    )
+    .unwrap();
+    let dashboard_item =
+        &MenuItem::with_id(app_handle, "dashboard", "Dashboard", true, None::<&str>).unwrap();
     let separator = &PredefinedMenuItem::separator(app_handle).unwrap();
-    let action_item = &MenuItem::with_id(app_handle, "action", "Action", true, None::<&str>).unwrap();
-    let about_item = &MenuItem::with_id(app_handle, "about", format!("About v{version}"), true, None::<&str>).unwrap();
-    let setting_item = &MenuItem::with_id(app_handle, "setting", "Setting", true, None::<&str>).unwrap();
-    let quit =
-        &MenuItem::with_id(app_handle, "quit", "Exit", true, Some("")).unwrap();
+    let action_item =
+        &MenuItem::with_id(app_handle, "action", "Action", true, None::<&str>).unwrap();
+    let about_item = &MenuItem::with_id(
+        app_handle,
+        "about",
+        format!("About v{version}"),
+        true,
+        None::<&str>,
+    )
+    .unwrap();
+    let setting_item =
+        &MenuItem::with_id(app_handle, "setting", "Setting", true, None::<&str>).unwrap();
+    let quit = &MenuItem::with_id(app_handle, "quit", "Exit", true, Some("")).unwrap();
 
     let menu = tauri::menu::MenuBuilder::new(app_handle)
-        .items(&[show_item, dashboard_item, action_item, about_item, setting_item, separator, quit])
+        .items(&[
+            show_item,
+            dashboard_item,
+            action_item,
+            about_item,
+            setting_item,
+            separator,
+            quit,
+        ])
         .build()
         .unwrap();
     logging!(info, Type::Tray, true, "Creating tray menu");

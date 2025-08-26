@@ -1,13 +1,13 @@
 use crate::{
-    schema::AppState, 
+    schema::AppState,
     store::module::{ActionManager, TaskManager},
     utils::{
-        date::{to_datetime_str,str_to_datetime}, 
-        help::random_string
+        date::{str_to_datetime, to_datetime_str},
+        help::random_string,
     },
 };
+use chrono::{Duration, Local};
 use serde::{Deserialize, Serialize};
-use chrono::{Local,Duration};
 
 #[derive(Deserialize, Serialize, Debug)]
 pub struct TaskRecord {
@@ -23,14 +23,14 @@ pub struct TaskRecord {
     pub reminder: Option<i64>,
 }
 
-
-
 impl TryFrom<(&TaskRecord, &AppState)> for TaskView {
     type Error = anyhow::Error;
 
     fn try_from((record, state): (&TaskRecord, &AppState)) -> Result<Self, Self::Error> {
+        let db = state.db.lock().unwrap();
+
         // 获取关联的 actions
-        let action_records = state.db.get_actions(&record.actions)?;
+        let action_records = db.get_actions(&record.actions)?;
         let actions = Some(
             action_records
                 .into_iter()
@@ -39,17 +39,15 @@ impl TryFrom<(&TaskRecord, &AppState)> for TaskView {
         );
         // println!("{:?}", actions);
 
-        let children = state
-            .db
+        let children = db
             .get_tasks_by_parent_id(&record.id)?
             .into_iter()
             .map(|child| Self::try_from((&child, state)))
             .collect::<Result<Vec<_>, _>>()?;
-        
+
         let created_at = to_datetime_str(record.created_at);
         let due_to = Some(to_datetime_str(record.due_to));
         let reminder = record.reminder.map(to_datetime_str);
-
 
         Ok(Self {
             id: record.id.clone(),
@@ -65,7 +63,6 @@ impl TryFrom<(&TaskRecord, &AppState)> for TaskView {
         })
     }
 }
-
 
 impl From<TaskData> for TaskRecord {
     fn from(data: TaskData) -> Self {
@@ -83,7 +80,7 @@ impl From<TaskData> for TaskRecord {
         // 截止时间默认为三个小时后
         let due_to = if let Some(s) = data.due_to {
             str_to_datetime(s.as_str()).timestamp()
-        }else{
+        } else {
             (now + Duration::hours(12)).timestamp()
         };
         Self {
@@ -97,14 +94,14 @@ impl From<TaskData> for TaskRecord {
             actions: data.actions,
             created_at,
             due_to,
-            reminder: data.reminder.map(|s| str_to_datetime(s.as_str()).timestamp()),
+            reminder: data
+                .reminder
+                .map(|s| str_to_datetime(s.as_str()).timestamp()),
         }
     }
 }
 
-
-
-#[derive(Deserialize, Serialize, Debug,Clone)]
+#[derive(Deserialize, Serialize, Debug, Clone)]
 pub struct TaskData {
     pub id: Option<String>,
     pub name: String,
@@ -131,4 +128,3 @@ pub struct TaskView {
     pub due_to: Option<String>,
     pub reminder: Option<String>,
 }
-

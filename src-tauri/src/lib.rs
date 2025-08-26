@@ -1,15 +1,15 @@
 mod core;
 mod feat;
+mod module;
 mod process;
 mod schema;
+mod service;
 mod store;
 mod utils;
-mod service;
-mod module;
 
 use std::sync::{Arc, Mutex, Once};
 
-use tauri::{AppHandle,Manager};
+use tauri::{AppHandle, Manager};
 #[cfg(desktop)]
 use tauri_plugin_notification::NotificationExt;
 #[cfg(desktop)]
@@ -17,10 +17,10 @@ use tauri_plugin_single_instance;
 
 // use utils::logging::Type;
 
+use core::handle::Handle;
 use schema::state::AppState;
 use store::db::Database;
 use utils::resolve;
-use core::handle::Handle;
 
 use crate::schema::LightWeightState;
 pub struct AppHandleManager {
@@ -87,19 +87,17 @@ impl AppHandleManager {
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     #[cfg(desktop)]
-    let db = Database::new(".".into()).expect("Failed to initialize database");
-    let app_state = AppState { 
-        db: Arc::new(db),
+    let app_state = AppState {
+        db: Arc::new(Mutex::new(Database::none())),
         lightweight: Arc::new(Mutex::new(LightWeightState::default())),
-
     };
     let builder = tauri::Builder::default()
         .plugin(tauri_plugin_single_instance::init(|app, _, _| {
-            let _ = app.get_webview_window("main")
-                       .expect("no main window")
-                       .set_focus();
+            let _ = app
+                .get_webview_window("main")
+                .expect("no main window")
+                .set_focus();
         }))
-        .manage(app_state)
         .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_shell::init())
@@ -113,20 +111,23 @@ pub fn run() {
                 .unwrap();
         }))
         .plugin(tauri_plugin_opener::init())
+        .plugin(
+            tauri_plugin_autostart::Builder::new()
+                .app_name("ducker")
+                .build(),
+        )
+        .manage(app_state)
         .setup(|app| {
+            let local_data_dir = app.handle().path().app_data_dir().unwrap();
+            std::fs::create_dir_all(&local_data_dir).expect("Failed to create app data dir");
+            let db = Database::new(local_data_dir).expect("Failed to initialize database");
+            {
+                let state = app.state::<AppState>();
+                let mut db_guard = state.db.lock().unwrap();
+                *db_guard = db;
+            }
             AppHandleManager::global().init(app.handle().clone());
             Handle::global().init(&app.handle());
-            tauri::async_runtime::block_on(async move {
-                resolve::resolve_setup(app).await;
-            });
-            Ok(())
-        });
-
-    #[cfg(mobile)]
-    let builder = tauri::Builder::default()
-        .plugin(tauri_plugin_notification::init())
-        .plugin(tauri_plugin_opener::init())
-        .setup(|app| {
             tauri::async_runtime::block_on(async move {
                 resolve::resolve_setup(app).await;
             });
@@ -138,7 +139,6 @@ pub fn run() {
             core::cmd::window::toggle_main_window,
             core::cmd::window::toggle_dashboard_window,
             core::cmd::window::toggle_action_window,
-
             // Actions
             #[cfg(target_os = "windows")]
             core::cmd::action::execute_actions,
@@ -156,7 +156,6 @@ pub fn run() {
             core::cmd::action::get_all_actions,
             #[cfg(target_os = "windows")]
             core::cmd::action::select_file,
-            
             // Tasks
             core::cmd::task::create_task,
             core::cmd::task::gen_random_task_id,
@@ -234,7 +233,6 @@ pub fn run() {
                             log_err!(hotkey::Hotkey::global().unregister("CMD+Q"));
                             log_err!(hotkey::Hotkey::global().unregister("CMD+W"));
                         }
-
                     }
                     tauri::WindowEvent::Destroyed => {
                         #[cfg(target_os = "macos")]
@@ -242,7 +240,6 @@ pub fn run() {
                             log_err!(hotkey::Hotkey::global().unregister("CMD+Q"));
                             log_err!(hotkey::Hotkey::global().unregister("CMD+W"));
                         }
-
                     }
                     _ => {}
                 }
