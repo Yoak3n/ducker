@@ -1,3 +1,4 @@
+mod config;
 mod core;
 mod feat;
 mod module;
@@ -6,7 +7,6 @@ mod schema;
 mod service;
 mod store;
 mod utils;
-mod config;
 use std::sync::{Arc, Mutex, Once};
 
 use tauri::{AppHandle, Manager};
@@ -92,6 +92,7 @@ pub fn run() {
         lightweight: Arc::new(Mutex::new(LightWeightState::default())),
     };
     let builder = tauri::Builder::default()
+        .plugin(tauri_plugin_window_state::Builder::new().build())
         .plugin(tauri_plugin_single_instance::init(|app, _, _| {
             let _ = app
                 .get_webview_window("main")

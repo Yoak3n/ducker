@@ -142,7 +142,7 @@ pub async fn resolve_setup(app: &mut App) {
         logging!(info, Type::Window, true, "Creating window preview");
         let config = Config::global().await.lock().unwrap();
         config.save().ok();
-        if let Some(silent_start) = config.data().silent_launch{
+        if let Some(silent_start) = config.data().silent_launch {
             if !silent_start {
                 window_manager::create_main_window();
             }

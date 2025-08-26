@@ -117,7 +117,7 @@ pub async fn execute_actions(actions: Vec<Action>) -> Result<(), String> {
 #[tauri::command]
 pub async fn create_action(state: State<'_, AppState>, action: Action) -> Result<String, String> {
     let db = state.db.lock().unwrap();
-    
+
     let res = db.create_action(&action);
     match res {
         Ok(data) => Ok(data.id),
@@ -132,7 +132,7 @@ use crate::store::module::ActionManager;
 #[tauri::command]
 pub async fn get_action(state: State<'_, AppState>, id: &str) -> Result<Action, String> {
     let db = state.db.lock().unwrap();
-    
+
     let res = db.get_action(id);
     match res {
         Ok(data) => {
@@ -153,7 +153,7 @@ pub async fn update_action(
     action: Action,
 ) -> Result<Action, String> {
     let db = state.db.lock().unwrap();
-    
+
     let res = db.update_action(id, &action);
     match res {
         Ok(data) => {
@@ -170,7 +170,7 @@ pub async fn update_action(
 #[tauri::command]
 pub async fn delete_action(state: State<'_, AppState>, id: &str) -> Result<(), String> {
     let db = state.db.lock().unwrap();
-    
+
     let res = db.delete_action(id);
     match res {
         Ok(_) => Ok(()),
@@ -202,7 +202,7 @@ pub async fn select_file(app: AppHandle, file: bool) -> Result<String, String> {
 #[tauri::command]
 pub async fn get_all_actions(state: State<'_, AppState>) -> Result<Vec<Action>, String> {
     let db = state.db.lock().unwrap();
-    
+
     let res = db.get_all_actions();
     match res {
         Ok(data) => {

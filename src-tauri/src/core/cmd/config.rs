@@ -1,7 +1,7 @@
 use crate::config::Config;
 
 #[tauri::command]
-pub async  fn save_config() {
+pub async fn save_config() {
     let config = Config::global().await.lock().unwrap().clone();
     config.save().ok();
 }

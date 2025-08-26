@@ -97,8 +97,7 @@ const ActionsList = () => {
                             </ContextMenuTrigger>
                             <ContextMenuContent>
                                 <ContextMenuItem onClick={
-                                    async (e) => {
-                                        e.preventDefault();
+                                    async () => {
                                         const result = await executeSingleAction(action)
                                         if (result.success) {
                                             toast.success('动作执行成功');

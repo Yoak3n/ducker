@@ -48,4 +48,5 @@ tauri-plugin-shell = "2"
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
 tauri-plugin-autostart = "2.5.0"
 tauri-plugin-global-shortcut = "2"
-tauri-plugin-single-instance = "2"
+tauri-plugin-single-instance = "2.3.3"
+tauri-plugin-window-state = "2"
