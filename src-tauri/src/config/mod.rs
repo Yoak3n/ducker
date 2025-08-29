@@ -12,7 +12,7 @@ pub struct Config {
 }
 
 impl Config {
-    pub async fn global() -> &'static std::sync::Mutex<Config> {
+    pub fn global() -> &'static std::sync::Mutex<Config> {
         static INSTANCE: std::sync::OnceLock<std::sync::Mutex<Config>> = std::sync::OnceLock::new();
         INSTANCE.get_or_init(|| std::sync::Mutex::new(Self::new()))
     }

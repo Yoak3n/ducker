@@ -1,5 +1,5 @@
 use crate::{
-    // config::Config,
+    config::Config,
     core::{handle, timer::Timer, tray::Tray},
     log_err,
     logging,
@@ -41,33 +41,29 @@ where
     }
 }
 
-// pub fn run_once_auto_lightweight() {
-//     LightWeightState::default().run_once_time(|| {
-//         let is_silent_start = Config::verge()
-//             .latest_ref()
-//             .enable_silent_start
-//             .unwrap_or(false);
-//         let enable_auto = Config::verge()
-//             .data_mut()
-//             .enable_auto_light_weight_mode
-//             .unwrap_or(false);
-//         if enable_auto && is_silent_start {
-//             logging!(
-//                 info,
-//                 Type::Lightweight,
-//                 true,
-//                 "在静默启动的情况下，创建窗口再添加自动进入轻量模式窗口监听器"
-//             );
-//             set_lightweight_mode(false);
-//             enable_auto_light_weight_mode();
+pub async fn run_once_auto_lightweight() {
+    LightWeightState::default().run_once_time(|| {
+        let config = Config::global().lock().unwrap().clone();
+        let is_silent_start = config
+            .silent_launch
+            .unwrap_or(false);
+        if is_silent_start {
+            logging!(
+                info,
+                Type::Lightweight,
+                true,
+                "在静默启动的情况下，创建窗口再添加自动进入轻量模式窗口监听器"
+            );
+            set_lightweight_mode(false);
+            enable_auto_light_weight_mode();
 
-//             // 触发托盘更新
-//             if let Err(e) = Tray::global().update_part() {
-//                 log::warn!("Failed to update tray: {e}");
-//             }
-//         }
-//     });
-// }
+            // 触发托盘更新
+            if let Err(e) = Tray::global().update_part() {
+                log::warn!("Failed to update tray: {e}");
+            }
+        }
+    });
+}
 
 pub fn auto_lightweight_mode_init() {
     if let Some(app_handle) = handle::Handle::global().app_handle() {
