@@ -1,5 +1,4 @@
 import { useState, useEffect, type FC } from 'react';
-import { invoke } from '@tauri-apps/api/core';
 
 import { Slider } from '@/components/ui/slider';
 import { Button } from '../ui/button';

@@ -1,13 +1,14 @@
 import { useEffect, useState, type FC } from "react";
 import { useParams } from "react-router-dom";
+import { emit } from "@tauri-apps/api/event";
 
 import { TaskForm } from "@/components/Task";
-import type { Task, TaskData, Action } from '@/types';
+import type { Task, TaskData } from '@/types';
 import { useTaskStore } from "@/store";
 
 const TaskModify: FC = () => {
     const { id } = useParams<{ id?: string }>();
-    const { fetchTasks, tasks } = useTaskStore(state => state)
+    const { fetchTasks, tasks, updateTask, createTask } = useTaskStore(state => state)
     const [editingTask, setEditingTask] = useState<Task | undefined>(undefined)
     useEffect(() => {
         fetchTasks()
@@ -21,17 +22,34 @@ const TaskModify: FC = () => {
         setEditingTask(task)
     }
 
+    const modifyTask = async (taskData: TaskData) => {
+        try {
+            if (isEditMode) {
+                // 编辑模式下，调用更新任务接口
+                await updateTask(id, taskData);
+            } else {
+                // 新建模式下，调用创建任务接口
+                await createTask(taskData);
+            }
+            // 发送统一的任务变更事件
+            await emit('task-changed', { 
+                action: isEditMode ? 'update' : 'create',
+                taskId: isEditMode ? id : undefined,
+                timestamp: Date.now() 
+            });
+        } catch (error) {
+            console.error('任务操作失败:', error);
+        }
+    }
+
     return (
         <div style={{
-            width: '800px',
-            height: '500px',
+            width: '100vw',
+            height: '100vh',
             overflowY: 'auto',
+            scrollbarWidth: 'none',
         }}>
-            <TaskForm task={editingTask} isOpen={true} onClose={function (): void {
-                throw new Error("Function not implemented.");
-            }} onSave={function (taskData: TaskData): void {
-                throw new Error("Function not implemented.");
-            }} />
+            <TaskForm task={editingTask} onSave={modifyTask} />
         </div>
     )
 }

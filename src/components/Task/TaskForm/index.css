@@ -57,6 +57,15 @@
   display: none; /* Chrome, Safari, Opera */
 }
 
+.form-title{
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #1f2937;
+  padding: 12px 20px;
+  border-bottom: 1px solid #e5e7eb;
+  cursor: move;
+}
+
 /* 表单分区样式 - 压缩版本 */
 .form-section {
   background: #fafbfc;
@@ -223,6 +232,12 @@
   margin-top: 6px;
   border-top: 1px solid #e5e7eb;
   padding-top: 14px;
+  .advanced-trigger{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+  }
 }
 
 .advanced-toggle {

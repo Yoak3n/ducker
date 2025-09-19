@@ -1,14 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
+import { listen } from "@tauri-apps/api/event";
 
-
-import { TaskForm } from "@/components/Task";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 
 import { useTaskStore } from "@/store";
 import { extractTimeStampSecond, getTodayRange } from "@/utils";
 import {showWindow} from "@/api";
-import type { Task, TaskData } from "@/types";
 
 import TaskList from "./TaskList";
 import "./index.css"
@@ -16,9 +13,6 @@ import "./index.css"
 
 
 const TodayView = () => {
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [parentTask, setParentTask] = useState<Task | undefined>(undefined);
-    const [editingTask, setEditingTask] = useState<Task | null>(null);
 
     const taskStore = useTaskStore()
     const todayDate = new Date()
@@ -27,6 +21,28 @@ const TodayView = () => {
 
     useEffect(() => {
         taskStore.fetchTasks()
+        
+        // 监听任务变更事件
+        let unlistenTaskChanged: Promise<() => void> | null = null;
+        
+        // 检查是否在Tauri环境中
+        if (typeof window !== 'undefined') {
+            try {
+                unlistenTaskChanged = listen('task-changed', (event) => {
+                    console.log('接收到任务变更事件:', event.payload);
+                    taskStore.fetchTasks();
+                });
+            } catch (error) {
+                console.warn('事件监听器初始化失败:', error);
+            }
+        }
+        
+        // 清理事件监听器
+        return () => {
+            if (unlistenTaskChanged) {
+                unlistenTaskChanged.then(fn => fn()).catch(console.warn);
+            }
+        };
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
     // const [taskList, setTaskList] = useState<Task[]>(tasks);
@@ -54,9 +70,6 @@ const TodayView = () => {
 
     const handleCreateTask = () => {
         showWindow("task")
-        setEditingTask(null);
-        setParentTask(undefined);
-        setIsModalOpen(true);
     };
 
     const handleTaskStatueChange = (id: string) => {

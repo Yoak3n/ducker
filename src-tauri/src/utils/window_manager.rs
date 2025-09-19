@@ -131,8 +131,8 @@ impl WindowConfig {
             },
             WindowType::Task => Self {
                 window_type,
-                inner_size: (800.0, 500.0),
-                min_inner_size: (800.0, 500.0),
+                inner_size: (800.0, 600.0),
+                min_inner_size: (800.0, 600.0),
                 decorations: false,
                 transparent: false,
                 skip_taskbar: true,

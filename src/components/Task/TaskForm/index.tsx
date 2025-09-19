@@ -1,20 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import type { Task, TaskData, Action } from '@/types';
-import './index.css';
 
 import ActionSelect from '@/components/Action/ActionSelect';
 import DatetimePicker from '@/components/Date/DatetimePicker';
 import { Label } from '@/components/ui/label';
-import { formatDatetime } from '@/utils';
 import { Collapsible } from '@radix-ui/react-collapsible';
 import { CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 
+import { formatDatetime } from '@/utils';
+import type { Task, TaskData, Action } from '@/types';
+import { closeWindow } from '@/api';
+
+import './index.css';
+
 
 interface TaskModalProps {
-  isOpen: boolean;
-  onClose: () => void;
   onSave: (taskData: TaskData) => void;
   task?: Task; // 编辑模式时传入任务数据
   parentTask?: Task; // 创建子任务时传入父任务
@@ -58,12 +59,10 @@ const reminderOptions = [
 ] as const;
 
 
-export default function TaskModal({ isOpen, onClose, onSave, task, parentTask }: TaskModalProps) {
+export default function TaskModal({ onSave, task, parentTask }: TaskModalProps) {
   const [formData, setFormData] = useState<TaskFormData>(initialFormData);
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [isActionSelectOpen, setIsActionSelectOpen] = useState(false);
-
-
 
   // 处理键盘事件
   useEffect(() => {
@@ -71,17 +70,15 @@ export default function TaskModal({ isOpen, onClose, onSave, task, parentTask }:
       if (event.key === 'Escape') {
         if (isActionSelectOpen) {
           setIsActionSelectOpen(false);
-        } else if (isOpen) {
-          // setIsOpen(false);
         }
       }
     };
 
-    if (isOpen || isActionSelectOpen) {
+    if (isActionSelectOpen) {
       document.addEventListener('keydown', handleKeyDown);
       return () => document.removeEventListener('keydown', handleKeyDown);
     }
-  }, [isOpen, isActionSelectOpen]);
+  }, [isActionSelectOpen]);
 
   const calculateReminderOffset = (dueDate: Date, reminderDate: Date): string => {
     try {
@@ -143,7 +140,7 @@ export default function TaskModal({ isOpen, onClose, onSave, task, parentTask }:
       }
       setFormData(newFormData);
     }
-  }, [task, parentTask, isOpen]);
+  }, [task, parentTask]);
 
   // 当截止时间或提醒偏移量改变时，自动计算提醒时间
   useEffect(() => {
@@ -161,7 +158,7 @@ export default function TaskModal({ isOpen, onClose, onSave, task, parentTask }:
   };
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-
+    console.log('提交表单数据:', formData);
     // 将TaskFormData转换为TaskData
     const taskData: TaskData = {
       name: formData.name,
@@ -182,19 +179,18 @@ export default function TaskModal({ isOpen, onClose, onSave, task, parentTask }:
     }
 
     onSave(taskData);
-    onClose();
+    closeWindow('task');
   };
 
   const handleClose = () => {
     setFormData(initialFormData);
     setShowAdvanced(false);
-    onClose();
+    closeWindow('task');
   };
 
-  if (!isOpen) return null;
   return (
     <>
-      <div className="title"  data-tauri-drag-region>
+      <div className="form-title" data-tauri-drag-region>
         {task ? '编辑任务' : parentTask ? '创建子任务' : '创建任务'}
       </div>
 
@@ -330,10 +326,13 @@ export default function TaskModal({ isOpen, onClose, onSave, task, parentTask }:
                 className="advanced-toggle"
                 onClick={() => setShowAdvanced(!showAdvanced)}
               > */}
+              <div className="advanced-trigger">
                 <span className="material-symbols-outlined">
                   {showAdvanced ? 'expand_less' : 'expand_more'}
                 </span>
                 高级设置
+              </div>
+
               {/* </button> */}
             </CollapsibleTrigger>
             <CollapsibleContent>
@@ -396,7 +395,7 @@ export default function TaskModal({ isOpen, onClose, onSave, task, parentTask }:
           <button type="button" className="cancel-btn" onClick={handleClose}>
             取消
           </button>
-          <button type="submit" className="save-btn" disabled={!formData.name.trim()}>
+          <button type="submit" className="save-btn" disabled={!formData.name.trim()} onClick={handleSubmit}>
             {task ? '保存' : '创建'}
           </button>
         </div>

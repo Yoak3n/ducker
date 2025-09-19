@@ -80,6 +80,7 @@ export const useTaskStore = create<TaskStore>()(
           set({ loading: true, error: null }, false);
           try {
             const tasks = await taskApi.get_all_tasks();
+            console.log('获取所有任务:', tasks);
             set({ tasks: tasks || [], loading: false }, false);
           } catch (error) {
             set({

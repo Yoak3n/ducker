@@ -318,7 +318,7 @@ impl TaskManager for Database {
         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9  )",
         )?;
 
-        if let Ok(id) = stmt.insert(params![
+        match stmt.insert(params![
             &record.id,
             &record.value,
             &record.auto,
@@ -329,9 +329,20 @@ impl TaskManager for Database {
             &record.due_to,
             &record.reminder
         ]) {
-            logging!(info, Type::Database, "创建任务成功: {id}");
-        } else {
-            return Err(anyhow::anyhow!("创建任务失败"));
+            Ok(id) => {
+                logging!(info, Type::Database, "创建任务成功: {id}");
+            }
+            Err(e) => {
+                logging!(
+                    error,
+                    Type::Database,
+                    true,
+                    "创建任务失败: {:?}, 错误: {:?}",
+                    record.id,
+                    e
+                );
+                return Err(anyhow::anyhow!("创建任务失败"));
+            }
         };
 
         Ok(record)

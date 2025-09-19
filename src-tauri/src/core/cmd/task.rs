@@ -1,22 +1,19 @@
 use crate::{
-    schema::{
+    logging, schema::{
         task::{TaskData, TaskRecord, TaskView},
         AppState,
-    },
-    store::module::TaskManager,
-    utils::help::random_string,
+    }, store::module::TaskManager, utils::{help::random_string, logging::Type}
 };
 use tauri::State;
 
 #[tauri::command]
 pub async fn create_task(state: State<'_, AppState>, task: TaskData) -> Result<String, String> {
     let db = state.db.lock().unwrap();
-
     let res = db.create_task(&task);
     match res {
         Ok(data) => Ok(data.id),
         Err(e) => {
-            println!("创建任务失败: {:?}", e);
+            logging!(info, Type::Database,true,"创建任务失败: {:?}", e);
             Err(e.to_string())
         }
     }
@@ -80,7 +77,7 @@ pub async fn get_task(state: State<'_, AppState>, id: &str) -> Result<TaskView, 
     match res {
         Ok(data) => Ok(TaskView::try_from((&data, state.inner())).unwrap()),
         Err(e) => {
-            println!("获取任务失败: {:?}", e);
+            logging!(error, Type::Database, true, "获取任务失败: {:?}", e);
             Err(e.to_string())
         }
     }
@@ -88,19 +85,21 @@ pub async fn get_task(state: State<'_, AppState>, id: &str) -> Result<TaskView, 
 
 #[tauri::command]
 pub async fn get_all_tasks(state: State<'_, AppState>) -> Result<Vec<TaskView>, String> {
-    let db = state.db.lock().unwrap();
-
-    let res = db.get_all_tasks();
-    match res {
-        Ok(data) => {
+    
+    // 快速获取数据并立即释放数据库锁
+    let data = {
+        let db = state.db.lock().unwrap();
+        db.get_all_tasks()
+    };
+    match data {
+        Ok(task_records) => {
             let mut tasks = Vec::new();
-            for task in data {
+            for task in task_records {
                 tasks.push(TaskView::try_from((&task, state.inner())).unwrap());
             }
             Ok(tasks)
         }
         Err(e) => {
-            println!("获取所有任务失败: {:?}", e);
             Err(e.to_string())
         }
     }
@@ -112,11 +111,19 @@ pub async fn get_tasks_by_date_range(
     start_date: i64,
     end_date: i64,
 ) -> Result<Vec<TaskView>, String> {
-    let db = state.db.lock().unwrap();
-    match db.get_tasks_by_date_range(start_date, end_date) {
-        Ok(data) => {
+    logging!(info, Type::Database, true, "获取任务范围: {:?}", (start_date, end_date));
+    
+    // 快速获取数据并立即释放数据库锁
+    let data = {
+        let db = state.db.lock().unwrap();
+        db.get_tasks_by_date_range(start_date, end_date)
+    };
+    
+    match data {
+        Ok(task_records) => {
+            logging!(info, Type::Database, true, "获取任务范围成功: {:?}", task_records.len());
             let mut tasks = Vec::new();
-            for task in data {
+            for task in task_records {
                 tasks.push(TaskView::try_from((&task, state.inner())).unwrap());
             }
             Ok(tasks)
@@ -150,12 +157,16 @@ pub async fn get_tasks(
     state: State<'_, AppState>,
     ids: Vec<String>,
 ) -> Result<Vec<TaskView>, String> {
-    let db = state.db.lock().unwrap();
+    // 快速获取数据并立即释放数据库锁
+    let data = {
+        let db = state.db.lock().unwrap();
+        db.get_tasks(&ids)
+    };
 
-    match db.get_tasks(&ids) {
-        Ok(data) => {
+    match data {
+        Ok(task_records) => {
             let mut tasks = Vec::new();
-            for task in data {
+            for task in task_records {
                 tasks.push(TaskView::try_from((&task, state.inner())).unwrap());
             }
             Ok(tasks)
