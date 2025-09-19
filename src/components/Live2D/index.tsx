@@ -158,14 +158,20 @@ const Live2DModelComponent: FC = () => {
 
   return (
     <>
-      <Drawer open={isSettingOpen} onClose={() => setIsSettingOpen(!isSettingOpen)}>
+      <Drawer open={isSettingOpen} onClose={() => setIsSettingOpen(false)}>
         <DrawerContent>
           <div className="mx-auto w-full max-w-sm">
             {/* <DrawerHeader> */}
               <DrawerTitle></DrawerTitle>
               <DrawerDescription></DrawerDescription>
             {/* </DrawerHeader> */}
-            <Setting scale={live2dStore.scale} updateScale={updateModelScale} position={live2dStore.position} updatePosition={updateModelPosition} />
+            <Setting 
+            scale={live2dStore.scale} 
+            updateScale={updateModelScale} 
+            position={live2dStore.position} 
+            updatePosition={updateModelPosition} 
+            setIsSettingOpen={setIsSettingOpen}
+            />
           </div>
         </DrawerContent>
       </Drawer>

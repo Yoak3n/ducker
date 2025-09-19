@@ -48,17 +48,23 @@ impl Handle {
         self.app_handle.read().clone()
     }
 
-    pub fn get_window(&self) -> Option<WebviewWindow> {
+    pub fn get_window_by_label(&self, label: &str) -> Option<WebviewWindow> {
+        let app_handle = self.app_handle().unwrap();
+        let window: Option<WebviewWindow> = app_handle.get_webview_window(label);
+        window
+    }
+
+    pub fn get_main_window(&self) -> Option<WebviewWindow> {
         let app_handle = self.app_handle().unwrap();
         let window: Option<WebviewWindow> = app_handle.get_webview_window("main");
         if window.is_none() {
-            // log::debug!(target:"app", "main window not found");
+            log::error!(target:"app", "main window not found");
             return None;
         }
         window
     }
     pub fn get_window_visible(&self) -> bool {
-        let window = self.get_window();
+        let window = self.get_main_window();
         match window {
             // TODO 没有按照预想的立即返回false
             Some(window) => window.is_visible().unwrap_or(false),
@@ -125,7 +131,7 @@ impl Handle {
         );
 
         // 等待2秒以确保前端已完全加载，延迟发送错误通知
-        if let Some(window) = self.get_window() {
+        if let Some(window) = self.get_main_window() {
             let window_clone = window.clone();
             let errors_clone = errors.clone();
 
@@ -134,7 +140,7 @@ impl Handle {
 
                 for error in errors_clone {
                     let _ =
-                        window_clone.emit("verge://notice-message", (error.status, error.message));
+                        window_clone.emit("ducker://notice-message", (error.status, error.message));
                     // 每条消息之间间隔500ms，避免消息堆积
                     tokio::time::sleep(Duration::from_millis(500)).await;
                 }

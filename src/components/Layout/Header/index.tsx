@@ -1,11 +1,14 @@
 import { getCurrentWindow} from '@tauri-apps/api/window';
+
+import { closeWindow } from '@/api';
 import "./index.css"
 
+
 export default function Header() {
-    const handleClose = async() => await getCurrentWindow().close();
+    const handleClose = async() => await closeWindow(getCurrentWindow().label);
     const handleMinimize = async() => await getCurrentWindow().minimize()
     const handleMaximize = async() => {
-        const currentWindow = await getCurrentWindow();
+        const currentWindow = getCurrentWindow();
         if (await currentWindow.isMaximized()) {
             await currentWindow.unmaximize();
         } else {

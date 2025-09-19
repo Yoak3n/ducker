@@ -10,7 +10,7 @@ pub fn quit(code: Option<i32>) {
     handle::Handle::global().set_is_exiting();
 
     // 优先关闭窗口，提供立即反馈
-    if let Some(window) = handle::Handle::global().get_window() {
+    if let Some(window) = handle::Handle::global().get_main_window() {
         let _ = window.hide();
     }
 

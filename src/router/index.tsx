@@ -5,6 +5,7 @@ import Layout from '@/pages/Layout';
 import ActionsList from '@/components/Action/ActionsList';
 import ActionModify from '@/components/Action/ActionModify';
 import Setting from '@/pages/Setting';
+import TaskModify from '@/pages/TaskModify';
 
 const Dashboard = lazy(() => import('@/pages/Dashboard'));
 const Action = lazy(() => import('@/pages/Action'));
@@ -18,14 +19,14 @@ const router = createBrowserRouter([
   {
     path: '/main',
     element: <Home />,
-  },{
+  }, {
     path: "/",
     element: <Layout />,
     children: [
       {
         index: true,
         element: <Dashboard />,
-      },{
+      }, {
         path: "action",
         element: <Action />,
         children: [
@@ -38,15 +39,20 @@ const router = createBrowserRouter([
             element: <ActionModify />
           }
         ]
-      },{
+      }, {
         path: "about",
         element: <About />
-      },{
+      }, {
         path: "setting",
         element: <Setting />
-
       }
     ],
+  }, {
+    path: "task",
+    element: <TaskModify />
+  }, {
+    path: "task/:id",
+    element: <TaskModify />
   },
   {
     path: '*',

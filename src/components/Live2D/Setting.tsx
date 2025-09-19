@@ -1,8 +1,11 @@
 import { useState, useEffect, type FC } from 'react';
+import { invoke } from '@tauri-apps/api/core';
+
 import { Slider } from '@/components/ui/slider';
 import { Button } from '../ui/button';
 
-import { invoke } from '@tauri-apps/api/core';
+import { closeWindow } from '@/api';
+
 
 
 interface Props {
@@ -10,9 +13,15 @@ interface Props {
     updateScale: (scale: number) => void;
     position: { x: number, y: number };
     updatePosition: (position: { x: number, y: number }) => void;
+    setIsSettingOpen: (isOpen: boolean) => void;
 }
 
-const Setting: FC<Props> = ({ scale, updateScale, position, updatePosition }) => {
+const closeMainWindow = async () => {
+    await closeWindow('main')
+}
+
+
+const Setting: FC<Props> = ({ scale, updateScale, position, updatePosition, setIsSettingOpen }) => {
     const [modelScale, setModelScale] = useState(scale * 1000);
     const [modelPosition, setModelPosition] = useState(position);
 
@@ -71,8 +80,11 @@ const Setting: FC<Props> = ({ scale, updateScale, position, updatePosition }) =>
                 </div>
             </div>
 
-            <div className="flex justify-center w-full mt-2">
-                <Button className='w-1/2 h-6 cursor-pointer' onClick={() => invoke('toggle_main_window')}>关闭Live2D</Button>
+            <div className="flex justify-center w-full mt-2 mb-2">
+                <Button className='w-1/2 h-6 cursor-pointer' onClick={() => {
+                    setIsSettingOpen(false);
+                    closeMainWindow()
+                }}>关闭Live2D</Button>
             </div>
         </>
     )

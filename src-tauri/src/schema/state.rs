@@ -1,5 +1,6 @@
 use crate::store::db::Database;
 use crate::{logging, utils::logging::Type};
+use std::collections::HashSet;
 use std::sync::{Arc, Mutex, Once, OnceLock};
 
 #[derive(Clone)]
@@ -13,6 +14,9 @@ pub struct LightWeightState {
     #[allow(unused)]
     once: Arc<Once>,
     pub is_lightweight: bool,
+    pub close_listeners: Vec<u32>,
+    pub focus_listeners: Vec<u32>,
+    pub listened_windows: HashSet<String>,
 }
 
 impl LightWeightState {
@@ -20,6 +24,9 @@ impl LightWeightState {
         Self {
             once: Arc::new(Once::new()),
             is_lightweight: false,
+            close_listeners: Vec::new(),
+            focus_listeners: Vec::new(),
+            listened_windows: HashSet::new(),
         }
     }
 

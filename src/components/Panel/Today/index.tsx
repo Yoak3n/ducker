@@ -1,19 +1,23 @@
 import { useEffect, useState } from "react";
-import type { Task, TaskData } from "@/types";
-import TaskList from "./TaskList";
 
-import { TaskModal } from "@/components/Task";
+
+import { TaskForm } from "@/components/Task";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogTrigger } from "@/components/ui/dialog";
+
 import { useTaskStore } from "@/store";
 import { extractTimeStampSecond, getTodayRange } from "@/utils";
+import {showWindow} from "@/api";
+import type { Task, TaskData } from "@/types";
 
+import TaskList from "./TaskList";
 import "./index.css"
-import { Dialog, DialogTrigger } from "@/components/ui/dialog";
+
 
 
 const TodayView = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [parentTask, setParentTask] = useState<Task | null>(null);
+    const [parentTask, setParentTask] = useState<Task | undefined>(undefined);
     const [editingTask, setEditingTask] = useState<Task | null>(null);
 
     const taskStore = useTaskStore()
@@ -49,30 +53,10 @@ const TodayView = () => {
     const progressPercent = totalCount > 0 ? (completedValueCount / totalCount) * 100 : 0;
 
     const handleCreateTask = () => {
+        showWindow("task")
         setEditingTask(null);
-        setParentTask(null);
+        setParentTask(undefined);
         setIsModalOpen(true);
-    };
-
-    const handleSaveTask = (taskData: Partial<TaskData>) => {
-        if (editingTask) {
-            // 编辑模式
-            // TODO: 开始写前后端交互吧！
-            // setTaskList(prev => prev.map(task =>
-            //     task.id === editingTask.id
-            //         ? { ...task, ...taskData }
-            //         : task
-            // ));
-        } else {
-            // 创建模式
-            const newTask: TaskData = {
-                completed: false,
-                name: taskData.name!,
-                ...taskData
-            };
-            taskStore.createTask(newTask)
-
-        }
     };
 
     const handleTaskStatueChange = (id: string) => {
@@ -83,18 +67,7 @@ const TodayView = () => {
         <div className="today-view">
             <div className="today-title flex justify-between items-center">
                 <h2>今日任务 ({todayDate.toLocaleDateString()})</h2>
-                <Dialog>
-                    <DialogTrigger asChild>
-                        <Button variant="outline" className="cursor-pointer" onClick={handleCreateTask}>创建任务</Button>
-                    </DialogTrigger>
-                    <TaskModal
-                        isOpen={isModalOpen}
-                        onClose={() => setIsModalOpen(false)}
-                        onSave={handleSaveTask}
-                        task={editingTask}
-                        parentTask={parentTask}
-                    />
-                </Dialog>
+                <Button variant="outline" className="cursor-pointer" onClick={() => handleCreateTask()}>创建任务</Button>
             </div>
             {totalCount > 0 &&
                 <div className="progress-bar">

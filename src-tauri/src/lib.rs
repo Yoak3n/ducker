@@ -137,9 +137,9 @@ pub fn run() {
     let app = builder
         .invoke_handler(tauri::generate_handler![
             // Window
-            core::cmd::window::toggle_main_window,
-            core::cmd::window::toggle_dashboard_window,
-            core::cmd::window::toggle_action_window,
+            core::cmd::window::toggle_window,
+            core::cmd::window::show_window,
+            core::cmd::window::close_window,
             // Actions
             #[cfg(target_os = "windows")]
             core::cmd::action::execute_actions,
@@ -203,13 +203,13 @@ pub fn run() {
             }
         }
         tauri::RunEvent::WindowEvent { label, event, .. } => {
-            if label == "main" {
+            // if label == "main" {
                 match event {
                     tauri::WindowEvent::CloseRequested { api, .. } => {
                         // use crate::core::handle;
 
                         use crate::utils::logging::Type;
-                        logging!(info, Type::Window, true, "窗口关闭请求");
+                        logging!(info, Type::Window, "窗口关闭请求, 窗口标签: {}", label);
 
                         #[cfg(target_os = "macos")]
                         AppHandleManager::global().set_activation_policy_accessory();
@@ -217,7 +217,7 @@ pub fn run() {
                             return;
                         }
                         api.prevent_close();
-                        let window = core::handle::Handle::global().get_window().unwrap();
+                        let window = core::handle::Handle::global().get_window_by_label(&label).unwrap();
                         let _ = window.hide();
                     }
                     tauri::WindowEvent::Focused(true) => {
@@ -248,7 +248,7 @@ pub fn run() {
                     }
                     _ => {}
                 }
-            }
+            // }
         }
         _ => {}
     });

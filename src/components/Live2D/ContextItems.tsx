@@ -1,13 +1,15 @@
 import { ContextMenuItem } from "@/components/ui/context-menu"
-import { invoke } from "@tauri-apps/api/core"
+
+
+import { toggleWindow } from "@/api";
 
 const toggleDashboardWindow = async () => {
-  const result = await invoke("toggle_dashboard_window");
+  const result = await toggleWindow("dashboard");
   console.log(result);
 }
 
 const toggleActionWindow = async () => {
-  const result = await invoke("toggle_action_window");
+  const result = await toggleWindow("action");
   console.log(result);
 }
 

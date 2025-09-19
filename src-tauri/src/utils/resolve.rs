@@ -443,7 +443,7 @@ pub async fn create_window(is_show: bool) -> bool {
                             Ok(_) => {
                                 logging!(info, Type::Window, true, "UI已完全加载就绪");
                                 handle::Handle::global()
-                                    .get_window()
+                                    .get_main_window()
                                     .map(|window| window.eval(r"
                                         const overlay = document.getElementById('initial-loading-overlay');
                                         if (overlay) {
