@@ -92,7 +92,7 @@ const TodayView = () => {
                     </span>
                 </div>
             }
-            <TaskList tasks={tasksList} todayDate={todayDate} todayRange={todayRange} changeTask={handleTaskStatueChange} />
+            <TaskList tasks={tasksList} todayDate={todayDate} todayRange={todayRange} changeTask={handleTaskStatueChange}  variant="today"/>
         </div>
     );
 };

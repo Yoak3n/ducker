@@ -26,18 +26,19 @@ export default function DatetimePicker({ datetime, setDatetime }: Props) {
     
     useEffect(() => {
         if (datetime) {
-            const [date, time] = datetime.split(" ")
-            setDate(new Date(date))
-            setTime(time)
+            console.log("datetime:",datetime)
+            const t = datetime.split(" ")
+            if (t.length === 2) {
+                setDate(new Date(t[0]))
+                setTime(t[1])
+            }
         } else {
             const now = new Date()
             const formattedDatetime = formatDatetime(now)
             setDate(now)
             setTime(formattedDatetime.split(" ")[1])
-
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [])
+    }, [datetime])
 
     useEffect(() => {
         if (date && time) {

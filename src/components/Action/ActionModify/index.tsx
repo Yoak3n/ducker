@@ -99,6 +99,7 @@ const ActionModify: React.FC = () => {
         { value: "open_url", label: "Open URL" },
     ];
     const onSubmit = (values: z.infer<typeof formSchema>) => {
+        console.log('onSubmit', values);
         const args = values.args?.split(",")
         const actionData = { ...values, args, type: values.type as Action['type'] }
         if (isAddAction) {

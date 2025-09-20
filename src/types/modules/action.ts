@@ -7,7 +7,6 @@ export interface Action {
     retry?: number;
     timeout?: number;
     command?: string;
-    url?: string;
     args?: string[];
 }
 

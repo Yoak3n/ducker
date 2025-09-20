@@ -796,7 +796,7 @@
   }
 }
 
-/* 任务标题和自动执行同行布局 */
+/* 任务状态、标题和自动执行同行布局 */
 .title-auto-row {
   display: grid;
   grid-template-columns: 1fr auto;
@@ -805,11 +805,17 @@
   margin-bottom: 12px;
 }
 
+/* 编辑模式时的三列布局 */
+.title-auto-row:has(.status-group) {
+  grid-template-columns: auto 1fr auto;
+}
+
 .title-group {
   flex: 1;
   margin-bottom: 0;
 }
 
+.status-group,
 .auto-execute-group {
   display: flex;
   flex-direction: column;
@@ -862,7 +868,16 @@
     align-items: stretch;
   }
 
+  .status-group {
+    order: 1;
+  }
+
+  .title-group {
+    order: 2;
+  }
+
   .auto-execute-group {
+    order: 3;
     flex-direction: row;
     justify-content: space-between;
     align-items: center;

@@ -1,14 +1,32 @@
 import { invoke } from '@tauri-apps/api/core';
-import type{ Action,CreateActionData, UpdateActionData } from '@/types';
-async function execute_actions(actions: Action[]|undefined) {
+import {
+    isPermissionGranted,
+    requestPermission,
+    sendNotification,
+} from '@tauri-apps/plugin-notification';
+
+
+import type { Action, CreateActionData, UpdateActionData } from '@/types';
+async function execute_actions(actions: Action[] | undefined) {
     try {
         if (!actions || actions.length === 0) {
             console.warn('No actions to execute');
             return;
         }
-        await invoke('execute_actions', { actions });
+        const result: string = await invoke('execute_actions', { actions });
+        let permissionGranted = await isPermissionGranted();
+        
+        // If not we need to request it
+        if (!permissionGranted) {
+            const permission = await requestPermission();
+            permissionGranted = permission === 'granted';
+        }
 
-    }catch (err) {
+        // Once permission has been granted we can send the notification
+        if (permissionGranted) {
+            sendNotification({ title: 'Deaf', body: actions.map(a => a.name).join(', ') + "执行完成" });
+        }
+    } catch (err) {
         console.error('Error executing actions:', err);
     }
 }

@@ -11,9 +11,10 @@ interface Props {
         end: number
     },
     changeTask: (id: string) => void
+    variant?: "today" | "weekly";
 }
 
-export default function TaskList({ tasks,todayDate,todayRange,changeTask }: Props) {
+export default function TaskList({ tasks,todayDate,todayRange,changeTask,variant }: Props) {
     const handleTaskChange = (id: string) => {
         changeTask(id)
     }
@@ -27,7 +28,13 @@ export default function TaskList({ tasks,todayDate,todayRange,changeTask }: Prop
 
     return <ul className="task-list">
         {sortedTasks.map(task => (
-            <TaskItem key={task.id} task={task} changeTask={handleTaskChange} todayDate={todayDate} today={extractTimeStampSecond(task.due_to!) >= todayRange.start && extractTimeStampSecond(task.due_to!) <= todayRange.end} />
+            <TaskItem
+            variant={variant}
+             key={task.id} 
+             task={task} 
+             changeTask={handleTaskChange} 
+             todayDate={todayDate} 
+             today={extractTimeStampSecond(task.due_to!) >= todayRange.start && extractTimeStampSecond(task.due_to!) <= todayRange.end} />
         ))}
     </ul>
 }

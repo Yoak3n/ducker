@@ -114,12 +114,11 @@ export default function TaskModal({ onSave, task, parentTask }: TaskModalProps) 
     if (task) {
       // 编辑模式
       const dueToStr = task.due_to ? new Date(task.due_to).toISOString().slice(0, 16) : '';
+      console.log("due:", dueToStr)
       const reminderStr = task.reminder ? new Date(task.reminder).toISOString().slice(0, 16) : '';
       const reminderOffset = task.due_to && task.reminder
         ? calculateReminderOffset(new Date(task.due_to), new Date(task.reminder))
-        : 'ontime';
-
-      // 从Task转换为TaskFormData
+        : 'ontime';      // 从Task转换为TaskFormData
       setFormData({
         name: task.name,
         value: task.value,
@@ -132,6 +131,7 @@ export default function TaskModal({ onSave, task, parentTask }: TaskModalProps) 
         parent_id: undefined,
         actions: task.actions || []
       });
+      console.log("formData:", formData)
     } else {
       // 创建模式
       const newFormData = { ...initialFormData };
@@ -141,6 +141,8 @@ export default function TaskModal({ onSave, task, parentTask }: TaskModalProps) 
       setFormData(newFormData);
     }
   }, [task, parentTask]);
+
+
 
   // 当截止时间或提醒偏移量改变时，自动计算提醒时间
   useEffect(() => {
@@ -156,6 +158,7 @@ export default function TaskModal({ onSave, task, parentTask }: TaskModalProps) 
   const handleInputChange = (field: keyof TaskFormData, value: string | boolean | number | undefined | Action[]) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     console.log('提交表单数据:', formData);
@@ -202,8 +205,21 @@ export default function TaskModal({ onSave, task, parentTask }: TaskModalProps) 
             <h3>基本信息</h3>
           </div>
 
-          {/* 任务标题和自动执行在同一行 */}
+          {/* 任务状态、标题和自动执行在同一行 */}
           <div className="form-row title-auto-row">
+            {/* 任务完成状态 - 仅在编辑模式时显示 */}
+            {task && (
+              <div className="status-group">
+                <label className="auto-label">任务状态</label>
+                <div className='checkbox-wrapper'>
+                  <Checkbox
+                    checked={formData.completed}
+                    onCheckedChange={(v) => handleInputChange('completed', v)}
+                  />
+                  <label>已完成</label>
+                </div>
+              </div>
+            )}
             <div className="form-group title-group">
               <label htmlFor="title">任务标题 *</label>
               <input
@@ -296,26 +312,6 @@ export default function TaskModal({ onSave, task, parentTask }: TaskModalProps) 
             </div>
           </div>
         </div>
-
-        {/* 任务选项区域 - 移除自动执行选项 */}
-        {task && (
-          <div className="form-section task-options">
-            <div className="section-title">
-              <span className="material-symbols-outlined">tune</span>
-              <h3>任务状态</h3>
-            </div>
-
-            <div className="form-row options-row">
-              <div className='checkbox-wrapper'>
-                <Checkbox
-                  checked={formData.completed}
-                  onCheckedChange={(v) => handleInputChange('completed', v)}
-                />
-                <label>已完成</label>
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* 高级设置区域 */}
         <div className="advanced-section">

@@ -8,11 +8,13 @@ interface Props {
     today: boolean,
     changeTask: (id: string,sub?:boolean) => void;
     todayDate: Date
+    variant?: "today" | "weekly";
 
 }
 
-export default function TodayTaskItem({root,task,changeTask,today,todayDate}:Props) {
+export default function TodayTaskItem({root,task,changeTask,today,todayDate,variant}:Props) {
     return <TaskItem 
+    variant={variant}
     root={root} 
     task={task} 
     changeTask={changeTask} 

@@ -145,7 +145,6 @@ export const useActionStore = create<ActionStore>()(
           // 合并数据确保所有必需字段都存在
           const fullActionData = {
             command: currentAction.command,
-            url: currentAction.url,
             ...actionData
           };
           const errors = get().validateAction(fullActionData);
@@ -302,7 +301,6 @@ export const useActionStore = create<ActionStore>()(
                 type: currentAction.type,
                 wait: currentAction.wait,
                 command: currentAction.command,
-                url: currentAction.url,
                 ...updates
               };
 
@@ -414,11 +412,11 @@ export const useActionStore = create<ActionStore>()(
               break;
 
             case 'open_url':
-              if (!action.url || action.url.trim() === '') {
+              if (!action.command || action.command.trim() === '') {
                 errors.push('URL不能为空');
               } else {
                 try {
-                  new URL(action.url);
+                  new URL(action.command);
                 } catch (e) {
                   errors.push('URL格式不正确', e as string);
                 }

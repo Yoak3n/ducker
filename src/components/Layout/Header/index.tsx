@@ -2,6 +2,7 @@ import { getCurrentWindow} from '@tauri-apps/api/window';
 
 import { closeWindow } from '@/api';
 import "./index.css"
+import type React from 'react';
 
 
 export default function Header() {
@@ -19,12 +20,18 @@ export default function Header() {
     }
 
 
+    const handleDoubleClick = (e:React.MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        // 阻止整个标题栏的双击最大化行为
+    }
+
     return (
-        <header className="header" data-tauri-drag-region>
+        <header className="header" data-tauri-drag-region onDoubleClick={handleDoubleClick}>
             <div className="header-title">
                 Ducker
             </div>
-            <div className="header-operation">
+            <div className="header-operation" onDoubleClick={handleDoubleClick}>
                 <button onClick={handleMinimize}>
                     <span className="material-symbols-outlined">
                         remove

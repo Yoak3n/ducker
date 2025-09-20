@@ -10,17 +10,23 @@ const TaskModify: FC = () => {
     const { id } = useParams<{ id?: string }>();
     const { fetchTasks, tasks, updateTask, createTask } = useTaskStore(state => state)
     const [editingTask, setEditingTask] = useState<Task | undefined>(undefined)
+    
+    // 如果有id参数，说明是编辑模式；否则是新建模式
+    const isEditMode = !!id;
+    
     useEffect(() => {
         fetchTasks()
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
 
-    // 如果有id参数，说明是编辑模式；否则是新建模式
-    const isEditMode = !!id;
-    if (isEditMode) {
-        const task = tasks.find(task => task.id === id)
-        setEditingTask(task)
-    }
+    useEffect(() => {
+        if (isEditMode && tasks.length > 0) {
+            const task = tasks.find(task => task.id === id)
+            setEditingTask(task)
+        } else if (!isEditMode) {
+            setEditingTask(undefined)
+        }
+    }, [isEditMode, id, tasks])
 
     const modifyTask = async (taskData: TaskData) => {
         try {
