@@ -9,8 +9,12 @@ function showWindow(windowType: string, url?: string) {
     return invoke("show_window", { windowType, url });
 }
 
+function minimizeWindow(windowType: string) {
+    return invoke("minimize_window", { windowType });
+}
+
 function closeWindow(windowType: string) {
     return invoke("close_window", { windowType });
 }
 
-export { toggleWindow, showWindow, closeWindow };
+export { toggleWindow, showWindow, minimizeWindow, closeWindow };

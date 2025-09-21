@@ -139,6 +139,7 @@ pub fn run() {
             // Window
             core::cmd::window::toggle_window,
             core::cmd::window::show_window,
+            core::cmd::window::minimize_window,
             core::cmd::window::close_window,
             // Actions
             #[cfg(target_os = "windows")]

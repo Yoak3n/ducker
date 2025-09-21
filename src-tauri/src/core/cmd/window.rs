@@ -14,3 +14,8 @@ pub async fn show_window(window_type: String,url: Option<String>) {
 pub async fn close_window(window_type: String) {
     window_manager::close_window_by_label(&window_type);
 }
+
+#[tauri::command]
+pub async fn minimize_window(window_type: String) -> bool {
+    window_manager::minimize_window_by_label(&window_type)
+}

@@ -2,6 +2,7 @@ use crate::{
     core::{handle, tray},
     logging,
     utils::logging::Type,
+    schema::WindowType,
 };
 use mouse_position::mouse_position::Mouse;
 use once_cell::sync::OnceCell;
@@ -44,46 +45,6 @@ pub enum WindowState {
     NotExist,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum WindowType {
-    Main,
-    Dashboard,
-    Task,
-    Action,
-    Setting,
-}
-
-impl WindowType {
-    pub fn label(&self) -> &'static str {
-        match self {
-            WindowType::Main => "main",
-            WindowType::Dashboard => "dashboard",
-            WindowType::Task => "task",
-            WindowType::Action => "action",
-            WindowType::Setting => "setting",
-        }
-    }
-
-    pub fn url(&self) -> &'static str {
-        match self {
-            WindowType::Main => "/main",
-            WindowType::Dashboard => "/",
-            WindowType::Task => "/task/",
-            WindowType::Action => "/action",
-            WindowType::Setting => "/setting",
-        }
-    }
-
-    pub fn title(&self) -> &'static str {
-        match self {
-            WindowType::Main => "dida",
-            WindowType::Dashboard => "dida",
-            WindowType::Task => "dida",
-            WindowType::Action => "dida",
-            WindowType::Setting => "Setting",
-        }
-    }
-}
 
 #[derive(Debug, Clone)]
 pub struct WindowConfig {
@@ -331,6 +292,7 @@ impl WindowManager {
         .inner_size(config.inner_size.0, config.inner_size.1)
         .min_inner_size(config.min_inner_size.0, config.min_inner_size.1)
         .decorations(config.decorations)
+        .focused(config.focused)
         .skip_taskbar(config.skip_taskbar)
         .always_on_top(config.always_on_top)
         .maximizable(config.maximizable)
@@ -351,13 +313,15 @@ impl WindowManager {
             let half_width = config.inner_size.0 / 2.0;
             let window_width = config.inner_size.0;
             let window_height = config.inner_size.1;
-            
+
             // 获取屏幕尺寸进行边界检测 - 支持多屏幕
-            let (screen_width, screen_height, screen_x, screen_y) = if let Ok(monitors) = app_handle.available_monitors() {
+            let (screen_width, screen_height, screen_x, screen_y) = if let Ok(monitors) =
+                app_handle.available_monitors()
+            {
                 // 查找鼠标所在的显示器
                 let mouse_x = x as f64;
                 let mouse_y = y as f64;
-                
+
                 let mut found_monitor = None;
                 for monitor in monitors {
                     let pos = monitor.position();
@@ -366,29 +330,40 @@ impl WindowManager {
                     let monitor_y = pos.y as f64;
                     let monitor_width = size.width as f64;
                     let monitor_height = size.height as f64;
-                    
+
                     // 检查鼠标是否在当前显示器范围内
-                    if mouse_x >= monitor_x && mouse_x < monitor_x + monitor_width &&
-                       mouse_y >= monitor_y && mouse_y < monitor_y + monitor_height {
+                    if mouse_x >= monitor_x
+                        && mouse_x < monitor_x + monitor_width
+                        && mouse_y >= monitor_y
+                        && mouse_y < monitor_y + monitor_height
+                    {
                         logging!(
                             info,
                             Type::Window,
                             true,
                             "检测到鼠标在显示器: {}x{} at ({}, {})",
-                            monitor_width, monitor_height, monitor_x, monitor_y
+                            monitor_width,
+                            monitor_height,
+                            monitor_x,
+                            monitor_y
                         );
                         found_monitor = Some((monitor_width, monitor_height, monitor_x, monitor_y));
                         break;
                     }
                 }
-                
+
                 // 如果找到了匹配的显示器，使用它；否则使用主显示器
                 if let Some(monitor_info) = found_monitor {
                     monitor_info
                 } else if let Some(primary) = app_handle.primary_monitor().ok().flatten() {
                     let pos = primary.position();
                     let size = primary.size();
-                    (size.width as f64, size.height as f64, pos.x as f64, pos.y as f64)
+                    (
+                        size.width as f64,
+                        size.height as f64,
+                        pos.x as f64,
+                        pos.y as f64,
+                    )
                 } else {
                     // 如果无法获取屏幕尺寸，使用默认值
                     (1920.0, 1080.0, 0.0, 0.0)
@@ -397,19 +372,19 @@ impl WindowManager {
                 // 如果无法获取屏幕尺寸，使用默认值
                 (1920.0, 1080.0, 0.0, 0.0)
             };
-            
+
             // 计算初始位置
             let initial_x = x as f64 - half_width;
             let initial_y = y as f64 - 20.0;
-            
+
             // 进行屏幕边缘检测和调整，保留边距空间 - 考虑多屏幕偏移
             let margin = 10.0; // 保留10像素边距
             let adjusted_x = initial_x
-                .max(screen_x + margin) 
-                .min(screen_x + screen_width - window_width - margin); 
+                .max(screen_x + margin)
+                .min(screen_x + screen_width - window_width - margin);
             let adjusted_y = initial_y
-                .max(screen_y + margin) 
-                .min(screen_y + screen_height - window_height - margin); 
+                .max(screen_y + margin)
+                .min(screen_y + screen_height - window_height - margin);
 
             logging!(
                 info,
@@ -756,42 +731,22 @@ impl WindowManager {
         result
     }
 
-    /// 检查窗口是否可见
-    pub fn is_window_visible(&self, window_type: WindowType) -> bool {
-        self.get_window(window_type)
-            .map(|window| window.is_visible().unwrap_or(false))
-            .unwrap_or(false)
-    }
-
-    /// 检查窗口是否有焦点
-    pub fn is_window_focused(&self, window_type: WindowType) -> bool {
-        self.get_window(window_type)
-            .map(|window| window.is_focused().unwrap_or(false))
-            .unwrap_or(false)
-    }
-
-    /// 检查窗口是否最小化
-    pub fn is_window_minimized(&self, window_type: WindowType) -> bool {
-        self.get_window(window_type)
-            .map(|window| window.is_minimized().unwrap_or(false))
-            .unwrap_or(false)
-    }
-
-    /// 获取详细的窗口状态信息
-    pub fn get_window_status_info(&self, window_type: WindowType) -> String {
-        let state = self.get_cached_window_state(window_type);
-        let is_visible = self.is_window_visible(window_type);
-        let is_focused = self.is_window_focused(window_type);
-        let is_minimized = self.is_window_minimized(window_type);
-
-        format!(
-            "{} 窗口状态: {:?} | 可见: {} | 有焦点: {} | 最小化: {}",
-            window_type.label(),
-            state,
-            is_visible,
-            is_focused,
-            is_minimized
-        )
+    fn minimized_window(&self, window_type: WindowType) -> bool {
+        match self.get_window(window_type) {
+            Some(window) => {
+                if window.is_minimized().unwrap_or(false) {
+                    return true;
+                } else {
+                    if let Err(e) = window.minimize() {
+                        logging!(error, Type::Window, true, "窗口最小化失败: {:?}", e);
+                        return false;
+                    }
+                    self.update_window_state(window_type, WindowState::Minimized);
+                    return true;
+                }
+            }
+            None => return false,
+        }
     }
 
     /// 检查是否所有窗口都已关闭（隐藏或不存在）
@@ -822,23 +777,23 @@ impl WindowManager {
         true // 所有窗口都已关闭
     }
 
-    /// 检查是否有任何窗口获得焦点
-    pub fn has_any_window_focused(&self) -> bool {
-        let all_window_types = [
-            WindowType::Main,
-            WindowType::Dashboard,
-            WindowType::Task,
-            WindowType::Action,
-            WindowType::Setting,
-        ];
+    // /// 检查是否有任何窗口获得焦点
+    // pub fn has_any_window_focused(&self) -> bool {
+    //     let all_window_types = [
+    //         WindowType::Main,
+    //         WindowType::Dashboard,
+    //         WindowType::Task,
+    //         WindowType::Action,
+    //         WindowType::Setting,
+    //     ];
 
-        for window_type in &all_window_types {
-            if self.is_window_focused(*window_type) {
-                return true;
-            }
-        }
-        false
-    }
+    //     for window_type in &all_window_types {
+    //         if self.is_window_focused(*window_type) {
+    //             return true;
+    //         }
+    //     }
+    //     false
+    // }
 }
 
 // 保持向后兼容的公共API
@@ -856,55 +811,42 @@ pub fn create_main_window() {
 }
 
 pub fn toggle_window_by_label(label: &str) -> WindowOperationResult {
-    let window_type = match label {
-        "main" => WindowType::Main,
-        "dashboard" => WindowType::Dashboard,
-        "task" => WindowType::Task,
-        "action" => WindowType::Action,
-        "setting" => WindowType::Setting,
-        _ => {
-            logging!(error, Type::Window, true, "Unknown window label: {}", label);
-            return WindowOperationResult::Failed;
-        }
-    };
-    WindowManager::global().toggle_window(window_type)
+    if let Some(window_type) = WindowType::from_label(label){
+        WindowManager::global().toggle_window(window_type)
+    } else {
+        logging!(error, Type::Window, true, "Unknown window label: {}", label);
+        WindowOperationResult::Failed
+    }
 }
 
 pub fn show_window_by_label(label: &str, url: Option<&str>) {
-    let window_type = match label {
-        "main" => WindowType::Main,
-        "dashboard" => WindowType::Dashboard,
-        "task" => WindowType::Task,
-        "action" => WindowType::Action,
-        "setting" => WindowType::Setting,
-
-        _ => {
-            logging!(error, Type::Window, true, "Unknown window label: {}", label);
-            return;
+    if let Some(window_type) = WindowType::from_label(label){
+        let _ = WindowManager::global().show_window(window_type, url);
+        if window_type == WindowType::Main {
+            tray::Tray::global().update_menu_visible(true);
         }
-    };
-    let _ = WindowManager::global().show_window(window_type, url);
-    if window_type == WindowType::Main {
-        tray::Tray::global().update_menu_visible(true);
+    } else {
+        logging!(error, Type::Window, true, "Unknown window label: {}", label);
+    }
+}
+
+pub fn minimize_window_by_label(label: &str) -> bool {
+    if let Some(window_type) = WindowType::from_label(label){
+        WindowManager::global().minimized_window(window_type)
+    } else {
+        logging!(error, Type::Window, true, "Unknown window label: {}", label);
+        false
     }
 }
 
 pub fn close_window_by_label(label: &str) {
-    let window_type = match label {
-        "main" => WindowType::Main,
-        "dashboard" => WindowType::Dashboard,
-        "task" => WindowType::Task,
-        "action" => WindowType::Action,
-        "setting" => WindowType::Setting,
-
-        _ => {
-            logging!(error, Type::Window, true, "Unknown window label: {}", label);
-            return;
+    if let Some(window_type) = WindowType::from_label(label){
+        WindowManager::global().close_window(window_type);
+        if window_type == WindowType::Main {
+            tray::Tray::global().update_menu_visible(false);
         }
-    };
-    WindowManager::global().close_window(window_type);
-    if window_type == WindowType::Main {
-        tray::Tray::global().update_menu_visible(false);
+    } else {
+        logging!(error, Type::Window, true, "Unknown window label: {}", label);
     }
 }
 

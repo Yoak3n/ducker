@@ -1,5 +1,4 @@
 use crate::{
-    config::Config,
     core::{handle, timer::Timer, tray::Tray},
     log_err,
     logging,
@@ -14,13 +13,13 @@ use crate::AppHandleManager;
 
 use anyhow::{Context, Result};
 use delay_timer::prelude::TaskBuilder;
-use std::sync::atomic::{AtomicBool, Ordering};
+// use std::sync::atomic::{AtomicBool, Ordering};
 use tauri::{Listener, Manager};
 
 pub const LIGHT_WEIGHT_TASK_UID: &str = "light_weight_task";
 
 // 添加退出轻量模式的锁，防止并发调用
-static EXITING_LIGHTWEIGHT: AtomicBool = AtomicBool::new(false);
+// static EXITING_LIGHTWEIGHT: AtomicBool = AtomicBool::new(false);
 
 fn with_lightweight_status<F, R>(f: F) -> Option<R>
 where
@@ -41,29 +40,29 @@ where
     }
 }
 
-pub async fn run_once_auto_lightweight() {
-    LightWeightState::default().run_once_time(|| {
-        let config = Config::global().lock().unwrap().clone();
-        let is_silent_start = config
-            .silent_launch
-            .unwrap_or(false);
-        if is_silent_start {
-            logging!(
-                info,
-                Type::Lightweight,
-                true,
-                "在静默启动的情况下，创建窗口再添加自动进入轻量模式窗口监听器"
-            );
-            set_lightweight_mode(false);
-            enable_auto_light_weight_mode();
+// pub async fn run_once_auto_lightweight() {
+//     LightWeightState::default().run_once_time(|| {
+//         let config = Config::global().lock().unwrap().clone();
+//         let is_silent_start = config
+//             .silent_launch
+//             .unwrap_or(false);
+//         if is_silent_start {
+//             logging!(
+//                 info,
+//                 Type::Lightweight,
+//                 true,
+//                 "在静默启动的情况下，创建窗口再添加自动进入轻量模式窗口监听器"
+//             );
+//             set_lightweight_mode(false);
+//             enable_auto_light_weight_mode();
 
-            // 触发托盘更新
-            if let Err(e) = Tray::global().update_part() {
-                log::warn!("Failed to update tray: {e}");
-            }
-        }
-    });
-}
+//             // 触发托盘更新
+//             if let Err(e) = Tray::global().update_part() {
+//                 log::warn!("Failed to update tray: {e}");
+//             }
+//         }
+//     });
+// }
 
 pub fn auto_lightweight_mode_init() {
     if let Some(app_handle) = handle::Handle::global().app_handle() {
@@ -161,44 +160,44 @@ pub fn entry_lightweight_mode() {
 }
 
 // 添加从轻量模式恢复的函数
-pub fn exit_lightweight_mode() {
-    // 使用原子操作检查是否已经在退出过程中，防止并发调用
-    if EXITING_LIGHTWEIGHT
-        .compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst)
-        .is_err()
-    {
-        logging!(
-            info,
-            Type::Lightweight,
-            true,
-            "轻量模式退出操作已在进行中，跳过重复调用"
-        );
-        return;
-    }
+// pub fn exit_lightweight_mode() {
+//     // 使用原子操作检查是否已经在退出过程中，防止并发调用
+//     if EXITING_LIGHTWEIGHT
+//         .compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst)
+//         .is_err()
+//     {
+//         logging!(
+//             info,
+//             Type::Lightweight,
+//             true,
+//             "轻量模式退出操作已在进行中，跳过重复调用"
+//         );
+//         return;
+//     }
 
-    // 使用defer确保无论如何都会重置标志
-    let _guard = scopeguard::guard((), |_| {
-        EXITING_LIGHTWEIGHT.store(false, Ordering::SeqCst);
-    });
+//     // 使用defer确保无论如何都会重置标志
+//     let _guard = scopeguard::guard((), |_| {
+//         EXITING_LIGHTWEIGHT.store(false, Ordering::SeqCst);
+//     });
 
-    // 确保当前确实处于轻量模式才执行退出操作
-    if !is_in_lightweight_mode() {
-        logging!(info, Type::Lightweight, true, "当前不在轻量模式，无需退出");
-        return;
-    }
+//     // 确保当前确实处于轻量模式才执行退出操作
+//     if !is_in_lightweight_mode() {
+//         logging!(info, Type::Lightweight, true, "当前不在轻量模式，无需退出");
+//         return;
+//     }
 
-    set_lightweight_mode(false);
+//     set_lightweight_mode(false);
 
-    // macOS激活策略
-    #[cfg(target_os = "macos")]
-    AppHandleManager::global().set_activation_policy_regular();
+//     // macOS激活策略
+//     #[cfg(target_os = "macos")]
+//     AppHandleManager::global().set_activation_policy_regular();
 
-    // 重置UI就绪状态
-    crate::utils::resolve::reset_ui_ready();
+//     // 重置UI就绪状态
+//     crate::utils::resolve::reset_ui_ready();
 
-    // 更新托盘显示
-    let _tray = crate::core::tray::Tray::global();
-}
+//     // 更新托盘显示
+//     let _tray = crate::core::tray::Tray::global();
+// }
 
 #[cfg(target_os = "macos")]
 pub fn add_light_weight_timer() {

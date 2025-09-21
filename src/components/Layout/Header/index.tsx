@@ -1,13 +1,13 @@
 import { getCurrentWindow} from '@tauri-apps/api/window';
 
-import { closeWindow } from '@/api';
+import { closeWindow, minimizeWindow } from '@/api';
 import "./index.css"
 import type React from 'react';
 
 
 export default function Header() {
     const handleClose = async() => await closeWindow(getCurrentWindow().label);
-    const handleMinimize = async() => await getCurrentWindow().minimize()
+    const handleMinimize = async() => await minimizeWindow(getCurrentWindow().label);
     const handleMaximize = async() => {
         const currentWindow = getCurrentWindow();
         if (await currentWindow.isMaximized()) {
@@ -23,7 +23,7 @@ export default function Header() {
     const handleDoubleClick = (e:React.MouseEvent) => {
         e.preventDefault();
         e.stopPropagation();
-        // 阻止整个标题栏的双击最大化行为
+        // 阻止整个标题栏的双击最大化行为。尽管没什么作用
     }
 
     return (

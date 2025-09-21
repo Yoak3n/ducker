@@ -13,7 +13,7 @@ async function execute_actions(actions: Action[] | undefined) {
             console.warn('No actions to execute');
             return;
         }
-        const result: string = await invoke('execute_actions', { actions });
+        await invoke('execute_actions', { actions });
         let permissionGranted = await isPermissionGranted();
         
         // If not we need to request it
@@ -24,7 +24,7 @@ async function execute_actions(actions: Action[] | undefined) {
 
         // Once permission has been granted we can send the notification
         if (permissionGranted) {
-            sendNotification({ title: 'Deaf', body: actions.map(a => a.name).join(', ') + "执行完成" });
+            sendNotification({ title: 'Action执行完成', body: actions.map(a => a.name).join(',') });
         }
     } catch (err) {
         console.error('Error executing actions:', err);
