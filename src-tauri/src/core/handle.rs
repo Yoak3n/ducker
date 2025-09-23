@@ -31,7 +31,7 @@ impl Handle {
             startup_completed: Arc::new(RwLock::new(false)),
         })
     }
-    pub fn init(&self, app_handle: &AppHandle) {
+    pub fn init(&self, app_handle: AppHandle) {
         let mut handle = self.app_handle.write();
         *handle = Some(app_handle.clone());
     }

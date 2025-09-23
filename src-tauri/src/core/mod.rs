@@ -4,3 +4,4 @@ pub mod handle;
 pub mod timer;
 #[cfg(desktop)]
 pub mod tray;
+pub mod app_init;

@@ -36,7 +36,7 @@ pub enum WindowState {
     /// 窗口可见且有焦点
     VisibleFocused,
     /// 窗口可见但无焦点
-    VisibleUnfocused,
+    // VisibleUnfocused,
     /// 窗口最小化
     Minimized,
     /// 窗口隐藏
@@ -594,7 +594,7 @@ impl WindowManager {
                 logging!(info, Type::Window, true, "窗口已经可见且有焦点，无需操作");
                 WindowOperationResult::NoAction
             }
-            WindowState::VisibleUnfocused | WindowState::Minimized | WindowState::Hidden => {
+            WindowState::Minimized | WindowState::Hidden => {
                 if let Some(window) = self.get_window(window_type) {
                     self.activate_window(&window, window_type)
                 } else {
@@ -694,7 +694,7 @@ impl WindowManager {
                     Err(_) => WindowOperationResult::Failed,
                 }
             }
-            WindowState::VisibleFocused | WindowState::VisibleUnfocused => {
+            WindowState::VisibleFocused => {
                 logging!(info, Type::Window, true, "窗口可见，将隐藏窗口");
                 update_tray(false);
                 self.close_window(window_type)
@@ -765,7 +765,6 @@ impl WindowManager {
             logging!(info, Type::Window, true, "window {} is {:?}", label, state);
             match state {
                 WindowState::VisibleFocused
-                | WindowState::VisibleUnfocused
                 | WindowState::Minimized => {
                     return false; // 有窗口仍然可见或最小化
                 }
