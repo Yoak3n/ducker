@@ -539,6 +539,8 @@ export default function TaskModal({ onSave, task, parentTask }: TaskModalProps) 
               <ActionSelect
                 selectedActions={formData.actions}
                 onActionsChange={(actions) => handleInputChange('actions', actions)}
+                multiSelect={true}
+                maxHeight='50vh'
               />
             </div>
             <div className="flex justify-end gap-3 px-6 py-4 border-t border-gray-200 bg-gray-50">
