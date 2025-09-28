@@ -5,18 +5,15 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Tooltip, TooltipContent, TooltipTrigger, } from "@/components/ui/tooltip"
 import { Input } from '@/components/ui/input';
 import { Card, CardAction, CardContent, CardHeader, CardTitle, } from "@/components/ui/card"
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue, } from "@/components/ui/select"
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Badge } from '@/components/ui/badge';
-import { Skeleton } from "@/components/ui/skeleton"
 import { toast } from "sonner"
 
 import { useActionStore } from '@/store';
-import { open_file_select_dialog, simplifyPath } from '@/utils';
+import { open_file_select_dialog } from '@/utils';
 import type { Action } from '@/types';
 
 const formSchema = z.object({

@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox';
 
 import { formatDatetime } from '@/utils';
-import type { Task, TaskData, Action, Period, PeriodicTask, PeriodicTaskData } from '@/types';
+import type { Task, TaskData, Action, Period, PeriodicTaskData } from '@/types';
 import { closeWindow } from '@/api';
 import { create_periodic_task, update_periodic_task } from '@/api/modules/task';
 
