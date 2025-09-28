@@ -34,8 +34,8 @@ fn get_uncompleted_tasks_by_date_range_timestamp(
 
 pub fn create_scheduled_tasks() -> HashMap<i64, Vec<TaskView>> {
     let now = Local::now();
-    // 获取一分钟前开始的任务，防止某些任务未执行而因刷新被删除
-    let start_date = now.timestamp() - 60;
+    // 获取半分钟前开始的任务，防止某些任务未执行而因刷新被删除
+    let start_date = now.timestamp() - 30;
     let end_of_day = Local
         .with_ymd_and_hms(now.year(), now.month(), now.day(), 23, 59, 59)
         .unwrap()

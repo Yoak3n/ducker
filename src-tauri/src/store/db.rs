@@ -387,7 +387,7 @@ impl TaskManager for Database {
                 &record.completed,
                 &record.auto,
                 &record.parent_id,
-                &actions, id],
+                id],
         )?;
         Ok(record)
     }

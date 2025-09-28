@@ -101,7 +101,7 @@ impl Timer {
         let auto_refresh_task = TaskBuilder::default()
             .set_task_id(auto_refrsh_task_id)
             .set_maximum_parallel_runnable_num(1)
-            .set_frequency_once_by_minutes(1)
+            .set_frequency_repeated_by_minutes(1)
             .spawn_async_routine(move || async move {
                 Hub::global().refresh().await;
                 let _ = Self::global().refresh();
@@ -119,7 +119,6 @@ impl Timer {
         // Generate diff outside of lock to minimize lock contention
         // Hub::global().refresh();
         let diff_map = self.gen_diff();
-        // let diff_map = HashMap::<String, DiffFlag>::new();
         logging!(info, Type::Timer,true, "Timer refresh at {}",Local::now().to_rfc3339_opts(SecondsFormat::Secs, true));
         if diff_map.is_empty() {
             logging!(debug, Type::Timer, "No timer changes needed");
@@ -138,13 +137,14 @@ impl Timer {
                         logging!(
                             warn,
                             Type::Timer,
+                            true,
                             "Failed to remove task {} for uid {}: {}",
                             tid,
                             uid,
                             e
                         );
                     } else {
-                        logging!(debug, Type::Timer, "Removed task {} for uid {}", tid, uid);
+                        logging!(debug, Type::Timer, true, "Removed task {} for uid {}", tid, uid);
                     }
                 }
                 DiffFlag::Add(tid, interval) => {
@@ -156,7 +156,6 @@ impl Timer {
                     };
 
                     timer_map.insert(uid.clone(), task);
-
                     if let Err(e) =
                         self.add_task(&mut delay_timer, uid.clone(), tid, interval, now + interval)
                     {
@@ -166,6 +165,7 @@ impl Timer {
                         logging!(
                             debug,
                             Type::Timer,
+                            true,
                             "Added task {} for uid {} at {}",
                             tid,
                             uid,
@@ -179,6 +179,7 @@ impl Timer {
                         logging!(
                             warn,
                             Type::Timer,
+                            true,
                             "Failed to remove old task {} for uid {}: {}",
                             tid,
                             uid,
@@ -320,7 +321,6 @@ impl Timer {
             self.timer_count.store(next_id, Ordering::Relaxed);
         }
 
-        logging!(debug, Type::Timer, "定时任务变更数量: {}", diff_map.len());
         diff_map
     }
 
@@ -346,7 +346,7 @@ impl Timer {
         let task = TaskBuilder::default()
             .set_task_id(tid)
             .set_maximum_parallel_runnable_num(1)
-            .set_frequency_repeated_by_seconds(seconds as u64)
+            .set_frequency_once_by_seconds(seconds as u64)
             .spawn_async_routine(move || {
                 let uid = uid.clone();
                 async move {
