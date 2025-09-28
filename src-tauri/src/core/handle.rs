@@ -66,7 +66,7 @@ impl Handle {
     pub fn get_window_visible(&self) -> bool {
         let window = self.get_main_window();
         match window {
-            // TODO 没有按照预想的立即返回false
+            // 没有按照预想的在更改窗口状态后返回正确的窗口状态，那就一切自行控制
             Some(window) => window.is_visible().unwrap_or(false),
             None => false,
         }

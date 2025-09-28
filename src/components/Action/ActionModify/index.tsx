@@ -122,7 +122,9 @@ const ActionModify: React.FC = () => {
     const handleSelectFile = useCallback(async () => {
         const isFile = form.getValues("type") === "open_file";
         const path = await open_file_select_dialog(isFile);
-        form.setValue("command", path!);
+        if (path){
+            form.setValue("command", path);
+        }
     }, [form]);
 
 
@@ -223,12 +225,13 @@ const ActionModify: React.FC = () => {
                                     <FormItem className='w-5/6 mb-2'>
                                         <FormLabel className="block text-sm font-medium text-gray-700 ">{isUrlType ? "Url" : isCommandType ? "Command" : "Path"}</FormLabel>
                                         <FormControl>
-                                            {!isFileType ? <Input
+                                            <Input
                                                 {...field}
                                                 type="text"
-                                                placeholder="Enter command"
+                                                placeholder={isUrlType ? "Enter url" : isCommandType ? "Enter command" : "Enter path"}
                                                 className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-                                            /> : field.value != '' ?
+                                            /> 
+                                            {/* : field.value != '' ?
                                                 <Tooltip>
                                                     <TooltipTrigger asChild>
                                                         <Badge className='justify-start'>
@@ -238,8 +241,8 @@ const ActionModify: React.FC = () => {
                                                     <TooltipContent >
                                                         {field.value}
                                                     </TooltipContent>
-                                                </Tooltip> : <Skeleton className="h-5 w-[100px]" />
-                                            }
+                                                </Tooltip> : <Skeleton className="h-5 w-[100px]" /> */}
+                                            
                                         </FormControl>
                                     </FormItem>
                                 )}

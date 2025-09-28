@@ -1,8 +1,16 @@
 use crate::{
-    logging, schema::{
+    logging, 
+    schema::{
         task::{TaskData, TaskRecord, TaskView},
-        AppState,
-    }, store::module::TaskManager, utils::{help::random_string, logging::Type}
+        AppState, PeriodicTask, PeriodicTaskData,
+    }, 
+    store::module::{
+        PeriodicTaskManager, TaskManager
+    }, 
+    utils::{
+        help::random_string, 
+        logging::Type
+    }
 };
 use tauri::State;
 
@@ -183,13 +191,109 @@ pub async fn gen_random_task_id() -> Result<String, String> {
     let random_str = format!("task_{}", random_string(6));
     Ok(random_str)
 }
-// #[tauri::command]
-// pub async fn execute_task_actions(state: State<'_, AppState>, id: String) -> Result<(), String> {
-//     let task = state.db.get_task(&id).map_err(|e| e.to_string())?;
-//     let actions = state.db.get_actions(&task.actions).map_err(|e| e.to_string())?;
 
-//     for action in actions {
-//         execute_action(action.into()).await?;
-//     }
-//     Ok(())
-// }
+
+#[tauri::command]
+pub async fn get_enabled_periodic_tasks(state: State<'_, AppState>) -> Result<Vec<PeriodicTask>, String> {
+    let records = {
+        let db = state.db.lock().unwrap();
+        db.get_enabled_periodic_tasks()
+    };
+
+    match records {
+        Ok(data) => {
+            let mut periodic_tasks = Vec::new();
+            for record in data {
+                match PeriodicTask::try_from((&record, state.inner())) {
+                    Ok(task) => periodic_tasks.push(task),
+                    Err(e) => {
+                        logging!(error, Type::Database, true, "转换周期性任务失败: {:?}", e);
+                        return Err(e.to_string());
+                    }
+                }
+            }
+            Ok(periodic_tasks)
+        }
+        Err(e) => {
+            logging!(error, Type::Database, true, "获取周期性任务失败: {:?}", e);
+            Err(e.to_string())
+        }
+    }
+}
+
+#[tauri::command]
+pub async fn create_periodic_task(state: State<'_, AppState>, task: PeriodicTaskData) -> Result<String, String> {
+    let db = state.db.lock().unwrap();
+
+    let res = db.create_periodic_task(&task);
+    match res {
+        Ok(data) => {
+            logging!(info, Type::Database, "创建周期性任务成功: {}", data.id);
+            Ok(data.id)
+        }
+        Err(e) => {
+            logging!(error, Type::Database, true, "创建周期性任务失败: {:?}", e);
+            Err(e.to_string())
+        }
+    }
+}
+
+#[tauri::command]
+pub async fn update_periodic_task(
+    state: State<'_, AppState>,
+    task: PeriodicTaskData,
+) -> Result<PeriodicTask, String> {
+    let record = {
+        let db = state.db.lock().unwrap();
+        db.update_periodic_task(task.task.id.clone().unwrap().as_str(), &task)
+    };
+
+    match record {
+        Ok(data) => {
+            logging!(info, Type::Database, "更新周期性任务成功: {}", data.id);
+            // 将 PeriodicTaskRecord 转换为 PeriodicTask
+            match PeriodicTask::try_from((&data, state.inner())) {
+                Ok(periodic_task) => Ok(periodic_task),
+                Err(e) => {
+                    logging!(error, Type::Database, true, "转换周期性任务失败: {:?}", e);
+                    Err(e.to_string())
+                }
+            }
+        }
+        Err(e) => {
+            logging!(error, Type::Database, true, "更新周期性任务失败: {:?}", e);
+            Err(e.to_string())
+        }
+    }
+}
+
+#[tauri::command]
+pub async fn update_periodic_task_last_run(state: State<'_, AppState>, id: String)-> Result<(),String>{
+    let db = state.db.lock().unwrap();
+    match db.update_periodic_task_last_run(id.as_str()) {
+        Ok(_) => Ok(()),
+        Err(e) => {
+            logging!(error, Type::Database, true, "更新周期性任务最后运行时间失败: {:?}", e);
+            Err(e.to_string())
+        }
+    }
+}
+
+#[tauri::command]
+pub async fn delete_periodic_task(state: State<'_, AppState>, id: String) -> Result<(), String> {
+    let db = state.db.lock().unwrap();
+
+    let res = db.delete_periodic_task(id.as_str());
+    match res {
+        Ok(_) => {
+            logging!(info, Type::Database, "删除周期性任务成功: {}", id);
+            Ok(())
+        }
+        Err(e) => {
+            logging!(error, Type::Database, true, "删除周期性任务失败: {:?}", e);
+            Err(e.to_string())
+        }
+    }
+}
+
+

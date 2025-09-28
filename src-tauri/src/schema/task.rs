@@ -6,6 +6,7 @@ use crate::{
         help::random_string,
     },
 };
+use super::Action;
 use chrono::{Duration, Local};
 use serde::{Deserialize, Serialize};
 
@@ -85,7 +86,7 @@ impl From<TaskData> for TaskRecord {
         };
         Self {
             id,
-            // TODO 添加更复杂的默认值逻辑
+            // TODO 添加更复杂的默认值逻辑,比如根据任务所有来判定任务价值
             value: data.value.unwrap_or(0.0),
             completed: data.completed,
             auto: data.auto,
@@ -114,7 +115,7 @@ pub struct TaskData {
     pub due_to: Option<String>,
     pub reminder: Option<String>,
 }
-use super::Action;
+
 #[derive(Deserialize, Serialize, Debug, Clone)]
 pub struct TaskView {
     pub id: String,

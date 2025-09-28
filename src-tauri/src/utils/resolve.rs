@@ -7,7 +7,7 @@ use tauri::App;
 #[cfg(desktop)]
 use crate::core::tray;
 use crate::{
-    config::Config, core::{handle, timer}, logging, logging_error, module::lightweight::{self, auto_lightweight_mode_init}, process::AsyncHandler, utils::{logging::Type, window_manager}
+    config::Config, core::{handle, timer}, logging, logging_error, module::lightweight::auto_lightweight_mode_init, utils::{logging::Type, window_manager}
 };
 
 pub static VERSION: OnceCell<String> = OnceCell::new();
@@ -135,7 +135,7 @@ pub async fn resolve_setup(app: &mut App) {
         // 初始化热键
         // logging!(trace, Type::System, true, "Initial hotkeys");
         // logging_error!(Type::System, true, hotkey::Hotkey::global().init());
-        logging!(info, Type::Window, true, "Creating window preview");
+        // logging!(info, Type::Window, true, "Creating window preview");
         let config = Config::global().lock().unwrap();
         config.save().ok();
         if let Some(silent_start) = config.data().silent_launch {

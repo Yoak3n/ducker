@@ -267,9 +267,6 @@ impl WindowManager {
             // 更新缓存状态为可见且有焦点
             self.update_window_state(window_type, WindowState::VisibleFocused);
 
-            // 为恢复的窗口添加轻量模式监听器（如果还没有的话）
-            crate::module::lightweight::add_window_listeners(window_type.label());
-
             return Ok(existing_window);
         }
 
@@ -389,7 +386,6 @@ impl WindowManager {
             logging!(
                 info,
                 Type::Window,
-                true,
                 "Task窗口位置调整: 鼠标({}, {}) -> 初始({:.1}, {:.1}) -> 最终({:.1}, {:.1}), 显示器({:.0}x{:.0} at {:.0},{:.0})",
                 x, y, initial_x, initial_y, adjusted_x, adjusted_y, screen_width, screen_height, screen_x, screen_y
             );
@@ -481,7 +477,8 @@ impl WindowManager {
             }
             _ => {}
         }
-
+        // 为恢复的窗口添加轻量模式监听器（如果还没有的话）
+        crate::module::lightweight::add_window_listeners(window_type.label());
         Ok(window)
     }
 
@@ -751,15 +748,7 @@ impl WindowManager {
 
     /// 检查是否所有窗口都已关闭（隐藏或不存在）
     pub fn are_all_windows_closed(&self) -> bool {
-        let all_window_types = [
-            WindowType::Main,
-            WindowType::Dashboard,
-            WindowType::Task,
-            WindowType::Action,
-            WindowType::Setting,
-        ];
-
-        for window_type in &all_window_types {
+        for window_type in &WindowType::all() {
             let label = window_type.label();
             let state = self.get_cached_window_state(*window_type);
             logging!(info, Type::Window, true, "window {} is {:?}", label, state);
@@ -775,24 +764,6 @@ impl WindowManager {
         }
         true // 所有窗口都已关闭
     }
-
-    // /// 检查是否有任何窗口获得焦点
-    // pub fn has_any_window_focused(&self) -> bool {
-    //     let all_window_types = [
-    //         WindowType::Main,
-    //         WindowType::Dashboard,
-    //         WindowType::Task,
-    //         WindowType::Action,
-    //         WindowType::Setting,
-    //     ];
-
-    //     for window_type in &all_window_types {
-    //         if self.is_window_focused(*window_type) {
-    //             return true;
-    //         }
-    //     }
-    //     false
-    // }
 }
 
 // 保持向后兼容的公共API

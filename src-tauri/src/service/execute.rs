@@ -8,7 +8,7 @@ use crate::{
 };
 use tokio::time::timeout;
 
-pub async fn execute_single_action(action: &Action) -> Result<(), String> {
+pub async fn execute_single_action(action: &Action) -> Result<String, String> {
     let is_sync = action.wait > 0;
     Ok(if is_sync {
         // 同步执行 - 等待任务完成
@@ -24,11 +24,10 @@ pub async fn execute_single_action(action: &Action) -> Result<(), String> {
             match timeout(timeout_duration, execute_action(action.clone())).await {
                 Ok(result) => {
                     // 任务在超时前完成
-                    // TODO: 之后要把执行结果返回给前端
                     match result {
                         Ok(out) => {
                             logging!(info, Type::Service, true, "任务执行成功:{}", out);
-                            return Ok(());
+                            return Ok(out);
                         }
                         Err(e) => {
                             last_error = e.to_string();
@@ -54,6 +53,7 @@ pub async fn execute_single_action(action: &Action) -> Result<(), String> {
                                 );
                                 tokio::time::sleep(tokio::time::Duration::from_millis(1000)).await;
                             }
+                            
                         }
                     }
                 }
@@ -89,6 +89,7 @@ pub async fn execute_single_action(action: &Action) -> Result<(), String> {
 
         // 使用异步等待而不是阻塞主线程
         tokio::time::sleep(tokio::time::Duration::from_millis(action.wait as u64)).await;
+        last_error
     } else {
         // 异步执行 - 不等待任务完成
         let action_name = action.name.clone();
@@ -121,28 +122,32 @@ pub async fn execute_single_action(action: &Action) -> Result<(), String> {
                 }
             }
         });
-        return Ok(());
+        return Ok("".to_string());
     })
 }
 
-pub async fn execute_plural_actions(actions: Vec<Action>) -> Result<(), String> {
+pub async fn execute_plural_actions(actions: Vec<Action>) -> Result<String, String> {
+    let mut out = "".to_string();
     for action in actions {
-        let _: () = execute_single_action(&action).await?;
+        let out_action: String = execute_single_action(&action).await?;
+        out += &out_action;
     }
-    return Ok(());
+    return Ok(out);
 }
 
-pub async fn execute_tasks(id: &str, ts: i64) -> Result<(), String> {
+pub async fn execute_tasks(id: &str, ts: i64) -> Result<String, String> {
     let tasks = Hub::global().get_schedule(id, ts).unwrap_or_default();
     if tasks.is_empty() {
-        return Ok(());
+        return Ok("".to_string());
     }
     let mut tasks_name = Vec::new();
+    let mut out_tasks = "".to_string();
     for task in tasks {
         let actions = task.actions.clone().unwrap_or_default();
         tasks_name.push(task.name.clone());
-        let _: () = execute_plural_actions(actions).await?;
+        let out_task: String = execute_plural_actions(actions).await?;
+        out_tasks += &out_task;
     }
     Handle::notice_message("Task", format!("任务{}执行完成", tasks_name.join(",")));
-    Ok(())
+    Ok(out_tasks)
 }

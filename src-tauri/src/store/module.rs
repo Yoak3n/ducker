@@ -1,4 +1,4 @@
-use crate::schema::{Action, ActionRecord, TaskData, TaskRecord};
+use crate::schema::{Action, ActionRecord, PeriodicTaskData, PeriodicTaskRecord, TaskData, TaskRecord};
 use anyhow::Result;
 pub trait ActionManager {
     fn create_action(&self, action: &Action) -> Result<ActionRecord>;
@@ -24,4 +24,15 @@ pub trait TaskManager {
         end_date: i64,
     ) -> Result<Vec<TaskRecord>>;
     fn get_all_tasks(&self) -> Result<Vec<TaskRecord>>;
+}
+
+pub trait PeriodicTaskManager {
+    fn create_periodic_task(&self, task: &PeriodicTaskData) -> Result<PeriodicTaskRecord>;
+    fn update_periodic_task(&self, id: &str, task: &PeriodicTaskData) -> Result<PeriodicTaskRecord>;
+    fn update_periodic_task_last_run(&self, id: &str) -> Result<()>;
+    fn delete_periodic_task(&self, id: &str) -> Result<()>;
+    fn get_enabled_periodic_tasks(&self) -> Result<Vec<PeriodicTaskRecord>>;
+    // fn get_periodic_task(&self, id: u32) -> Result<PeriodicTaskRecord>;
+    // fn get_periodic_tasks(&self, ids: &[u32]) -> Result<Vec<PeriodicTaskRecord>>;
+    // fn get_all_periodic_tasks(&self) -> Result<Vec<PeriodicTaskRecord>>;
 }

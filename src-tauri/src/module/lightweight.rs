@@ -1,7 +1,6 @@
 use crate::{
     core::{handle, timer::Timer, tray::Tray},
-    log_err,
-    logging,
+    log_err, logging,
     schema::{state::LightWeightState, AppState},
     utils::{logging::Type, window_manager},
 };
@@ -16,7 +15,7 @@ use delay_timer::prelude::TaskBuilder;
 // use std::sync::atomic::{AtomicBool, Ordering};
 use tauri::{Listener, Manager};
 
-pub const LIGHT_WEIGHT_TASK_UID: &str = "light_weight_task";
+const LIGHT_WEIGHT_TASK_ID: u64 = 100000;
 
 // 添加退出轻量模式的锁，防止并发调用
 // static EXITING_LIGHTWEIGHT: AtomicBool = AtomicBool::new(false);
@@ -121,17 +120,17 @@ pub fn set_lightweight_mode(value: bool) {
 
 pub fn enable_auto_light_weight_mode() {
     Timer::global().init().unwrap();
-    logging!(info, Type::Lightweight, true, "开启自动轻量模式");
-    
+    logging!(info, Type::Lightweight, "开启自动轻量模式");
+
     // 设置监听器
     setup_window_close_listener();
 }
 
-pub fn disable_auto_light_weight_mode() {
-    logging!(info, Type::Lightweight, true, "关闭自动轻量模式");
-    let _ = cancel_light_weight_timer();
-    cancel_window_listeners();
-}
+// pub fn disable_auto_light_weight_mode() {
+//     logging!(info, Type::Lightweight, true, "关闭自动轻量模式");
+//     let _ = cancel_light_weight_timer();
+//     cancel_window_listeners();
+// }
 
 pub fn entry_lightweight_mode() {
     use crate::utils::window_manager;
@@ -144,11 +143,17 @@ pub fn entry_lightweight_mode() {
         "轻量模式隐藏窗口结果: {:?}",
         result
     );
-    // TODO 这里应该要把所有窗口destroy
-    if let Some(window) = handle::Handle::global().get_main_window() {
-        if let Some(webview) = window.get_webview_window("main") {
-            let _ = webview.destroy();
+    // 销毁所有窗口
+    if let Some(app_handle) = handle::Handle::global().app_handle() {
+        // 获取所有窗口类型并销毁它们
+        for window_type in &crate::schema::WindowType::all() {
+            let label = window_type.label();
+            if let Some(webview) = app_handle.get_webview_window(label) {
+                logging!(info, Type::Lightweight, true, "销毁窗口: {}", label);
+                let _ = webview.destroy();
+            }
         }
+
         #[cfg(target_os = "macos")]
         AppHandleManager::global().set_activation_policy_accessory();
     }
@@ -206,19 +211,15 @@ pub fn add_light_weight_timer() {
 
 /// 设置窗口关闭监听器（初始化时调用）
 pub fn setup_window_close_listener() {
-    let window_labels = [
-        "main",
-    ];
+    let window_labels = ["main"];
 
     // 使用动态监听机制为所有已存在的窗口添加监听器
     for window_label in &window_labels {
         add_window_listeners(window_label);
     }
-    
+
     logging!(info, Type::Lightweight, true, "完成初始窗口监听器设置");
 }
-
-
 
 /// 为单个窗口添加监听器（动态添加）
 pub fn add_window_listeners(window_label: &str) {
@@ -226,13 +227,19 @@ pub fn add_window_listeners(window_label: &str) {
         if let Some(window) = app_handle.get_webview_window(window_label) {
             with_lightweight_status(|state| {
                 let window_id = window.label();
-                
+
                 // 检查是否已经监听过这个窗口
                 if state.listened_windows.contains(window_id) {
-                    logging!(debug, Type::Lightweight, true, "窗口 {} 已经被监听，跳过重复添加", window_id);
+                    logging!(
+                        debug,
+                        Type::Lightweight,
+                        true,
+                        "窗口 {} 已经被监听，跳过重复添加",
+                        window_id
+                    );
                     return;
                 }
-                
+
                 // 添加关闭监听器
                 let close_handler = window.listen("tauri://close-requested", move |_event| {
                     // 检查是否所有窗口都已关闭
@@ -253,7 +260,7 @@ pub fn add_window_listeners(window_label: &str) {
                     }
                 });
                 state.close_listeners.push(close_handler);
-                
+
                 // 添加焦点监听器
                 let focus_handler = window.listen("tauri://focus", move |_event| {
                     // 任何窗口获得焦点都取消轻量模式计时
@@ -265,11 +272,17 @@ pub fn add_window_listeners(window_label: &str) {
                     );
                 });
                 state.focus_listeners.push(focus_handler);
-                
+
                 // 记录已监听的窗口
                 state.listened_windows.insert(window_id.to_string());
-                
-                logging!(info, Type::Lightweight, true, "为窗口 {} 添加了监听器", window_id);
+
+                logging!(
+                    info,
+                    Type::Lightweight,
+                    true,
+                    "为窗口 {} 添加了监听器",
+                    window_id
+                );
             });
         } else {
             logging!(warn, Type::Lightweight, true, "未找到窗口 {}", window_label);
@@ -277,51 +290,52 @@ pub fn add_window_listeners(window_label: &str) {
     }
 }
 
-pub fn cancel_window_listeners() {
-    with_lightweight_status(|state| {
-        if let Some(app_handle) = handle::Handle::global().app_handle() {
-            let window_labels = ["main", "dashboard", "task", "action", "setting"];
-            
-            // 取消关闭监听器
-            for handler_id in &state.close_listeners {
-                for label in &window_labels {
-                    if let Some(window) = app_handle.get_webview_window(label) {
-                        window.unlisten(*handler_id);
-                    }
-                }
-            }
-            state.close_listeners.clear();
-            
-            // 取消焦点监听器
-            for handler_id in &state.focus_listeners {
-                for label in &window_labels {
-                    if let Some(window) = app_handle.get_webview_window(label) {
-                        window.unlisten(*handler_id);
-                    }
-                }
-            }
-            state.focus_listeners.clear();
-            
-            // 清理已监听窗口的记录
-            state.listened_windows.clear();
-            
-            logging!(info, Type::Lightweight, true, "已取消所有窗口监听器并清理跟踪记录");
-        }
-    });
-}
+// pub fn cancel_window_listeners() {
+//     with_lightweight_status(|state| {
+//         if let Some(app_handle) = handle::Handle::global().app_handle() {
+//             let window_labels = ["main", "dashboard", "task", "action", "setting"];
+
+//             // 取消关闭监听器
+//             for handler_id in &state.close_listeners {
+//                 for label in &window_labels {
+//                     if let Some(window) = app_handle.get_webview_window(label) {
+//                         window.unlisten(*handler_id);
+//                     }
+//                 }
+//             }
+//             state.close_listeners.clear();
+
+//             // 取消焦点监听器
+//             for handler_id in &state.focus_listeners {
+//                 for label in &window_labels {
+//                     if let Some(window) = app_handle.get_webview_window(label) {
+//                         window.unlisten(*handler_id);
+//                     }
+//                 }
+//             }
+//             state.focus_listeners.clear();
+
+//             // 清理已监听窗口的记录
+//             state.listened_windows.clear();
+
+//             logging!(info, Type::Lightweight, true, "已取消所有窗口监听器并清理跟踪记录");
+//         }
+//     });
+// }
 
 fn setup_light_weight_timer() -> Result<()> {
     Timer::global().init()?;
 
     // 获取task_id
-    let task_id = {
-        Timer::global()
-            .timer_count
-            .fetch_add(1, std::sync::atomic::Ordering::Relaxed)
-    };
+    // let task_id = {
+    //     Timer::global()
+    //         .timer_count
+    //         .fetch_add(1, std::sync::atomic::Ordering::Relaxed)
+    // };
+
     // 创建任务
     let task = TaskBuilder::default()
-        .set_task_id(task_id)
+        .set_task_id(LIGHT_WEIGHT_TASK_ID)
         .set_maximum_parallel_runnable_num(1)
         .set_frequency_once_by_minutes(10)
         .spawn_async_routine(move || async move {
@@ -339,18 +353,6 @@ fn setup_light_weight_timer() -> Result<()> {
             .context("failed to add timer task")?;
     }
 
-    // 更新任务映射
-    // 作为特殊任务处理，不加入任务映射
-    // {
-    //     let mut timer_map = Timer::global().timer_map.write();
-    //     let timer_task = crate::core::timer::TimerTask {
-    //         task_id,
-    //         interval_seconds: 10 * 60,
-    //         last_run: chrono::Local::now().timestamp(),
-    //     };
-    //     timer_map.insert(LIGHT_WEIGHT_TASK_UID.to_string(), timer_task);
-    // }
-
     logging!(
         info,
         Type::Timer,
@@ -362,14 +364,14 @@ fn setup_light_weight_timer() -> Result<()> {
 }
 
 fn cancel_light_weight_timer() -> Result<()> {
-    let mut timer_map = Timer::global().timer_map.write();
+    // let mut timer_map = Timer::global().timer_map.write();
     let delay_timer = Timer::global().delay_timer.write();
 
-    if let Some(task) = timer_map.remove(LIGHT_WEIGHT_TASK_UID) {
-        delay_timer
-            .remove_task(task.task_id)
-            .context("failed to remove timer task")?;
-        logging!(info, Type::Timer, true, "计时器已取消");
-    }
+    // if let Some(task) = timer_map.remove(&LIGHT_WEIGHT_TASK_ID) {
+    delay_timer
+        .remove_task(LIGHT_WEIGHT_TASK_ID)
+        .context("failed to remove timer task")?;
+    logging!(info, Type::Timer, "计时器已取消");
+    // }
     Ok(())
 }

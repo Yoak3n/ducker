@@ -41,9 +41,9 @@ impl LightWeightState {
     pub fn set_lightweight_mode(&mut self, value: bool) -> &Self {
         self.is_lightweight = value;
         if value {
-            logging!(info, Type::Lightweight, true, "轻量模式已开启");
+            logging!(info, Type::Lightweight, "轻量模式已开启");
         } else {
-            logging!(info, Type::Lightweight, true, "轻量模式已关闭");
+            logging!(info, Type::Lightweight, "轻量模式已关闭");
         }
         self
     }

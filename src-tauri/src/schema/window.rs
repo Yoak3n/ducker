@@ -9,6 +9,17 @@ pub enum WindowType {
 }
 
 impl WindowType {
+    /// 获取所有窗口类型
+    pub fn all() -> [Self; 5] {
+        [
+            WindowType::Main,
+            WindowType::Dashboard,
+            WindowType::Task,
+            WindowType::Action,
+            WindowType::Setting,
+        ]
+    }
+
     pub fn from_label(label: &str) -> Option<Self> {
         match label {
             "main" => Some(WindowType::Main),

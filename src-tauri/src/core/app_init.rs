@@ -83,6 +83,11 @@ pub fn generate_handlers() -> impl Fn(tauri::ipc::Invoke<tauri::Wry>) -> bool + 
         cmd::task::get_tasks_by_date_range,
         cmd::task::get_tasks_by_status,
         cmd::task::get_tasks,
+        cmd::task::get_enabled_periodic_tasks,
+        // Periodic Tasks
+        cmd::task::create_periodic_task,
+        cmd::task::update_periodic_task,
+        cmd::task::delete_periodic_task,
         // Config
         cmd::config::save_config,
         cmd::config::get_config,
