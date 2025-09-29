@@ -9,7 +9,8 @@ pub struct  PeriodicTask {
     pub name: String,
     pub interval: Period,
     pub task: TaskView,
-    pub last_run: Option<u64>,
+    pub last_period: Option<u64>,
+    pub next_period: Option<u64>,
 }
 
 impl TryFrom<(&PeriodicTaskRecord,&AppState)> for PeriodicTask {
@@ -36,7 +37,8 @@ impl TryFrom<(&PeriodicTaskRecord,&AppState)> for PeriodicTask {
             name: record.name.clone(),
             interval,
             task,
-            last_run: record.last_run,
+            last_period: record.last_period,
+            next_period: record.next_period,
         })
     }
 }
@@ -64,5 +66,6 @@ pub struct PeriodicTaskRecord {
     pub id: String,
     pub name: String,
     pub interval: u8,
-    pub last_run: Option<u64>,
+    pub last_period: Option<u64>,
+    pub next_period: Option<u64>,
 }

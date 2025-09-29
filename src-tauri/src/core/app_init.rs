@@ -134,7 +134,7 @@ pub fn check_periodic_task(){
             .iter()
             .filter(|task| {
                 task.interval == 100 && 
-                task.last_run.map_or(true, |timestamp| !is_today(timestamp))
+                task.last_period.map_or(true, |timestamp| !is_today(timestamp))
             })
             .map(|task| task.id.clone())
             .collect();

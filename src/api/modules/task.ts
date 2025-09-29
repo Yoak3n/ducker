@@ -62,8 +62,9 @@ async function update_periodic_task(id: string, task: PeriodicTaskData): Promise
     return result;
 }
 
-async function update_periodic_task_last_run(id: string): Promise<void> {
-    const result = await invoke<void>("update_periodic_task_last_run", { id });
+// 更新周期任务的最后运行时间
+async function update_periodic_task_last_period(id: string): Promise<void> {
+    const result = await invoke<void>("update_periodic_task_last_period", { id });
     return result;
 }
 
@@ -90,7 +91,7 @@ export {
     // 周期任务相关导出
     create_periodic_task,
     update_periodic_task,
-    update_periodic_task_last_run,
+    update_periodic_task_last_period,
     delete_periodic_task,
     get_enabled_periodic_tasks
 };

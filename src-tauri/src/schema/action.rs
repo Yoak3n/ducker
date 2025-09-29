@@ -13,14 +13,8 @@ pub struct Action {
     pub command: String,
     pub args: Option<Vec<String>>,
 }
-// impl From<ActionRecord> for Action {
-//     fn from(value: ActionRecord) -> Self {
-
-//     }
-// }
 
 impl From<ActionRecord> for Action {
-    // type Error = anyhow::Error;
 
     fn from(value: ActionRecord) -> Self {
         let mut action = Action {
@@ -34,12 +28,7 @@ impl From<ActionRecord> for Action {
             retry: value.retry,
             timeout: value.timeout,
         };
-        match value.typ {
-            ActionType::ExecCommand => action.typ = "exec_command".to_string(),
-            ActionType::OpenDir => action.typ = "open_dir".to_string(),
-            ActionType::OpenFile => action.typ = "open_file".to_string(),
-            ActionType::OpenUrl => action.typ = "open_url".to_string(),
-        }
+        action.typ = value.typ.into();
 
         action
     }
@@ -62,25 +51,31 @@ pub struct ActionRecord {
 #[derive(Deserialize, Debug, Clone)]
 #[repr(u8)]
 pub enum ActionType {
-    OpenDir = 0,
-    OpenFile = 1,
-    OpenUrl = 2,
-    ExecCommand = 3,
+    Directory = 0,
+    File = 1,
+    Url = 2,
+    Command = 3,
+    Notice = 4,
+    Group = 11,
 }
 impl From<ActionType> for u8 {
     fn from(action_type: ActionType) -> Self {
         action_type as u8
     }
 }
+
+
 impl TryFrom<&str> for ActionType {
     type Error = anyhow::Error;
 
     fn try_from(value: &str) -> Result<Self, Self::Error> {
         match value {
-            "directory" => Ok(ActionType::OpenDir),
-            "file" => Ok(ActionType::OpenFile),
-            "url" => Ok(ActionType::OpenUrl),
-            "command" => Ok(ActionType::ExecCommand),
+            "directory" => Ok(ActionType::Directory),
+            "file" => Ok(ActionType::File),
+            "url" => Ok(ActionType::Url),
+            "command" => Ok(ActionType::Command),
+            "notice" => Ok(ActionType::Notice),
+            "group" => Ok(ActionType::Group),
             _ => Err(anyhow::anyhow!("无效的 ActionType 值: {}", value)),
         }
     }
@@ -88,10 +83,12 @@ impl TryFrom<&str> for ActionType {
 impl From<ActionType> for String {
     fn from(action_type: ActionType) -> Self {
         match action_type {
-            ActionType::OpenDir => "directory".to_string(),
-            ActionType::OpenFile => "file".to_string(),
-            ActionType::OpenUrl => "url".to_string(),
-            ActionType::ExecCommand => "command".to_string(),
+            ActionType::Directory => "directory".to_string(),
+            ActionType::File => "file".to_string(), 
+            ActionType::Url => "url".to_string(),
+            ActionType::Command => "command".to_string(),
+            ActionType::Notice => "notice".to_string(),
+            ActionType::Group => "group".to_string(),
         }
     }
 }
@@ -100,10 +97,12 @@ impl TryFrom<u8> for ActionType {
 
     fn try_from(value: u8) -> Result<Self, Self::Error> {
         match value {
-            0 => Ok(ActionType::OpenDir),
-            1 => Ok(ActionType::OpenFile),
-            2 => Ok(ActionType::OpenUrl),
-            3 => Ok(ActionType::ExecCommand),
+            0 => Ok(ActionType::Directory),
+            1 => Ok(ActionType::File),
+            2 => Ok(ActionType::Url),
+            3 => Ok(ActionType::Command),   
+            4 => Ok(ActionType::Notice),
+            11 => Ok(ActionType::Group),
             _ => Err(anyhow::anyhow!("无效的 ActionType 值: {}", value)),
         }
     }

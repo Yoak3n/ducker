@@ -355,10 +355,12 @@ export const useActionStore = create<ActionStore>()(
 
         getActionsByTypeGrouped: () => {
           const result: Record<Action['type'], Action[]> = {
-            'exec_command': [],
-            'open_url': [],
-            'open_file': [],
-            'open_dir': [],
+            'directory': [],
+            'file': [],
+            'url': [],
+            'command': [],
+            'notice':[],
+            'group': [],
           };
 
           get().actions.forEach(action => {
@@ -376,10 +378,12 @@ export const useActionStore = create<ActionStore>()(
         getActionStats: () => {
           const actions = get().actions;
           const byType: Record<Action['type'], number> = {
-            'exec_command': 0,
-            'open_url': 0,
-            'open_file': 0,
-            'open_dir': 0,
+            'command': 0,
+            'url': 0,
+            'file': 0,
+            'directory': 0,
+            'notice': 0,
+            'group': 0,
           };
 
           actions.forEach(action => {
@@ -405,13 +409,13 @@ export const useActionStore = create<ActionStore>()(
           }
 
           switch (action.type) {
-            case 'exec_command':
+            case 'command':
               if (!action.command || action.command.trim() === '') {
                 errors.push('命令不能为空');
               }
               break;
 
-            case 'open_url':
+            case 'url':
               if (!action.command || action.command.trim() === '') {
                 errors.push('URL不能为空');
               } else {

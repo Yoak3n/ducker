@@ -29,7 +29,7 @@ pub trait TaskManager {
 pub trait PeriodicTaskManager {
     fn create_periodic_task(&self, task: &PeriodicTaskData) -> Result<PeriodicTaskRecord>;
     fn update_periodic_task(&self, id: &str, task: &PeriodicTaskData) -> Result<PeriodicTaskRecord>;
-    fn update_periodic_task_last_run(&self, id: &str) -> Result<()>;
+    fn update_periodic_task_last_period(&self, id: &str) -> Result<()>;
     fn update_periodic_tasks_last_run(&self, ids: &[String]) -> Result<()>;
     fn delete_periodic_task(&self, id: &str) -> Result<()>;
     fn get_enabled_periodic_tasks(&self) -> Result<Vec<PeriodicTaskRecord>>;

@@ -33,6 +33,7 @@ async function execute_actions(actions: Action[] | undefined) {
 
 async function execute_single_action(action: Action) {
     try {
+        console.log('Executing action:', action);
         const result = await invoke<string>('execute_single_action', { action });
         return result;
     } catch (err) {

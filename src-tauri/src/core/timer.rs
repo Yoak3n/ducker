@@ -26,7 +26,7 @@ pub struct TimerTask {
     pub task_id: TaskID,
     pub interval_seconds: i64,
     #[allow(unused)]
-    pub last_run: i64,
+    pub last_period: i64,
 }
 
 pub struct Timer {
@@ -152,7 +152,7 @@ impl Timer {
                     let task = TimerTask {
                         task_id: tid,
                         interval_seconds: interval,
-                        last_run: now,
+                        last_period: now,
                     };
 
                     timer_map.insert(uid.clone(), task);
@@ -191,7 +191,7 @@ impl Timer {
                     let task = TimerTask {
                         task_id: tid,
                         interval_seconds: interval,
-                        last_run: now,
+                        last_period: now,
                     };
 
                     timer_map.insert(uid.clone(), task);

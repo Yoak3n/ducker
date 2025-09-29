@@ -47,7 +47,8 @@ export type Period = typeof Period[keyof typeof Period];
 export interface PeriodicTaskBase {
   name: string;
   interval: Period;
-  last_run?: number;
+  last_period?: number;
+  next_period?: number;
 }
 
 // 完整的周期任务接口
@@ -57,7 +58,7 @@ export interface PeriodicTask extends PeriodicTaskBase {
 }
 
 // 周期任务数据接口 - 用于创建和更新
-export interface PeriodicTaskData extends Omit<PeriodicTaskBase, 'last_run'> {
+export interface PeriodicTaskData extends Omit<PeriodicTaskBase, 'last_period' | 'next_period'> {
   task: TaskData;
 }
 

@@ -1,33 +1,49 @@
-use crate::schema::Action;
+use crate::schema::{Action, ActionType};
 use std::process::Command;
+use tauri_plugin_notification::NotificationExt;
 use tauri_plugin_opener::OpenerExt;
 
 pub async fn execute_action(action: Action) -> Result<String, String> {
-    match action.typ.as_str() {
-        "open_dir" => {
-            open_path(action.command).await?;
-            Ok(format!("open_dir: ok"))
-        }
-        "open_file" => {
-            open_path(action.command).await?;
-            Ok(format!("open_file: ok"))
-        }
-        "open_url" => {
-            open_url(action.command).await?;
-            Ok(format!("open_url: ok"))
-        }
-        "exec_command" => {
-            if action.wait > 0 {
-                let output = execute_command(action.command, action.args).await?;
-                Ok(output)
-            } else {
-                let output = execute_command_indepent(action.command, action.args).await?;
-                Ok(output)
+    if let Ok(t) = ActionType::try_from(action.typ.as_str()) {
+        match t {
+            ActionType::Directory => {
+                open_path(action.command).await?;
+                Ok(format!("open_dir: ok"))
+            }
+            ActionType::File => {
+                open_path(action.command).await?;
+                Ok(format!("open_file: ok"))
+            }
+            ActionType::Url => {
+                open_url(action.command).await?;
+                Ok(format!("open_url: ok"))
+            }
+            ActionType::Command => {
+                if action.wait > 0 {
+                    let output = execute_command(action.command, action.args).await?;
+                    Ok(output)
+                } else {
+                    let output = execute_command_indepent(action.command, action.args).await?;
+                    Ok(output)
+                }
+            }
+            ActionType::Notice => {
+                let handle = Handle::global();
+                let app_handle = handle.app_handle().unwrap();
+                let notification = app_handle.notification();
+                notification.builder()
+                    .title("Ducker")
+                    .body(&action.command)
+                    .show()
+                    .unwrap();
+                Ok(format!("notice: ok"))
+            }
+            ActionType::Group => {
+                Ok(format!("group: ok"))
             }
         }
-        _ => {
-            return Err("未知操作类型".to_string());
-        }
+    } else {
+        return Err("未知操作类型".to_string());
     }
 }
 use crate::core::handle::Handle;
@@ -40,6 +56,7 @@ async fn open_path(path: String) -> Result<(), String> {
     };
     Ok(())
 }
+
 async fn open_url(url: String) -> Result<(), String> {
     let handle = Handle::global();
     let app_handle = handle.app_handle().unwrap();
@@ -68,6 +85,7 @@ async fn execute_command(command: String, args: Option<Vec<String>>) -> Result<S
 
     Ok(output_message.to_string())
 }
+
 #[cfg(target_os = "windows")]
 use std::os::windows::process::CommandExt;
 #[cfg(target_os = "windows")]

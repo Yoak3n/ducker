@@ -7,7 +7,10 @@ use std::path::PathBuf;
 use super::module::*;
 use crate::{
     logging,
-    schema::{Action, ActionRecord, ActionType, TaskData, TaskRecord, PeriodicTaskRecord, PeriodicTaskData},
+    schema::{
+        Action, ActionRecord, ActionType, PeriodicTaskData, PeriodicTaskRecord, TaskData,
+        TaskRecord,
+    },
     utils::{help::random_string, logging::Type},
 };
 pub struct Database {
@@ -55,7 +58,8 @@ impl Database {
                 id TEXT PRIMARY KEY,
                 name TEXT NOT NULL,
                 interval INTEGER NOT NULL,
-                last_run INTEGER
+                last_period INTEGER,
+                next_period INTEGER
             )",
             [],
         )?;
@@ -78,7 +82,7 @@ impl Database {
             [],
         )?;
         conn.execute(
-            "CREATE INDEX IF NOT EXISTS idx_periodic_tasks_last_run ON periodic_tasks(last_run)",
+            "CREATE INDEX IF NOT EXISTS idx_periodic_tasks_last_period ON periodic_tasks(last_period)",
             [],
         )?;
 
@@ -115,12 +119,15 @@ impl Database {
         })
     }
 
-    fn build_periodic_task_record_from_row(row: &rusqlite::Row) -> rusqlite::Result<PeriodicTaskRecord> {
+    fn build_periodic_task_record_from_row(
+        row: &rusqlite::Row,
+    ) -> rusqlite::Result<PeriodicTaskRecord> {
         Ok(PeriodicTaskRecord {
             id: row.get(0)?,
             name: row.get(1)?,
             interval: row.get(2)?,
-            last_run: row.get(3)?,
+            last_period: row.get(3)?,
+            next_period: row.get(4)?,
         })
     }
 }
@@ -220,7 +227,7 @@ impl ActionManager for Database {
             let command = row.get(3)?;
             let args_text: String = row.get(4)?;
             let typ_number: u8 = row.get(5)?;
-            let typ = ActionType::try_from(typ_number).unwrap_or(ActionType::ExecCommand);
+            let typ = ActionType::try_from(typ_number).unwrap_or(ActionType::Command);
             let wait = row.get(6)?;
             let retry: Option<usize> = row.get(7)?;
             let timeout: Option<u64> = row.get(8)?;
@@ -265,7 +272,7 @@ impl ActionManager for Database {
             let command = row.get(3)?;
             let args_text: String = row.get(4)?;
             let typ_number: u8 = row.get(5)?;
-            let typ = ActionType::try_from(typ_number).unwrap_or(ActionType::ExecCommand);
+            let typ = ActionType::try_from(typ_number).unwrap_or(ActionType::Command);
             let wait = row.get(6)?;
             let retry: Option<usize> = row.get(7)?;
             let timeout: Option<u64> = row.get(8)?;
@@ -304,7 +311,7 @@ impl ActionManager for Database {
             let command = row.get(3)?;
             let args_text: String = row.get(4)?;
             let typ_number: u8 = row.get(5)?;
-            let typ = ActionType::try_from(typ_number).unwrap_or(ActionType::ExecCommand);
+            let typ = ActionType::try_from(typ_number).unwrap_or(ActionType::Command);
             let wait = row.get(6)?;
             let retry: Option<usize> = row.get(7)?;
             let timeout: Option<u64> = row.get(8)?;
@@ -452,7 +459,7 @@ impl TaskManager for Database {
 
         Ok(tasks)
     }
-    
+
     fn get_tasks_by_status(&self, completed: bool) -> Result<Vec<TaskRecord>> {
         let conn = self.conn.read();
         let mut stmt = conn.prepare(
@@ -545,73 +552,103 @@ impl TaskManager for Database {
 
 impl PeriodicTaskManager for Database {
     fn create_periodic_task(&self, task: &PeriodicTaskData) -> Result<PeriodicTaskRecord> {
-        
         // 创建任务
         let task_record = self.create_task(&task.task)?;
         let conn = self.conn.write();
         let mut stmt = conn.prepare(
-            "INSERT INTO periodic_tasks (id, name, interval) 
-             VALUES (?1, ?2, ?3)"
+            "INSERT INTO periodic_tasks (id, name, interval, next_period) 
+             VALUES (?1, ?2, ?3, ?4)",
         )?;
-        
+        let next_period = task.interval.clone() as i64 * 3600 * 24 + &task_record.due_to;
         let row_id = stmt.insert(params![
             &task_record.id,
             &task.name,
             task.interval.clone() as u8,
+            Some(next_period),
         ])?;
-        
+
         logging!(debug, Type::Database, "创建周期性任务成功: {}", row_id);
-        
+
         Ok(PeriodicTaskRecord {
             id: task_record.id.clone(),
             name: task.name.clone(),
             interval: task.interval.clone() as u8,
-            last_run: None,
+            last_period: None,
+            next_period: Some(next_period as u64),
         })
     }
-    
-    fn update_periodic_task(&self, id: &str, task: &PeriodicTaskData) -> Result<PeriodicTaskRecord> {
+
+    fn update_periodic_task(
+        &self,
+        id: &str,
+        task: &PeriodicTaskData,
+    ) -> Result<PeriodicTaskRecord> {
         let conn = self.conn.write();
         // 更新任务
         let task_record = self.update_task(id, &task.task)?;
-        
+
         conn.execute(
             "UPDATE periodic_tasks 
              SET name = ?1, interval = ?2
              WHERE id = ?3",
-            params![
-                &task_record.name,
-                task.interval.clone() as u8,
-                id
-            ]
+            params![&task_record.name, task.interval.clone() as u8, id],
         )?;
-        
+
         logging!(debug, Type::Database, "更新周期性任务成功: {}", id);
-        
+
         Ok(PeriodicTaskRecord {
             id: id.to_string(),
             name: task.name.clone(),
             interval: task.interval.clone() as u8,
-            last_run: None,
+            last_period: None,
+            next_period: None,
         })
     }
-    
-    fn update_periodic_task_last_run(&self, id: &str) -> Result<()> {
+
+    fn update_periodic_task_last_period(&self, id: &str) -> Result<()> {
         let conn = self.conn.write();
-        
+
+        // 获取当前的 next_period 和 interval
+        let (current_next_period, interval): (Option<i64>, i64) = conn.query_row(
+            "SELECT next_period, interval FROM periodic_tasks WHERE id = ?1",
+            params![id],
+            |row| Ok((row.get(0)?, row.get(1)?)),
+        )?;
+
+        // 计算新的 next_period
+        let new_last_period = current_next_period.unwrap_or_else(|| {
+            let task_due_to: i64 = conn
+                .query_row(
+                    "SELECT due_to FROM tasks WHERE id = ?1",
+                    params![id],
+                    |row| Ok(row.get(0)?),
+                )
+                .unwrap();
+            task_due_to
+        });
+        let new_next_period = new_last_period + interval * 3600 * 24;
+
         conn.execute(
             "UPDATE periodic_tasks 
-             SET last_run = ?1
-             WHERE id = ?2",
-            params![chrono::Utc::now().timestamp(), id]
+             SET last_period = ?1, next_period = ?2
+             WHERE id = ?3",
+            params![new_last_period, new_next_period, id],
         )?;
-        
-        logging!(debug, Type::Database, "更新周期性任务最后运行时间成功: {}", id);
-        
+
+        logging!(
+            debug,
+            Type::Database,
+            "更新周期性任务时间成功: {} (last_period: {}, next_period: {})",
+            id,
+            new_last_period,
+            new_next_period
+        );
+
         Ok(())
     }
 
     fn update_periodic_tasks_last_run(&self, ids: &[String]) -> Result<()> {
+        // 专为`启动时任务`而设，将当前时间记录下来
         if ids.is_empty() {
             return Ok(());
         }
@@ -620,7 +657,7 @@ impl PeriodicTaskManager for Database {
         let placeholders = ids.iter().map(|_| "?").collect::<Vec<_>>().join(",");
         let query = format!(
             "UPDATE periodic_tasks 
-             SET last_run = ?1
+             SET last_period = ?1
              WHERE id IN ({})",
             placeholders
         );
@@ -631,42 +668,44 @@ impl PeriodicTaskManager for Database {
         }
 
         conn.execute(&query, params.as_slice())?;
-        logging!(debug, Type::Database, "批量更新周期性任务最后运行时间成功，共 {} 个任务", ids.len());
+        logging!(
+            debug,
+            Type::Database,
+            "批量更新周期性任务最后运行时间成功，共 {} 个任务",
+            ids.len()
+        );
         Ok(())
     }
+
     fn delete_periodic_task(&self, id: &str) -> Result<()> {
         let conn = self.conn.write();
-        
-        let rows_affected = conn.execute(
-            "DELETE FROM periodic_tasks WHERE id = ?1",
-            params![id]
-        )?;
-        
+
+        let rows_affected =
+            conn.execute("DELETE FROM periodic_tasks WHERE id = ?1", params![id])?;
+
         if rows_affected == 0 {
             return Err(anyhow::anyhow!("周期性任务不存在: {}", id));
         }
-        
+
         logging!(info, Type::Database, "删除周期性任务成功: {}", id);
         Ok(())
     }
-    
+
     fn get_enabled_periodic_tasks(&self) -> Result<Vec<PeriodicTaskRecord>> {
         let conn = self.conn.read();
         let mut stmt = conn.prepare(
-            "SELECT id, name, interval, last_run 
-             FROM periodic_tasks "
+            "SELECT id, name, interval, last_period, next_period 
+             FROM periodic_tasks ",
         )?;
-        
-        let periodic_tasks = stmt.query_map([], |row| {
-            Self::build_periodic_task_record_from_row(row)
-        })?;
-        
+
+        let periodic_tasks =
+            stmt.query_map([], |row| Self::build_periodic_task_record_from_row(row))?;
+
         let mut result = Vec::new();
         for task in periodic_tasks {
             result.push(task?);
         }
-        
+
         Ok(result)
     }
 }
-

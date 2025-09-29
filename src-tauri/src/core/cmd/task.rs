@@ -268,9 +268,9 @@ pub async fn update_periodic_task(
 }
 
 #[tauri::command]
-pub async fn update_periodic_task_last_run(state: State<'_, AppState>, id: String)-> Result<(),String>{
+pub async fn update_periodic_task_last_period(state: State<'_, AppState>, id: String)-> Result<(),String>{
     let db = state.db.lock().unwrap();
-    match db.update_periodic_task_last_run(id.as_str()) {
+    match db.update_periodic_task_last_period(id.as_str()) {
         Ok(_) => Ok(()),
         Err(e) => {
             logging!(error, Type::Database, true, "更新周期性任务最后运行时间失败: {:?}", e);
