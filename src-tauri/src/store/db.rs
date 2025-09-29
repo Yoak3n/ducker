@@ -545,10 +545,10 @@ impl TaskManager for Database {
 
 impl PeriodicTaskManager for Database {
     fn create_periodic_task(&self, task: &PeriodicTaskData) -> Result<PeriodicTaskRecord> {
-        let conn = self.conn.write();
+        
         // 创建任务
         let task_record = self.create_task(&task.task)?;
-
+        let conn = self.conn.write();
         let mut stmt = conn.prepare(
             "INSERT INTO periodic_tasks (id, name, interval) 
              VALUES (?1, ?2, ?3)"
@@ -611,6 +611,29 @@ impl PeriodicTaskManager for Database {
         Ok(())
     }
 
+    fn update_periodic_tasks_last_run(&self, ids: &[String]) -> Result<()> {
+        if ids.is_empty() {
+            return Ok(());
+        }
+        let conn = self.conn.write();
+        let now = chrono::Utc::now().timestamp();
+        let placeholders = ids.iter().map(|_| "?").collect::<Vec<_>>().join(",");
+        let query = format!(
+            "UPDATE periodic_tasks 
+             SET last_run = ?1
+             WHERE id IN ({})",
+            placeholders
+        );
+
+        let mut params: Vec<&dyn rusqlite::ToSql> = vec![&now as &dyn rusqlite::ToSql];
+        for id in ids {
+            params.push(id as &dyn rusqlite::ToSql);
+        }
+
+        conn.execute(&query, params.as_slice())?;
+        logging!(debug, Type::Database, "批量更新周期性任务最后运行时间成功，共 {} 个任务", ids.len());
+        Ok(())
+    }
     fn delete_periodic_task(&self, id: &str) -> Result<()> {
         let conn = self.conn.write();
         
@@ -630,9 +653,8 @@ impl PeriodicTaskManager for Database {
     fn get_enabled_periodic_tasks(&self) -> Result<Vec<PeriodicTaskRecord>> {
         let conn = self.conn.read();
         let mut stmt = conn.prepare(
-            "SELECT id, name, interval, task_id, enabled, last_run 
-             FROM periodic_tasks 
-             WHERE enabled = 1"
+            "SELECT id, name, interval, last_run 
+             FROM periodic_tasks "
         )?;
         
         let periodic_tasks = stmt.query_map([], |row| {

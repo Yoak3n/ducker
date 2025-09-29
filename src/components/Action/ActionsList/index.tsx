@@ -10,7 +10,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
-import { actionTypes } from "@/types";
+import { actionTypes,type ActionTypeSelector } from "@/types";
 import { useActionStore } from "@/store";
 import ActionCard from "../ActionCard";
 import { toast } from "sonner";
@@ -18,7 +18,7 @@ import { toast } from "sonner";
 
 const ActionsList = () => {
     const [searchTerm, setSearchTerm] = useState("");
-    const [selectedType, setSelectedType] = useState("all");
+    const [selectedType, setSelectedType] = useState<ActionTypeSelector>("all");
     // const [control, setControl] = useState(false);
     const navigate = useNavigate()
     const fetchActions = useActionStore(state=>state.fetchActions)

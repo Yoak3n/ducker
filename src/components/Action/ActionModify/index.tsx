@@ -20,7 +20,7 @@ const formSchema = z.object({
     name: z.string().min(2, {
         message: "action name must be at least 2 characters.",
     }),
-    type: z.enum(["open_file", "open_dir", "exec_command", "open_url"]),
+    type: z.enum(["file", "directory", "command", "url", "group", "notice"]),
     command: z.string(),
     args: z.string().optional(),
     desc: z.string(),
@@ -41,7 +41,7 @@ const ActionModify: React.FC = () => {
         resolver: zodResolver(formSchema),
         defaultValues: {
             name: "",
-            type: "open_file",
+            type: "file",
             command: "",
             desc: "",
             wait: 0,
@@ -49,9 +49,9 @@ const ActionModify: React.FC = () => {
     })
 
     const handleTypeChange = useCallback((type: string) => {
-        setIsFileType(type === "open_file" || type === "open_dir");
-        setIsUrlType(type === "open_url");
-        setIsCommandType(type === "exec_command");
+        setIsFileType(type === "file" || type === "directory");
+        setIsUrlType(type === "url");
+        setIsCommandType(type === "command");
     }, []);
 
     const currentAction = useMemo(() => {
@@ -66,14 +66,14 @@ const ActionModify: React.FC = () => {
         if (isAddAction) {
             const defaultValues = {
                 name: "",
-                type: "open_file" as const,
+                type: "file" as const,
                 command: "",
                 args: "",
                 desc: "",
                 wait: 0,
             };
             form.reset(defaultValues);
-            handleTypeChange("open_file");
+            handleTypeChange("file");
         } else if (currentAction) {
             const formData = {
                 name: currentAction.name,
@@ -90,10 +90,10 @@ const ActionModify: React.FC = () => {
 
 
     const actionTypeOptions = [
-        { value: "open_file", label: "Open File" },
-        { value: "open_dir", label: "Open Directory" },
-        { value: "exec_command", label: "Execute Command" },
-        { value: "open_url", label: "Open URL" },
+        { value: "file", label: "Open File" },
+        { value: "directory", label: "Open Directory" },
+        { value: "command", label: "Execute Command" },
+        { value: "url", label: "Open URL" },
     ];
     const onSubmit = (values: z.infer<typeof formSchema>) => {
         console.log('onSubmit', values);
@@ -117,7 +117,7 @@ const ActionModify: React.FC = () => {
     }
 
     const handleSelectFile = useCallback(async () => {
-        const isFile = form.getValues("type") === "open_file";
+        const isFile = form.getValues("type") === "file";
         const path = await open_file_select_dialog(isFile);
         if (path){
             form.setValue("command", path);

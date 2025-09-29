@@ -55,7 +55,7 @@ pub enum Period {
 #[derive(Deserialize, Serialize, Debug)]
 pub struct PeriodicTaskData {
     pub name: String,
-    pub interval: Period,
+    pub interval: u8,
     pub task: TaskData,
 }
 

@@ -221,7 +221,7 @@ export default function TaskModal({ onSave, task, parentTask }: TaskModalProps) 
       onSave(taskData);
     }
 
-    closeWindow('task');
+    // closeWindow('task');
   };
 
   const handleClose = () => {

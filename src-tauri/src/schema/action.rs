@@ -77,10 +77,10 @@ impl TryFrom<&str> for ActionType {
 
     fn try_from(value: &str) -> Result<Self, Self::Error> {
         match value {
-            "open_dir" => Ok(ActionType::OpenDir),
-            "open_file" => Ok(ActionType::OpenFile),
-            "open_url" => Ok(ActionType::OpenUrl),
-            "exec_command" => Ok(ActionType::ExecCommand),
+            "directory" => Ok(ActionType::OpenDir),
+            "file" => Ok(ActionType::OpenFile),
+            "url" => Ok(ActionType::OpenUrl),
+            "command" => Ok(ActionType::ExecCommand),
             _ => Err(anyhow::anyhow!("无效的 ActionType 值: {}", value)),
         }
     }
@@ -88,10 +88,10 @@ impl TryFrom<&str> for ActionType {
 impl From<ActionType> for String {
     fn from(action_type: ActionType) -> Self {
         match action_type {
-            ActionType::OpenDir => "open_dir".to_string(),
-            ActionType::OpenFile => "open_file".to_string(),
-            ActionType::OpenUrl => "open_url".to_string(),
-            ActionType::ExecCommand => "exec_command".to_string(),
+            ActionType::OpenDir => "directory".to_string(),
+            ActionType::OpenFile => "file".to_string(),
+            ActionType::OpenUrl => "url".to_string(),
+            ActionType::ExecCommand => "command".to_string(),
         }
     }
 }

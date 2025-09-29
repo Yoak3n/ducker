@@ -67,8 +67,6 @@ async function update_periodic_task_last_run(id: string): Promise<void> {
     return result;
 }
 
-
-
 async function delete_periodic_task(id: string): Promise<void> {
     const result = await invoke<void>("delete_periodic_task", { id });
     return result;

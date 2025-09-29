@@ -224,11 +224,11 @@ pub async fn get_enabled_periodic_tasks(state: State<'_, AppState>) -> Result<Ve
 #[tauri::command]
 pub async fn create_periodic_task(state: State<'_, AppState>, task: PeriodicTaskData) -> Result<String, String> {
     let db = state.db.lock().unwrap();
-
+    
     let res = db.create_periodic_task(&task);
     match res {
         Ok(data) => {
-            logging!(info, Type::Database, "创建周期性任务成功: {}", data.id);
+            logging!(debug, Type::Database,true, "创建周期性任务成功: {}", data.id);
             Ok(data.id)
         }
         Err(e) => {
