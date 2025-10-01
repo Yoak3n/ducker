@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { emit } from '@tauri-apps/api/event';
+import { getCurrentWindow } from '@tauri-apps/api/window';
 
 import ActionSelect from '@/components/Action/ActionSelect';
 import DatetimePicker from '@/components/Date/DatetimePicker';
@@ -8,14 +10,13 @@ import { CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsi
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 
+
 import { formatDatetime } from '@/utils';
 import type { Task, TaskData, Action, Period, PeriodicTaskData } from '@/types';
-import { closeWindow } from '@/api';
 import { create_periodic_task, update_periodic_task } from '@/api/modules/task';
+import { destroyWindow } from '@/api/modules/window';
 
 import './index.css';
-import { emit } from '@tauri-apps/api/event';
-
 
 interface TaskModalProps {
   onSave: (taskData: TaskData) => void;
@@ -226,13 +227,13 @@ export default function TaskModal({ onSave, task, parentTask }: TaskModalProps) 
       onSave(taskData);
     }
 
-    closeWindow('task');
+    destroyWindow('task');
   };
 
   const handleClose = () => {
     setFormData(initialFormData);
     setShowAdvanced(false);
-    closeWindow('task');
+    destroyWindow('task');
   };
 
   return (

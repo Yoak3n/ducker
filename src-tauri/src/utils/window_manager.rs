@@ -745,6 +745,19 @@ impl WindowManager {
         }
     }
 
+    fn destroy_window(&self, window_type: WindowType) -> bool {
+        match self.get_window(window_type) {
+            Some(window) => {
+                if let Err(e) = window.close() {
+                    logging!(error, Type::Window, true, "窗口销毁失败: {:?}", e);
+                    return false;
+                }
+                self.update_window_state(window_type, WindowState::NotExist);
+                return true;
+            }
+            None => return false,
+        }
+    }
     /// 检查是否所有窗口都已关闭（隐藏或不存在）
     pub fn are_all_windows_closed(&self) -> bool {
         for window_type in &WindowType::all() {
@@ -816,6 +829,15 @@ pub fn close_window_by_label(label: &str) {
         }
     } else {
         logging!(error, Type::Window, true, "Unknown window label: {}", label);
+    }
+}
+
+pub fn destroy_window_by_label(label: &str) -> bool {
+    if let Some(window_type) = WindowType::from_label(label){
+        WindowManager::global().destroy_window(window_type)
+    } else {
+        logging!(error, Type::Window, true, "Unknown window label: {}", label);
+        false
     }
 }
 

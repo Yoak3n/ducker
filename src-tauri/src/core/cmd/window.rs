@@ -19,3 +19,9 @@ pub async fn close_window(window_type: String) {
 pub async fn minimize_window(window_type: String) -> bool {
     window_manager::minimize_window_by_label(&window_type)
 }
+
+// 主要是用来关闭浮动窗口，避免窗口被缓存
+#[tauri::command]
+pub async fn destroy_window(window_type: String) -> bool {
+    window_manager::destroy_window_by_label(&window_type)
+}

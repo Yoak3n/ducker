@@ -163,7 +163,8 @@ impl Database {
 
         // 计算新的 next_period
         let mut calculated_next_period = calculate_next_period(current_periodic_task.due_to, interval);
-
+        // 用来标记是否需要特殊处理，如日期天数不一致
+        let mut special_flag = false;
         // 如果计算出的时间与当前 next_period 相同，意味着需要创建下一个周期任务，否则意味着是已过期的周期任务,阻止创建下一个任务
         let next_task = if Some(calculated_next_period as u64) == current_next_period {
                 // 只对月度任务进行日期天数一致性检查
@@ -174,8 +175,9 @@ impl Database {
                         let last_dt = Local.timestamp_opt(last_period as i64, 0).single().unwrap();
                         let next_dt = Local.timestamp_opt(next_period as i64, 0).single().unwrap();
                         // 检查两个日期的天数是否一致
-                        if last_dt.day() != next_dt.day() {
+                        if last_dt.day() != next_dt.day() {        
                             // 如果天数不一致，说明可能是月末日期调整（如1月31日->2月28日），则使用last_period的日期推到下下月
+                            special_flag = true;
                             // 需要重新计算下一个周期，确保使用正确的目标日期
                             logging!(
                                 debug,
@@ -193,6 +195,7 @@ impl Database {
                 }
                 // 再检查是否早于当前时间，重新计算
                 let next_period = calculate_next_period_from_now(calculated_next_period, interval);
+                calculated_next_period = next_period;
                 TaskData{
                     id: format!("task{}", random_string(6)).into(),
                     completed: false,
@@ -212,7 +215,7 @@ impl Database {
         // 创建下一个周期任务
         self.create_task(&next_task)?;
         // 更新周期性任务记录
-        self.update_periodic_task_last_period(&current_periodic_task_id, Some(calculated_next_period))?;
+        self.update_periodic_task_last_period(&current_periodic_task_id, if special_flag {Some(calculated_next_period)}else{None})?;
         Ok(PeriodicTaskRecord {
             id: current_periodic_task_id,
             name: next_task.name.clone(),   
@@ -704,7 +707,7 @@ impl PeriodicTaskManager for Database {
             "INSERT INTO periodic_tasks (id, name, interval, next_period, last_period) 
              VALUES (?1, ?2, ?3, ?4, ?5)",
         )?;
-        let next_period = task.interval.clone() as i64 * 3600 * 24 + &task_record.due_to;
+        let next_period = calculate_next_period(task_record.due_to, task.interval as u8);
         let row_id = stmt.insert(params![
             &task_record.id,
             &task.name,

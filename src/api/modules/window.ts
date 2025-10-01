@@ -17,4 +17,8 @@ function closeWindow(windowType: string) {
     return invoke("close_window", { windowType });
 }
 
-export { toggleWindow, showWindow, minimizeWindow, closeWindow };
+function destroyWindow(windowType: string) {
+    return invoke("destroy_window", { windowType });
+}
+
+export { toggleWindow, showWindow, minimizeWindow, closeWindow, destroyWindow };

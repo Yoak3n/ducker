@@ -55,6 +55,7 @@ pub fn generate_handlers() -> impl Fn(tauri::ipc::Invoke<tauri::Wry>) -> bool + 
         cmd::window::show_window,
         cmd::window::minimize_window,
         cmd::window::close_window,
+        cmd::window::destroy_window,
         // Actions
         #[cfg(target_os = "windows")]
         cmd::action::execute_actions,
