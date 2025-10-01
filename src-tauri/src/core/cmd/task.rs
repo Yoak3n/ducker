@@ -13,7 +13,7 @@ use tauri::State;
 
 #[tauri::command]
 pub async fn create_task(state: State<'_, AppState>, task: TaskData) -> Result<String, String> {
-    let db = state.db.lock().unwrap();
+    let db = state.db.lock();
     let res = db.create_task(&task);
     match res {
         Ok(data) => Ok(data.id),
@@ -30,7 +30,7 @@ pub async fn update_task(
     id: &str,
     task: TaskData,
 ) -> Result<TaskRecord, String> {
-    let db = state.db.lock().unwrap();
+    let db = state.db.lock();
 
     let res = db.update_task(id, &task);
     match res {
@@ -48,7 +48,7 @@ pub async fn update_task_status(
     id: &str,
     completed: bool,
 ) -> Result<bool, String> {
-    let db = state.db.lock().unwrap();
+    let db = state.db.lock();
 
     let res = db.update_task_status(id, completed);
     match res {
@@ -62,13 +62,13 @@ pub async fn update_task_status(
 
 #[tauri::command]
 pub async fn delete_task(state: State<'_, AppState>, id: &str) -> Result<(), String> {
-    let db = state.db.lock().unwrap();
+    let db = state.db.lock();
 
     let res = db.delete_task(id);
     match res {
         Ok(_) => Ok(()),
         Err(e) => {
-            println!("删除任务失败: {:?}", e);
+            logging!(error, Type::Database, true, "删除任务失败: {:?}", e);
             Err(e.to_string())
         }
     }
@@ -76,7 +76,7 @@ pub async fn delete_task(state: State<'_, AppState>, id: &str) -> Result<(), Str
 
 #[tauri::command]
 pub async fn get_task(state: State<'_, AppState>, id: &str) -> Result<TaskView, String> {
-    let db = state.db.lock().unwrap();
+    let db = state.db.lock();
 
     let res = db.get_task(id);
     match res {
@@ -92,7 +92,7 @@ pub async fn get_task(state: State<'_, AppState>, id: &str) -> Result<TaskView, 
 pub async fn get_all_tasks(state: State<'_, AppState>) -> Result<Vec<TaskView>, String> {
     // 快速获取数据并立即释放数据库锁
     let data = {
-        let db = state.db.lock().unwrap();
+        let db = state.db.lock();   
         db.get_all_tasks()
     };
     match data {
@@ -119,7 +119,7 @@ pub async fn get_tasks_by_date_range(
     
     // 快速获取数据并立即释放数据库锁
     let data = {
-        let db = state.db.lock().unwrap();
+        let db = state.db.lock();
         db.get_tasks_by_date_range(start_date, end_date)
     };
     
@@ -144,7 +144,7 @@ pub async fn get_tasks_by_status(
     state: State<'_, AppState>,
     completed: bool,
 ) -> Result<Vec<TaskRecord>, String> {
-    let db = state.db.lock().unwrap();
+    let db = state.db.lock();
 
     let res = db.get_tasks_by_status(completed);
     match res {
@@ -163,7 +163,7 @@ pub async fn get_tasks(
 ) -> Result<Vec<TaskView>, String> {
     // 快速获取数据并立即释放数据库锁
     let data = {
-        let db = state.db.lock().unwrap();
+        let db = state.db.lock();
         db.get_tasks(&ids)
     };
 
@@ -192,7 +192,7 @@ pub async fn gen_random_task_id() -> Result<String, String> {
 #[tauri::command]
 pub async fn get_enabled_periodic_tasks(state: State<'_, AppState>) -> Result<Vec<PeriodicTask>, String> {
     let records = {
-        let db = state.db.lock().unwrap();
+        let db = state.db.lock();
         db.get_enabled_periodic_tasks()
     };
 
@@ -219,7 +219,7 @@ pub async fn get_enabled_periodic_tasks(state: State<'_, AppState>) -> Result<Ve
 
 #[tauri::command]
 pub async fn create_periodic_task(state: State<'_, AppState>, mut task: PeriodicTaskData) -> Result<String, String> {
-    let db = state.db.lock().unwrap();
+    let db = state.db.lock();
     task.task.periodic = task.task.id.clone();
     let res = db.create_periodic_task(&task);
     match res {
@@ -240,7 +240,7 @@ pub async fn update_periodic_task(
     task: PeriodicTaskData,
 ) -> Result<PeriodicTask, String> {
     let record = {
-        let db = state.db.lock().unwrap();
+        let db = state.db.lock();
         db.update_periodic_task(task.task.id.clone().unwrap().as_str(), &task)
     };
 
@@ -265,7 +265,7 @@ pub async fn update_periodic_task(
 
 #[tauri::command]
 pub async fn update_periodic_task_last_period(state: State<'_, AppState>, id: String)-> Result<(),String>{
-    let db = state.db.lock().unwrap();
+    let db = state.db.lock();
     match db.update_periodic_task_last_period(id.as_str(), None) {
         Ok(_) => Ok(()),
         Err(e) => {
@@ -277,7 +277,7 @@ pub async fn update_periodic_task_last_period(state: State<'_, AppState>, id: St
 
 #[tauri::command]
 pub async fn delete_periodic_task(state: State<'_, AppState>, id: String) -> Result<(), String> {
-    let db = state.db.lock().unwrap();
+    let db = state.db.lock();
 
     let res = db.delete_periodic_task(id.as_str());
     match res {

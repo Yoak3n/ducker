@@ -27,7 +27,7 @@ where
     if let Some(app_handle) = handle::Handle::global().app_handle() {
         // Try to get state, but don't panic if it's not managed yet
         if let Some(state) = app_handle.try_state::<AppState>() {
-            let mut guard = state.lightweight.lock().unwrap();
+            let mut guard = state.lightweight.lock();
             Some(f(&mut guard))
         } else {
             // State not managed yet, return None

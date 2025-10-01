@@ -110,7 +110,7 @@ fn get_periodic_tasks_with_occurrences(
 ) -> Vec<(TaskRecord, i64)> {
     let app_handle = Handle::global().app_handle().unwrap();
     let state = app_handle.state::<AppState>();
-    let db_guard = state.db.lock().unwrap();
+    let db_guard = state.db.lock();
     
     let periodic_tasks = db_guard
         .get_enabled_periodic_tasks()
@@ -164,7 +164,7 @@ fn get_periodic_tasks_with_occurrences(
 fn get_tasks_by_time_range(start_timestamp: i64, end_timestamp: i64) -> HashMap<i64, Vec<TaskView>> {
     let app_handle = Handle::global().app_handle().unwrap();
     let state = app_handle.state::<AppState>();
-    let db_guard = state.db.lock().unwrap();
+    let db_guard = state.db.lock();
     
     let mut result = HashMap::new();
     

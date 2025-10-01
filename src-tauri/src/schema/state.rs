@@ -1,8 +1,8 @@
 use crate::store::db::Database;
 use crate::{logging, utils::logging::Type};
 use std::collections::HashSet;
-use std::sync::{Arc, Mutex, Once, OnceLock};
-
+use std::sync::{Arc, OnceLock};
+use parking_lot::{Mutex,Once};
 #[derive(Clone)]
 pub struct AppState {
     pub db: Arc<Mutex<Database>>,

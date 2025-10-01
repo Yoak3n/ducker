@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { emit } from '@tauri-apps/api/event';
-import { getCurrentWindow } from '@tauri-apps/api/window';
 
 import ActionSelect from '@/components/Action/ActionSelect';
 import DatetimePicker from '@/components/Date/DatetimePicker';

@@ -27,7 +27,7 @@ impl TryFrom<(&TaskRecord, &AppState)> for TaskView {
     type Error = anyhow::Error;
 
     fn try_from((record, state): (&TaskRecord, &AppState)) -> Result<Self, Self::Error> {
-        let db = state.db.lock().unwrap();
+        let db = state.db.lock();
 
         // 获取关联的 actions
         let action_records = db.get_actions(&record.actions)?;

@@ -141,7 +141,7 @@ pub async fn execute_plural_actions(actions: Vec<Action>) -> Result<String, Stri
 pub async fn marked_tasks_completed(tasks_ids: Vec<String>) -> Result<()> {
     let app_handle = Handle::global().app_handle().unwrap();
     let state = app_handle.state::<AppState>();
-    let db_guard = state.db.lock().unwrap();
+    let db_guard = state.db.lock();
     for task_id in tasks_ids {
         db_guard.update_task_status(&task_id, true)?;
     }

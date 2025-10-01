@@ -19,7 +19,7 @@ impl TryFrom<(&PeriodicTaskRecord,&AppState)> for PeriodicTask {
     fn try_from((record, state): (&PeriodicTaskRecord, &AppState)) -> Result<Self, Self::Error> {
         // 获取关联的 task
         let task_record = {
-            let db = state.db.lock().unwrap();
+            let db = state.db.lock();
             db.get_task(&record.id)?
         };
         let task = TaskView::try_from((&task_record, state))?;

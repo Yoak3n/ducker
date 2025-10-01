@@ -19,7 +19,7 @@ fn get_uncompleted_tasks_until_end_of_day(
 ) -> Vec<TaskRecord> {
     let app_handle = Handle::global().app_handle().unwrap();
     let state = app_handle.state::<AppState>();
-    let db_guard = state.db.lock().unwrap();
+    let db_guard = state.db.lock();
     let res = db_guard.get_uncompleted_tasks_by_date_range(start_date, end_date);
     res.unwrap_or_else(|e| {
         logging!(

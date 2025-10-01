@@ -7,8 +7,8 @@ mod schema;
 mod service;
 mod store;
 mod utils;
-use std::sync::{Arc, Mutex, Once};
-
+use std::sync::{Arc, Once};
+use parking_lot::Mutex;
 use tauri::{AppHandle, Manager};
 
 // use utils::logging::Type;
@@ -37,14 +37,16 @@ impl AppHandleManager {
     /// Initialize the app handle manager with an app handle.
     pub fn init(&self, handle: AppHandle) {
         self.init.call_once(|| {
-            let mut app_handle = self.inner.lock().unwrap();
+            let mut app_handle = self.inner.lock();
             *app_handle = Some(handle);
         });
     }
 
+
+
     /// Get the app handle if it has been initialized.
     pub fn get(&self) -> Option<AppHandle> {
-        self.inner.lock().unwrap().clone()
+        self.inner.lock().clone()
     }
 
     /// Get the app handle, panics if it hasn't been initialized.
@@ -55,7 +57,7 @@ impl AppHandleManager {
     pub fn set_activation_policy_regular(&self) {
         #[cfg(target_os = "macos")]
         {
-            let app_handle = self.inner.lock().unwrap();
+            let app_handle = self.inner.lock();
             let app_handle = app_handle.as_ref().unwrap();
             let _ = app_handle.set_activation_policy(tauri::ActivationPolicy::Regular);
         }
@@ -64,7 +66,7 @@ impl AppHandleManager {
     pub fn set_activation_policy_accessory(&self) {
         #[cfg(target_os = "macos")]
         {
-            let app_handle = self.inner.lock().unwrap();
+            let app_handle = self.inner.lock();
             let app_handle = app_handle.as_ref().unwrap();
             let _ = app_handle.set_activation_policy(tauri::ActivationPolicy::Accessory);
         }
@@ -73,7 +75,7 @@ impl AppHandleManager {
     pub fn set_activation_policy_prohibited(&self) {
         #[cfg(target_os = "macos")]
         {
-            let app_handle = self.inner.lock().unwrap();
+            let app_handle = self.inner.lock();
             let app_handle = app_handle.as_ref().unwrap();
             let _ = app_handle.set_activation_policy(tauri::ActivationPolicy::Prohibited);
         }
@@ -96,7 +98,7 @@ pub fn run() {
             let db = Database::new(local_data_dir).expect("Failed to initialize database");
             {
                 let state = app.state::<AppState>();
-                let mut db_guard = state.db.lock().unwrap();
+                let mut db_guard = state.db.lock();
                 *db_guard = db;
             }
             AppHandleManager::global().init(app.handle().clone());

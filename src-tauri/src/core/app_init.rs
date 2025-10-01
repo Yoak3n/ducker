@@ -123,7 +123,7 @@ pub fn check_periodic_task(){
     };
     let app_handle = Handle::global().app_handle().unwrap();
     let state = app_handle.state::<AppState>();
-    let db_guard = state.db.lock().unwrap();
+    let db_guard = state.db.lock();
     let res = db_guard.get_enabled_periodic_tasks();
     if let Ok(tasks) = res {
         use crate::store::module::{TaskManager, ActionManager};
