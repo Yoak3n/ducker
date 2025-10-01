@@ -1,8 +1,8 @@
 use anyhow::{Result,anyhow};
-use chrono::{Datelike, Local, TimeZone, Timelike};
+use chrono::Local;
 use parking_lot::RwLock;
 use rusqlite::{params, Connection};
-use std::collections::VecDeque;
+use std::collections::HashMap;
 use std::path::PathBuf;
 
 use super::module::*;
@@ -144,7 +144,12 @@ impl Database {
         let task = self.get_task(task_id)?;
         // 如果是周期性任务，创建下一个周期
         if let Some(_) = &task.periodic {
-            self.create_next_periodic_task(&task)?;
+            match self.create_next_periodic_task(&task) {
+                Ok(_) => {},
+                Err(e) => {
+                    logging!(error, Type::Database, true, "创建下一个周期性任务失败: {:?}", e);
+                }
+            }
         }
         Ok(())
     }
@@ -375,11 +380,22 @@ impl ActionManager for Database {
             })
         })?;
 
-        let mut actions = VecDeque::new();
+        // 将查询结果存储为map，以id为key
+        let mut action_map = HashMap::new();
         for action in action_iter {
-            actions.push_back(action?);
+            let action = action?;
+            action_map.insert(action.id.clone(), action);
         }
-        Ok(actions.into())
+
+        // 根据ids的顺序返回对应的actions数组
+        let mut actions = Vec::with_capacity(ids.len());
+        for id in ids {
+            if let Some(action) = action_map.remove(id) {
+                actions.push(action);
+            }
+        }
+        
+        Ok(actions)
     }
 
     fn get_all_actions(&self) -> anyhow::Result<Vec<crate::schema::ActionRecord>> {
@@ -488,13 +504,15 @@ impl TaskManager for Database {
     }
 
     fn update_task_status(&self, id: &str, completed: bool) -> Result<bool> {
-        let conn = self.conn.write();
-        conn.execute(
-            "UPDATE tasks 
-            SET completed = ?1
-            WHERE id = ?2",
-            params![&completed, id],
-        )?;
+        {
+            let conn = self.conn.write();
+            conn.execute(
+                "UPDATE tasks 
+                SET completed = ?1
+                WHERE id = ?2",
+                params![&completed, id],
+            )?;
+        }
         if completed {
             self.on_task_completed(id)?;
         }
@@ -643,12 +661,48 @@ impl TaskManager for Database {
 
 impl PeriodicTaskManager for Database {
     fn create_periodic_task(&self, task: &PeriodicTaskData) -> Result<PeriodicTaskRecord> {
-        // 创建任务
-        let task_record = self.create_task(&task.task)?;
+        // 直接创建带有periodic字段的任务，避免先创建再更新的冗余操作
         let conn = self.conn.write();
+        let actions = serde_json::to_string(&task.task.actions)?;
+        let task_record = TaskRecord::from(task.task.clone());
+        
+        // 在创建时就设置periodic字段为任务ID
         let mut stmt = conn.prepare(
-            "INSERT INTO periodic_tasks (id, name, interval, next_period) 
-             VALUES (?1, ?2, ?3, ?4)",
+            "INSERT INTO tasks (id, value, auto, parent_id, periodic, name, actions, created_at, due_to, reminder) 
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)",
+        )?;
+        match stmt.insert(params![
+            &task_record.id,
+            &task_record.value,
+            &task_record.auto,
+            &task_record.parent_id,
+            Some(&task_record.id), // 直接设置periodic为任务ID
+            &task_record.name,
+            &actions,
+            &task_record.created_at,
+            &task_record.due_to,
+            &task_record.reminder
+        ]) {
+            Ok(id) => {
+                logging!(info, Type::Database, "创建周期性任务成功: {id}");
+            }
+            Err(e) => {
+                logging!(
+                    error,
+                    Type::Database,
+                    true,
+                    "创建周期性任务失败: {:?}, 错误: {:?}",
+                    task_record.id,
+                    e
+                );
+                return Err(anyhow::anyhow!("创建周期性任务失败"));
+            }
+        };
+        
+        // 继续使用同一个连接创建periodic_tasks记录
+        let mut stmt = conn.prepare(
+            "INSERT INTO periodic_tasks (id, name, interval, next_period, last_period) 
+             VALUES (?1, ?2, ?3, ?4, ?5)",
         )?;
         let next_period = task.interval.clone() as i64 * 3600 * 24 + &task_record.due_to;
         let row_id = stmt.insert(params![
@@ -656,6 +710,7 @@ impl PeriodicTaskManager for Database {
             &task.name,
             task.interval.clone() as u8,
             Some(next_period),
+            Some(task_record.due_to),
         ])?;
 
         logging!(debug, Type::Database, "创建周期性任务成功: {}", row_id);
@@ -664,7 +719,7 @@ impl PeriodicTaskManager for Database {
             id: task_record.id.clone(),
             name: task.name.clone(),
             interval: task.interval.clone() as u8,
-            last_period: None,
+            last_period: Some(task_record.due_to as u64),
             next_period: Some(next_period as u64),
         })
     }
@@ -680,11 +735,6 @@ impl PeriodicTaskManager for Database {
             params![id],
             |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)),
         )?;
-
-        // if let Some(n) = next_period {
-        //     // 检查 next_period 是否在当前时间之后
-        //     current_next_period = Some(n);
-        // }
         
         // 计算新的 next_period
         let new_next_period;

@@ -8,7 +8,7 @@ use chrono::{Local, TimeZone, Utc};
 pub fn setup_plugins(builder: tauri::Builder<tauri::Wry>) -> tauri::Builder<tauri::Wry> {
     #[allow(unused_mut)]
     let mut builder = builder
-        .plugin(tauri_plugin_window_state::Builder::new().build())
+        // .plugin(tauri_plugin_window_state::Builder::new().build())
         .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_shell::init())

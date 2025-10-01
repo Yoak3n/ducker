@@ -88,6 +88,7 @@ export const useTaskStore = create<TaskStore>()(
             console.log('获取所有任务:', tasks);
             set({ tasks: tasks || [], loading: false }, false);
           } catch (error) {
+            console.log('获取所有任务失败:', error);
             set({
               loading: false,
               error: error instanceof Error ? error.message : '获取任务失败'

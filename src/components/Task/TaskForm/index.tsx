@@ -387,30 +387,6 @@ export default function TaskModal({ onSave, task, parentTask }: TaskModalProps) 
 
           {isPeriodic && (
             <div className="mt-4 pt-4 border-t border-gray-200 animate-[slideDown_0.3s_ease-out] bg-white/50 rounded-md p-4">
-              {/* <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <div className="mb-3">
-                  <label htmlFor="periodic-name" className="block mb-1 font-medium text-gray-600 text-sm">周期任务名称 *</label>
-                  <input
-                    id="periodic-name"
-                    type="text"
-                    value={formData.periodicName}
-                    onChange={(e) => handleInputChange('periodicName', e.target.value)}
-                    placeholder="输入周期任务名称..."
-                    required={formData.isPeriodic}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm transition-all duration-200 bg-white focus:outline-none focus:border-blue-500 focus:shadow-[0_0_0_3px_rgba(59,130,246,0.1)]"
-                  />
-                </div>
-                <div className="mb-3">
-                  <div className='flex items-center gap-2 justify-start mt-6'>
-                    <Checkbox
-                      checked={formData.periodicEnabled}
-                      onCheckedChange={(v) => handleInputChange('periodicEnabled', v)}
-                    />
-                    <label className="text-sm text-gray-600 cursor-default">立即启用</label>
-                  </div>
-                </div>
-              </div> */}
-
               <div className="mb-3">
                 <div className="mb-3">
                   <Label className='py-1'>执行周期</Label>

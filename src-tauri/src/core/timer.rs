@@ -26,6 +26,7 @@ pub struct TimerTask {
     pub task_id: TaskID,
     pub interval_seconds: i64,
     #[allow(unused)]
+    // 不知道这个字段有什么用
     pub last_period: i64,
 }
 
@@ -252,25 +253,25 @@ impl Timer {
         );
 
         // Find tasks to modify or delete
-        for (uid, task) in timer_map.iter() {
+        for (uid, timer_task) in timer_map.iter() {
             match new_map.get(uid) {
                 // 由于delay_timer内部会更新task的interval_seconds，所以这里应该会不断发送ModFlag
-                Some(&interval) if interval != task.interval_seconds => {
+                Some(&interval) if interval != timer_task.interval_seconds => {
                     // Task exists but interval changed
                     logging!(
                         debug,
                         Type::Timer,
                         "定时任务间隔变更: uid={}, 旧={}, 新={}",
                         uid,
-                        task.interval_seconds,
+                        timer_task.interval_seconds,
                         interval
                     );
-                    diff_map.insert(uid.clone(), DiffFlag::Mod(task.task_id, interval));
+                    diff_map.insert(uid.clone(), DiffFlag::Mod(timer_task.task_id, interval));
                 }
                 None => {
                     // Task no longer needed
                     logging!(debug, Type::Timer, true, "定时任务已删除: uid={}", uid);
-                    diff_map.insert(uid.clone(), DiffFlag::Del(task.task_id));
+                    diff_map.insert(uid.clone(), DiffFlag::Del(timer_task.task_id));
                 }
                 _ => {
                     // Task exists with same interval, no change needed

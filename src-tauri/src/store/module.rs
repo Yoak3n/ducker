@@ -34,6 +34,4 @@ pub trait PeriodicTaskManager {
     fn delete_periodic_task(&self, id: &str) -> Result<()>;
     fn get_enabled_periodic_tasks(&self) -> Result<Vec<PeriodicTaskRecord>>;
     fn get_periodic_task(&self, id: &str) -> Result<PeriodicTaskRecord>;
-    // fn get_periodic_tasks(&self, ids: &[u32]) -> Result<Vec<PeriodicTaskRecord>>;
-    // fn get_all_periodic_tasks(&self) -> Result<Vec<PeriodicTaskRecord>>;
 }

@@ -337,7 +337,6 @@ impl WindowManager {
                         logging!(
                             info,
                             Type::Window,
-                            true,
                             "检测到鼠标在显示器: {}x{} at ({}, {})",
                             monitor_width,
                             monitor_height,

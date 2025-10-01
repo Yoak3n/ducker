@@ -90,7 +90,6 @@ pub async fn get_task(state: State<'_, AppState>, id: &str) -> Result<TaskView, 
 
 #[tauri::command]
 pub async fn get_all_tasks(state: State<'_, AppState>) -> Result<Vec<TaskView>, String> {
-    
     // 快速获取数据并立即释放数据库锁
     let data = {
         let db = state.db.lock().unwrap();

@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use chrono::{Datelike, Duration, Local, TimeZone, Timelike};
+use chrono::{Datelike, Duration, Local, TimeZone};
 use tauri::Manager;
 
 use crate::{
@@ -212,19 +212,19 @@ fn get_tasks_by_time_range(start_timestamp: i64, end_timestamp: i64) -> HashMap<
 }
 
 /// 获取今天的所有任务（包括重复任务的准确执行时间）
-pub fn get_today_tasks() -> HashMap<i64, Vec<TaskView>> {
-    let now = Local::now();
-    let start_of_day = Local
-        .with_ymd_and_hms(now.year(), now.month(), now.day(), 0, 0, 0)
-        .unwrap()
-        .timestamp();
-    let end_of_day = Local
-        .with_ymd_and_hms(now.year(), now.month(), now.day(), 23, 59, 59)
-        .unwrap()
-        .timestamp();
+// pub fn get_today_tasks() -> HashMap<i64, Vec<TaskView>> {
+//     let now = Local::now();
+//     let start_of_day = Local
+//         .with_ymd_and_hms(now.year(), now.month(), now.day(), 0, 0, 0)
+//         .unwrap()
+//         .timestamp();
+//     let end_of_day = Local
+//         .with_ymd_and_hms(now.year(), now.month(), now.day(), 23, 59, 59)
+//         .unwrap()
+//         .timestamp();
     
-    get_tasks_by_time_range(start_of_day, end_of_day)
-}
+//     get_tasks_by_time_range(start_of_day, end_of_day)
+// }
 
 /// 获取本周的所有任务（包括重复任务的准确执行时间）
 pub fn get_weekly_tasks() -> HashMap<i64, Vec<TaskView>> {

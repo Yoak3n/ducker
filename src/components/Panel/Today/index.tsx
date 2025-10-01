@@ -1,11 +1,11 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { listen } from "@tauri-apps/api/event";
 
 import { Button } from "@/components/ui/button";
 
-import { useTaskStore } from "@/store";
+import { useTaskStore, type Task } from "@/store";
 import { extractTimeStampSecond, getTodayRange } from "@/utils";
-import {showWindow} from "@/api";
+import { showWindow } from "@/api";
 
 import TaskList from "./TaskList";
 import "./index.css"
@@ -24,7 +24,7 @@ const TodayView = () => {
         // taskStore.fetchTodayTasks()
         // 监听任务变更事件
         let unlistenTaskChanged: Promise<() => void> | null = null;
-        
+
         // 检查是否在Tauri环境中
         if (typeof window !== 'undefined') {
             try {
@@ -35,7 +35,7 @@ const TodayView = () => {
                 console.warn('事件监听器初始化失败:', error);
             }
         }
-        
+
         // 清理事件监听器
         return () => {
             if (unlistenTaskChanged) {
@@ -44,8 +44,13 @@ const TodayView = () => {
         };
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
-    // const [taskList, setTaskList] = useState<Task[]>(tasks);
-    const tasksList = taskStore.tasks.filter(task => (extractTimeStampSecond(task.due_to!) <= todayDate.getTime() / 1000 && !task.completed) || (extractTimeStampSecond(task.due_to!) >= todayRange.start && extractTimeStampSecond(task.due_to!) <= todayRange.end))
+    const [tasksList, setTasksList] = useState<Task[]>([]);
+    useEffect(() => {
+        setTasksList(taskStore
+            .tasks
+            .filter(task => (extractTimeStampSecond(task.due_to!) <= todayDate.getTime() / 1000 && !task.completed) || (extractTimeStampSecond(task.due_to!) >= todayRange.start && extractTimeStampSecond(task.due_to!) <= todayRange.end)))
+    }, [taskStore.tasks])
+
 
     let completedValueCount = 0
     tasksList.forEach(item => {
@@ -72,6 +77,8 @@ const TodayView = () => {
     };
 
     const handleTaskStatueChange = (id: string) => {
+
+        console.log(id)
         taskStore.toggleTaskCompletion(id)
     }
 
@@ -91,7 +98,7 @@ const TodayView = () => {
                     </span>
                 </div>
             }
-            <TaskList tasks={tasksList} todayDate={todayDate} todayRange={todayRange} changeTask={handleTaskStatueChange}  variant="today"/>
+            <TaskList tasks={tasksList} todayDate={todayDate} todayRange={todayRange} changeTask={handleTaskStatueChange} variant="today" />
         </div>
     );
 };
