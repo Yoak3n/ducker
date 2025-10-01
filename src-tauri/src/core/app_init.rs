@@ -84,6 +84,10 @@ pub fn generate_handlers() -> impl Fn(tauri::ipc::Invoke<tauri::Wry>) -> bool + 
         cmd::task::get_tasks_by_status,
         cmd::task::get_tasks,
         cmd::task::get_enabled_periodic_tasks,
+        // TODO 暂时不开放获取周期任务的接口
+        // cmd::task::get_today_tasks,
+        cmd::task::get_weekly_tasks,
+        cmd::task::get_monthly_tasks,
         // Periodic Tasks
         cmd::task::create_periodic_task,
         cmd::task::update_periodic_task,

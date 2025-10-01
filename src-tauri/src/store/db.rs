@@ -1,4 +1,5 @@
-use anyhow::Result;
+use anyhow::{Result,anyhow};
+use chrono::{Datelike, Local, TimeZone, Timelike};
 use parking_lot::RwLock;
 use rusqlite::{params, Connection};
 use std::collections::VecDeque;
@@ -11,7 +12,13 @@ use crate::{
         Action, ActionRecord, ActionType, PeriodicTaskData, PeriodicTaskRecord, TaskData,
         TaskRecord,
     },
-    utils::{help::random_string, logging::Type},
+    utils::{
+        date::{
+            calculate_next_period, calculate_next_period_from_now, next_month, to_datetime_str
+        }, 
+        help::random_string, 
+        logging::Type
+    },
 };
 pub struct Database {
     conn: RwLock<Connection>,
@@ -29,6 +36,7 @@ impl Database {
                 completed INTEGER DEFAULT 0,
                 auto INTEGER DEFAULT 0,
                 parent_id TEXT,
+                periodic TEXT,
                 name TEXT NOT NULL,
                 actions TEXT,
                 created_at INTEGER,
@@ -116,6 +124,7 @@ impl Database {
             due_to: row.get(7)?,
             reminder: row.get(8)?,
             value: row.get(9)?,
+            periodic: row.get(10)?,
         })
     }
 
@@ -128,6 +137,83 @@ impl Database {
             interval: row.get(2)?,
             last_period: row.get(3)?,
             next_period: row.get(4)?,
+        })
+    }
+    fn on_task_completed(&self, task_id: &str) -> Result<()> {
+        // 更新任务为已完成
+        let task = self.get_task(task_id)?;
+        // 如果是周期性任务，创建下一个周期
+        if let Some(_) = &task.periodic {
+            self.create_next_periodic_task(&task)?;
+        }
+        Ok(())
+    }
+    fn create_next_periodic_task(&self, current_periodic_task: &TaskRecord) -> Result<PeriodicTaskRecord> {
+        let current_periodic_task_id = current_periodic_task.clone().periodic.unwrap();
+        // 获取当前的 next_period 和 interval
+        let res = self.get_periodic_task(&current_periodic_task_id).expect("获取周期性任务失败");
+        let current_last_period = res.last_period;
+        let current_next_period = res.next_period;
+        let interval = res.interval;
+
+        // 计算新的 next_period
+        let mut calculated_next_period = calculate_next_period(current_periodic_task.due_to, interval);
+
+        // 如果计算出的时间与当前 next_period 相同，意味着需要创建下一个周期任务，否则意味着是已过期的周期任务,阻止创建下一个任务
+        let next_task = if Some(calculated_next_period as u64) == current_next_period {
+                // 只对月度任务进行日期天数一致性检查
+                if interval == 30 {
+                    // 检查current_last_period, current_next_period的日期的天数是否一致 
+                    if let (Some(last_period), Some(next_period)) = (current_last_period, current_next_period) {
+                        use chrono::{Datelike, TimeZone};
+                        let last_dt = Local.timestamp_opt(last_period as i64, 0).single().unwrap();
+                        let next_dt = Local.timestamp_opt(next_period as i64, 0).single().unwrap();
+                        // 检查两个日期的天数是否一致
+                        if last_dt.day() != next_dt.day() {
+                            // 如果天数不一致，说明可能是月末日期调整（如1月31日->2月28日），则使用last_period的日期推到下下月
+                            // 需要重新计算下一个周期，确保使用正确的目标日期
+                            logging!(
+                                debug,
+                                Type::Database,
+                                "月度任务日期不一致: last_period={} ({}日), next_period={} ({}日)",
+                                last_period,
+                                last_dt.day(),
+                                next_period,
+                                next_dt.day()
+                            );
+                            let after_next_month = next_month(next_month(last_dt));
+                            calculated_next_period = after_next_month.timestamp();
+                        }
+                    }
+                }
+                // 再检查是否早于当前时间，重新计算
+                let next_period = calculate_next_period_from_now(calculated_next_period, interval);
+                TaskData{
+                    id: format!("task{}", random_string(6)).into(),
+                    completed: false,
+                    parent_id: current_periodic_task.parent_id.clone(),
+                    name: current_periodic_task.name.clone(),
+                    auto: current_periodic_task.auto,
+                    actions: current_periodic_task.actions.clone(),
+                    created_at: to_datetime_str(current_periodic_task.created_at).into(),
+                    due_to: to_datetime_str(next_period).into(),
+                    reminder: current_periodic_task.reminder.map(|reminder| to_datetime_str(next_period - (current_periodic_task.due_to - reminder)).into()),
+                    value: current_periodic_task.value.into(),
+                    periodic: current_periodic_task_id.clone().into(),
+                }
+            } else {
+                return Err(anyhow!("周期性任务已过期，无法创建下一个周期任务"));
+            };
+        // 创建下一个周期任务
+        self.create_task(&next_task)?;
+        // 更新周期性任务记录
+        self.update_periodic_task_last_period(&current_periodic_task_id, Some(calculated_next_period))?;
+        Ok(PeriodicTaskRecord {
+            id: current_periodic_task_id,
+            name: next_task.name.clone(),   
+            interval,
+            last_period: Some(calculated_next_period as u64),
+            next_period: Some(calculated_next_period as u64),
         })
     }
 }
@@ -343,8 +429,8 @@ impl TaskManager for Database {
         let record = TaskRecord::from(task.clone());
         let mut stmt = conn.prepare(
             "
-        INSERT INTO tasks (id, value, auto, parent_id, name, actions, created_at, due_to, reminder) 
-        VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9  )",
+        INSERT INTO tasks (id, value, auto, parent_id, periodic, name, actions, created_at, due_to, reminder) 
+        VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)",
         )?;
 
         match stmt.insert(params![
@@ -352,6 +438,7 @@ impl TaskManager for Database {
             &record.value,
             &record.auto,
             &record.parent_id,
+            &record.periodic,
             &record.name,
             &actions,
             &record.created_at,
@@ -383,8 +470,8 @@ impl TaskManager for Database {
         let record = TaskRecord::from(task.clone());
         conn.execute(
             "UPDATE tasks 
-            SET name = ?1, value = ?2, actions = ?3, due_to = ?4, reminder = ?5, completed = ?6, auto = ?7, parent_id = ?8
-            WHERE id = ?9",
+            SET name = ?1, value = ?2, actions = ?3, due_to = ?4, reminder = ?5, completed = ?6, auto = ?7, parent_id = ?8, periodic = ?9
+            WHERE id = ?10",
             params![
                 &task.name,
                 &task.value,
@@ -394,6 +481,7 @@ impl TaskManager for Database {
                 &record.completed,
                 &record.auto,
                 &record.parent_id,
+                &record.periodic,
                 id],
         )?;
         Ok(record)
@@ -407,6 +495,9 @@ impl TaskManager for Database {
             WHERE id = ?2",
             params![&completed, id],
         )?;
+        if completed {
+            self.on_task_completed(id)?;
+        }
         Ok(true)
     }
 
@@ -420,7 +511,7 @@ impl TaskManager for Database {
         let conn = self.conn.read();
         let mut stmt = conn.prepare(
             "
-        SELECT id, completed, parent_id, name, auto, actions, created_at, due_to, reminder, value 
+        SELECT id, completed, parent_id, name, auto, actions, created_at, due_to, reminder, value, periodic 
         FROM tasks WHERE id = ?1",
         )?;
         let task = stmt.query_row([id], |row| Self::build_task_record_from_row(row))?;
@@ -434,7 +525,7 @@ impl TaskManager for Database {
         let conn = self.conn.read();
         let placeholders = ids.iter().map(|_| "?").collect::<Vec<_>>().join(",");
         let query = format!(
-            "SELECT id, completed, parent_id, name, auto, actions, created_at, due_to, reminder, value 
+            "SELECT id, completed, parent_id, name, auto, actions, created_at, due_to, reminder, value, periodic 
             FROM tasks 
             WHERE id IN ({})",
             placeholders
@@ -463,7 +554,7 @@ impl TaskManager for Database {
     fn get_tasks_by_status(&self, completed: bool) -> Result<Vec<TaskRecord>> {
         let conn = self.conn.read();
         let mut stmt = conn.prepare(
-            "SELECT id, completed, parent_id, name, auto, actions, created_at, due_to, reminder, value 
+            "SELECT id, completed, parent_id, name, auto, actions, created_at, due_to, reminder, value, periodic 
             FROM tasks WHERE completed = ?1",
         )?;
         let tasks = stmt.query_map([completed], |row| Self::build_task_record_from_row(row))?;
@@ -479,7 +570,7 @@ impl TaskManager for Database {
         let conn = self.conn.read();
         let mut stmt = conn.prepare(
             "
-        SELECT id, completed, parent_id, name, auto, actions, created_at, due_to, reminder, value 
+        SELECT id, completed, parent_id, name, auto, actions, created_at, due_to, reminder, value, periodic 
         FROM tasks 
         WHERE parent_id = ?1",
         )?;
@@ -495,7 +586,7 @@ impl TaskManager for Database {
     fn get_tasks_by_date_range(&self, start_date: i64, end_date: i64) -> Result<Vec<TaskRecord>> {
         let conn = self.conn.read();
         let mut stmt = conn.prepare(
-            "SELECT id, completed, parent_id, name, auto, actions, created_at, due_to, reminder, value 
+            "SELECT id, completed, parent_id, name, auto, actions, created_at, due_to, reminder, value, periodic 
             FROM tasks 
             WHERE due_to BETWEEN ?1 AND ?2
             ORDER BY due_to DESC",
@@ -518,7 +609,7 @@ impl TaskManager for Database {
     ) -> Result<Vec<TaskRecord>> {
         let conn = self.conn.read();
         let mut stmt = conn.prepare(
-            "SELECT id, completed, parent_id, name, auto, actions, created_at, due_to, reminder, value 
+            "SELECT id, completed, parent_id, name, auto, actions, created_at, due_to, reminder, value, periodic 
             FROM tasks 
             WHERE (due_to BETWEEN ?1 AND ?2) AND completed = 0
             ORDER BY due_to DESC",
@@ -537,7 +628,7 @@ impl TaskManager for Database {
     fn get_all_tasks(&self) -> Result<Vec<TaskRecord>> {
         let conn = self.conn.read();
         let mut stmt = conn.prepare(
-            "SELECT id, completed, parent_id, name, auto, actions, created_at, due_to, reminder, value 
+            "SELECT id, completed, parent_id, name, auto, actions, created_at, due_to, reminder, value, periodic 
             FROM tasks",
         )?;
         let tasks = stmt.query_map([], |row| Self::build_task_record_from_row(row))?;
@@ -578,55 +669,33 @@ impl PeriodicTaskManager for Database {
         })
     }
 
-    fn update_periodic_task(
-        &self,
-        id: &str,
-        task: &PeriodicTaskData,
-    ) -> Result<PeriodicTaskRecord> {
-        let conn = self.conn.write();
-        // 更新任务
-        let task_record = self.update_task(id, &task.task)?;
-
-        conn.execute(
-            "UPDATE periodic_tasks 
-             SET name = ?1, interval = ?2
-             WHERE id = ?3",
-            params![&task_record.name, task.interval.clone() as u8, id],
-        )?;
-
-        logging!(debug, Type::Database, "更新周期性任务成功: {}", id);
-
-        Ok(PeriodicTaskRecord {
-            id: id.to_string(),
-            name: task.name.clone(),
-            interval: task.interval.clone() as u8,
-            last_period: None,
-            next_period: None,
-        })
-    }
-
-    fn update_periodic_task_last_period(&self, id: &str) -> Result<()> {
+    // 什么时候调用才会让系统正常运行呢？
+    // 当一个周期性任务被触发时，系统会调用这个函数来更新下一个周期任务的触发时间。
+    fn update_periodic_task_last_period(&self, id: &str, next_period: Option<i64>) -> Result<()> {
         let conn = self.conn.write();
 
         // 获取当前的 next_period 和 interval
-        let (current_next_period, interval): (Option<i64>, i64) = conn.query_row(
-            "SELECT next_period, interval FROM periodic_tasks WHERE id = ?1",
+        let (current_next_period,current_last_period, interval): (Option<i64>, Option<i64>, u8) = conn.query_row(
+            "SELECT next_period, last_period, interval FROM periodic_tasks WHERE id = ?1",
             params![id],
-            |row| Ok((row.get(0)?, row.get(1)?)),
+            |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)),
         )?;
 
+        // if let Some(n) = next_period {
+        //     // 检查 next_period 是否在当前时间之后
+        //     current_next_period = Some(n);
+        // }
+        
         // 计算新的 next_period
-        let new_last_period = current_next_period.unwrap_or_else(|| {
-            let task_due_to: i64 = conn
-                .query_row(
-                    "SELECT due_to FROM tasks WHERE id = ?1",
-                    params![id],
-                    |row| Ok(row.get(0)?),
-                )
-                .unwrap();
-            task_due_to
-        });
-        let new_next_period = new_last_period + interval * 3600 * 24;
+        let new_next_period;
+        let new_last_period = if let Some(n) = next_period {
+            // 如果传入新的 next_period,表示是特殊情况： 进行了日期自适应调整 —— 不更新last_period，只更新next_period
+            new_next_period = n;
+            current_last_period.unwrap()
+        } else {
+            new_next_period = calculate_next_period(current_next_period.unwrap(), interval);
+            current_next_period.unwrap()
+        };
 
         conn.execute(
             "UPDATE periodic_tasks 
@@ -707,5 +776,29 @@ impl PeriodicTaskManager for Database {
         }
 
         Ok(result)
+    }
+
+    fn get_periodic_task(&self, id: &str) -> Result<PeriodicTaskRecord> {
+        let conn = self.conn.read();
+        let mut stmt = conn.prepare(
+            "SELECT id, name, interval, last_period, next_period 
+             FROM periodic_tasks WHERE id = ?1",
+        )?;
+
+        let mut rows =
+            stmt.query_map([id], |row| Self::build_periodic_task_record_from_row(row))?;
+
+        match rows.next() {
+            Some(task) => Ok(task?),
+            None => Err(anyhow::anyhow!("周期性任务不存在: {}", id)),
+        }
+    }
+
+    fn update_periodic_task(
+        &self,
+        periodic_id: &str,
+        task: &PeriodicTaskData,
+    ) -> Result<PeriodicTaskRecord> {
+        todo!()
     }
 }

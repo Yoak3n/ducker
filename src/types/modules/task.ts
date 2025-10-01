@@ -12,6 +12,7 @@ export interface Task {
   created_at: string
   due_to?: string
   reminder?: string
+  periodic?: string
 }
 
 // 任务数据接口 - 使用工具类型优化
@@ -20,6 +21,7 @@ export interface TaskData extends
   Partial<Pick<Task, 'id' | 'value' | 'created_at'>> {
   actions?: string[]  // 在TaskData中actions是字符串数组
   parent_id?: string  // TaskData特有字段
+  periodic?: string   // 周期性任务标识
 }
 
 // 常用的工具类型定义

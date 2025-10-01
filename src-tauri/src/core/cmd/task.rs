@@ -1,13 +1,10 @@
 use crate::{
-    logging, 
-    schema::{
+    logging, schema::{
         task::{TaskData, TaskRecord, TaskView},
         AppState, PeriodicTask, PeriodicTaskData,
-    }, 
-    store::module::{
+    }, service::periodic, store::module::{
         PeriodicTaskManager, TaskManager
-    }, 
-    utils::{
+    }, utils::{
         help::random_string, 
         logging::Type
     }
@@ -222,9 +219,9 @@ pub async fn get_enabled_periodic_tasks(state: State<'_, AppState>) -> Result<Ve
 }
 
 #[tauri::command]
-pub async fn create_periodic_task(state: State<'_, AppState>, task: PeriodicTaskData) -> Result<String, String> {
+pub async fn create_periodic_task(state: State<'_, AppState>, mut task: PeriodicTaskData) -> Result<String, String> {
     let db = state.db.lock().unwrap();
-    
+    task.task.periodic = task.task.id.clone();
     let res = db.create_periodic_task(&task);
     match res {
         Ok(data) => {
@@ -270,7 +267,7 @@ pub async fn update_periodic_task(
 #[tauri::command]
 pub async fn update_periodic_task_last_period(state: State<'_, AppState>, id: String)-> Result<(),String>{
     let db = state.db.lock().unwrap();
-    match db.update_periodic_task_last_period(id.as_str()) {
+    match db.update_periodic_task_last_period(id.as_str(), None) {
         Ok(_) => Ok(()),
         Err(e) => {
             logging!(error, Type::Database, true, "更新周期性任务最后运行时间失败: {:?}", e);
@@ -294,6 +291,21 @@ pub async fn delete_periodic_task(state: State<'_, AppState>, id: String) -> Res
             Err(e.to_string())
         }
     }
+}
+
+// #[tauri::command]
+// pub async fn get_today_tasks() -> Result<std::collections::HashMap<i64, Vec<TaskView>>, String> {
+//     Ok(periodic::get_today_tasks())
+// }
+
+#[tauri::command]
+pub async fn get_weekly_tasks() -> Result<std::collections::HashMap<i64, Vec<TaskView>>, String> {
+    Ok(periodic::get_weekly_tasks())
+}
+
+#[tauri::command]
+pub async fn get_monthly_tasks() -> Result<std::collections::HashMap<i64, Vec<TaskView>>, String> {
+    Ok(periodic::get_monthly_tasks())
 }
 
 

@@ -73,8 +73,24 @@ async function delete_periodic_task(id: string): Promise<void> {
     return result;
 }
 
-async function get_enabled_periodic_tasks(): Promise<PeriodicTask[]> {
-    const tasks = await invoke<PeriodicTask[]>("get_enabled_periodic_tasks");
+async function get_enabled_periodic_tasks() {
+    const tasks: PeriodicTask[] = await invoke("get_enabled_periodic_tasks");
+    return tasks;
+}
+
+// 新的任务获取函数 - 支持准确的重复任务时间计算
+async function get_today_tasks(): Promise<Map<number,Task[]>> {
+    const tasks: Map<number,Task[]> = await invoke("get_today_tasks");
+    return tasks;
+}
+
+async function get_weekly_tasks(): Promise<Task[]> {
+    const tasks: Task[] = await invoke("get_weekly_tasks");
+    return tasks;
+}
+
+async function get_monthly_tasks(): Promise<Task[]> {
+    const tasks: Task[] = await invoke("get_monthly_tasks");
     return tasks;
 }
 
@@ -93,5 +109,9 @@ export {
     update_periodic_task,
     update_periodic_task_last_period,
     delete_periodic_task,
-    get_enabled_periodic_tasks
+    get_enabled_periodic_tasks,
+    // 新的任务获取函数
+    get_today_tasks,
+    get_weekly_tasks,
+    get_monthly_tasks
 };

@@ -29,6 +29,11 @@ interface TaskStore extends TaskState {
   getTasksByDateRange: (start: Date, end: Date) => Task[];
   getTaskStats: () => TaskStats;
 
+  // 新的时间段任务获取方法
+  fetchTodayTasks: () => Promise<Task[]>;
+  fetchWeeklyTasks: () => Promise<Task[]>;
+  fetchMonthlyTasks: () => Promise<Task[]>;
+
   // 工具方法
   reset: () => void;
 }
@@ -297,6 +302,40 @@ export const useTaskStore = create<TaskStore>()(
             pending,
             completionRate,
           };
+        },
+
+        // 新的时间段任务获取方法
+        fetchTodayTasks: async () => {
+          try {
+            const res = await taskApi.get_today_tasks();
+            let tasks: Task[] = [];
+            
+            console.log('获取今日任务:', res);
+            return tasks || [];
+          } catch (error) {
+            console.error('获取今日任务失败:', error);
+            return [];
+          }
+        },
+
+        fetchWeeklyTasks: async () => {
+          try {
+            const tasks = await taskApi.get_weekly_tasks();
+            return tasks || [];
+          } catch (error) {
+            console.error('获取本周任务失败:', error);
+            return [];
+          }
+        },
+
+        fetchMonthlyTasks: async () => {
+          try {
+            const tasks = await taskApi.get_monthly_tasks();
+            return tasks || [];
+          } catch (error) {
+            console.error('获取月度任务失败:', error);
+            return [];
+          }
         },
 
         // 工具方法

@@ -77,24 +77,6 @@ impl Timer {
             logging_error!(Type::Timer, false, "Failed to initialize timer: {}", e);
             return Err(e);
         }
-        // let timer_map = self.timer_map.write();
-        // logging!(
-        //     info,
-        //     Type::Timer,
-        //     "已注册的定时任务数量: {}",
-        //     timer_map.len()
-        // );
-
-        // for (uid, task) in timer_map.iter() {
-        //     logging!(
-        //         info,
-        //         Type::Timer,
-        //         "注册了定时任务 - uid={}, interval={}sec, task_id={}",
-        //         uid,
-        //         task.interval_seconds,
-        //         task.task_id
-        //     );
-        // }
 
         // 定时每一分钟刷新待办动作
         let auto_refrsh_task_id = self.timer_count.fetch_add(1, Ordering::Relaxed);
@@ -133,6 +115,7 @@ impl Timer {
             match diff {
                 DiffFlag::Del(tid) => {
                     timer_map.remove(&uid);
+                    // TODO 咋感觉你没删除成功呢？移除任务后为何可重复任务仍然在运行？
                     if let Err(e) = delay_timer.remove_task(tid) {
                         logging!(
                             warn,
@@ -239,7 +222,7 @@ impl Timer {
                             );
                             continue;
                         }
-                        // 这样就不支持在同一个时间戳执行同一个action
+                        // TODO 这样就不支持在同一个时间戳执行同一个action
                         new_map.insert(id, interval);
                     }
                 }

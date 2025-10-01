@@ -5,7 +5,6 @@ import {allData} from '@/mocks/task';
 
 import TodayView from '@/components/Panel/Today';
 
-
 // 定义选项卡类型
 type TabType = 'today' | 'weekly' | 'monthly';
 
@@ -145,6 +144,20 @@ const TaskDashboard: React.FC = () => {
       </div>
     );
   };
+
+  // 获取星期名称
+  // const getDayName = (day: DayOfWeek): string => {
+  //   const dayNames = {
+  //     monday: '周一',
+  //     tuesday: '周二',
+  //     wednesday: '周三',
+  //     thursday: '周四',
+  //     friday: '周五',
+  //     saturday: '周六',
+  //     sunday: '周日'
+  //   };
+  //   return dayNames[day];
+  // };
 
   return (
     <div className="task-dashboard">

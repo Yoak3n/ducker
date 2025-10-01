@@ -14,6 +14,7 @@ import { closeWindow } from '@/api';
 import { create_periodic_task, update_periodic_task } from '@/api/modules/task';
 
 import './index.css';
+import { emit } from '@tauri-apps/api/event';
 
 
 interface TaskModalProps {
@@ -148,6 +149,11 @@ export default function TaskModal({ onSave, task, parentTask }: TaskModalProps) 
         // 周期任务相关字段
         periodicInterval: 1 as Period,
       });
+      
+      // 如果任务有 periodic 字段，设置为周期任务
+      if (task.periodic) {
+        setIsPeriodic(true);
+      }
       console.log("formData:", formData)
     } else {
       // 创建模式
@@ -213,9 +219,8 @@ export default function TaskModal({ onSave, task, parentTask }: TaskModalProps) 
           task: taskData,
         };
         task ? await update_periodic_task(task.id!, periodicTaskData) : await create_periodic_task(periodicTaskData);
-        console.log('周期任务创建成功');
+        emit('task-changed', {timestamp: Date.now() })
       } catch (error) {
-        console.error('创建周期任务失败:', error);
       }
     }else{
       onSave(taskData);

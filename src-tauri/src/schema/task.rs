@@ -10,13 +10,14 @@ use super::Action;
 use chrono::{Duration, Local};
 use serde::{Deserialize, Serialize};
 
-#[derive(Deserialize, Serialize, Debug)]
+#[derive(Deserialize, Serialize, Debug, Clone)]
 pub struct TaskRecord {
     pub id: String,
     pub value: f64,
     pub completed: bool,
     pub auto: bool,
     pub parent_id: Option<String>,
+    pub periodic: Option<String>,
     pub name: String,
     pub actions: Vec<String>,
     pub created_at: i64,
@@ -56,6 +57,7 @@ impl TryFrom<(&TaskRecord, &AppState)> for TaskView {
             name: record.name.clone(),
             completed: record.completed,
             auto: record.auto,
+            periodic: record.periodic.clone(),
             actions,
             children: Some(children),
             created_at,
@@ -91,6 +93,7 @@ impl From<TaskData> for TaskRecord {
             completed: data.completed,
             auto: data.auto,
             parent_id: data.parent_id,
+            periodic: data.periodic,
             name: data.name,
             actions: data.actions,
             created_at,
@@ -110,6 +113,7 @@ pub struct TaskData {
     pub completed: bool,
     pub auto: bool,
     pub parent_id: Option<String>,
+    pub periodic: Option<String>,
     pub actions: Vec<String>,
     pub created_at: Option<String>,
     pub due_to: Option<String>,
@@ -123,6 +127,7 @@ pub struct TaskView {
     pub value: f64,
     pub completed: bool,
     pub auto: bool,
+    pub periodic: Option<String>,
     pub actions: Option<Vec<Action>>,
     pub children: Option<Vec<TaskView>>,
     pub created_at: String,

@@ -21,15 +21,14 @@ const TodayView = () => {
 
     useEffect(() => {
         taskStore.fetchTasks()
-        
+        // taskStore.fetchTodayTasks()
         // 监听任务变更事件
         let unlistenTaskChanged: Promise<() => void> | null = null;
         
         // 检查是否在Tauri环境中
         if (typeof window !== 'undefined') {
             try {
-                unlistenTaskChanged = listen('task-changed', (event) => {
-                    console.log('接收到任务变更事件:', event.payload);
+                unlistenTaskChanged = listen('task-changed', () => {
                     taskStore.fetchTasks();
                 });
             } catch (error) {

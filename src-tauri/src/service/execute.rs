@@ -1,9 +1,12 @@
 use anyhow::Result;
 use std::time::Duration;
-use tauri::async_runtime;
+use tauri::{async_runtime, Manager};
 
 use crate::{
-    core::handle::Handle, feat::action::execute_action, logging, schema::action::Action,
+    core::handle::Handle, 
+    feat::action::execute_action, logging, 
+    schema::{action::Action, AppState},
+    store::module::TaskManager,
     service::hub::Hub, utils::logging::Type,
 };
 use tokio::time::timeout;
@@ -135,19 +138,32 @@ pub async fn execute_plural_actions(actions: Vec<Action>) -> Result<String, Stri
     return Ok(out);
 }
 
+pub async fn marked_tasks_completed(tasks_ids: Vec<String>) -> Result<()> {
+    let app_handle = Handle::global().app_handle().unwrap();
+    let state = app_handle.state::<AppState>();
+    let db_guard = state.db.lock().unwrap();
+    for task_id in tasks_ids {
+        db_guard.update_task_status(&task_id, true)?;
+    }
+    Ok(())
+}
+
 pub async fn execute_tasks(id: &str, ts: i64) -> Result<String, String> {
     let tasks = Hub::global().get_schedule(id, ts).unwrap_or_default();
     if tasks.is_empty() {
         return Ok("".to_string());
     }
     let mut tasks_name = Vec::new();
+    let mut tasks_ids = Vec::new();
     let mut out_tasks = "".to_string();
     for task in tasks {
         let actions = task.actions.clone().unwrap_or_default();
-        tasks_name.push(task.name.clone());
+        tasks_name.push(task.name);
         let out_task: String = execute_plural_actions(actions).await?;
         out_tasks += &out_task;
+        tasks_ids.push(task.id);
     }
+    let _ = marked_tasks_completed(tasks_ids);
     Handle::notice_message("Task", format!("任务{}执行完成", tasks_name.join(",")));
     Ok(out_tasks)
 }
