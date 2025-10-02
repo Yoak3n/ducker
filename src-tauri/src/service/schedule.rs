@@ -44,14 +44,15 @@ pub fn create_scheduled_tasks() -> HashMap<i64, Vec<TaskView>> {
     if start_date == end_of_day {
         return HashMap::new();
     }
-    // 获取到今天结束为止的任务
+    // 获取到今天结束为止的任务，需要排除启动时任务
     let task_records = get_uncompleted_tasks_until_end_of_day(start_date, end_of_day);
     let mut t2i_map = HashMap::new();
     let app_handle = Handle::global().app_handle().unwrap();
     let app_state = app_handle.state::<AppState>();
     for task in task_records.iter() {
+        // 既然这里没办法判断任务是否是启动时任务，那就只能让启动时任务都非自动任务
         if !task.auto {
-            continue;
+            continue;   
         }
         let task_view = TaskView::try_from((task, app_state.inner())).unwrap();
         t2i_map

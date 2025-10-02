@@ -1,8 +1,12 @@
 import React, { useState } from 'react';
+
+import { useI18n } from '@/hooks/use-i18n';
+
+
+
 import '@/assets/Dashboard.css';
 import type {TaskMocks,  WeeklyTasks } from '@/types';
 import {allData} from '@/mocks/task';
-
 import TodayView from '@/components/Panel/Today';
 
 // 定义选项卡类型
@@ -72,7 +76,7 @@ const TaskDashboard: React.FC = () => {
 
     return (
       <div className="weekly-view">
-        <h2>本周任务</h2>
+        <h2>{t("Weekly")}</h2>
         <div className="progress-bar">
           <div 
             className="progress" 
@@ -159,6 +163,8 @@ const TaskDashboard: React.FC = () => {
   //   return dayNames[day];
   // };
 
+  const { t } = useI18n();
+
   return (
     <div className="task-dashboard">
       <div className="tabs">
@@ -166,19 +172,19 @@ const TaskDashboard: React.FC = () => {
           className={activeTab === 'today' ? 'active' : ''}
           onClick={() => setActiveTab('today')}
         >
-          今日任务
+          {t("Daily")}
         </button>
         <button 
           className={activeTab === 'weekly' ? 'active' : ''}
           onClick={() => setActiveTab('weekly')}
         >
-          本周任务
+          {t("Weekly")}
         </button>
         <button 
           className={activeTab === 'monthly' ? 'active' : ''}
           onClick={() => setActiveTab('monthly')}
         >
-          月度任务
+          {t("Monthly")}
         </button>
       </div>
       

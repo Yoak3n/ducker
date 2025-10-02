@@ -103,3 +103,28 @@ pub fn path_to_str(path: &PathBuf) -> Result<&str> {
         .ok_or(anyhow::anyhow!("failed to get path from {:?}", path))?;
     Ok(path_str)
 }
+
+/// get the resources dir
+pub fn app_resources_dir() -> Result<PathBuf> {
+    // 避免在Handle未初始化时崩溃
+    let app_handle = match handle::Handle::global().app_handle() {
+        Some(handle) => handle,
+        None => {
+            log::warn!(target: "app", "app_handle not initialized in app_resources_dir, using fallback");
+            // 使用可执行文件目录作为备用
+            let exe_dir = tauri::utils::platform::current_exe()?
+                .parent()
+                .ok_or(anyhow::anyhow!("failed to get executable directory"))?
+                .to_path_buf();
+            return Ok(exe_dir.join("resources"));
+        }
+    };
+
+    match app_handle.path().resource_dir() {
+        Ok(dir) => Ok(dir.join("resources")),
+        Err(e) => {
+            log::error!(target: "app", "Failed to get the resource directory: {e}");
+            Err(anyhow::anyhow!("Failed to get the resource directory"))
+        }
+    }
+}

@@ -1,7 +1,7 @@
 import { ContextMenuItem } from "@/components/ui/context-menu"
 
-
 import { toggleWindow } from "@/api";
+import { useI18n } from "@/hooks/use-i18n";
 
 const toggleDashboardWindow = async () => {
   const result = await toggleWindow("dashboard");
@@ -20,16 +20,17 @@ interface Props {
 }
 
 export default function ContextItems({ setIsSettingOpen }: Props) {
+  const { t } = useI18n();
   return (
     <>
       <ContextMenuItem onClick={toggleDashboardWindow}>
-        打开任务面板
+        {t("Open Dashboard")}
       </ContextMenuItem>
       <ContextMenuItem onClick={toggleActionWindow}>
-        打开Action面板
+        {t("Open Action")}
       </ContextMenuItem>
       <ContextMenuItem onClick={() => setIsSettingOpen(true)}>
-        设置Live2D
+        {t("Live2d Setting")}
       </ContextMenuItem>
     </>
   )

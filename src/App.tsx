@@ -4,7 +4,6 @@ import './index.css';
 import { Toaster } from "@/components/ui/sonner";
 function App() {
 
-
   return (
     <div>
       <Toaster position='top-center'/>

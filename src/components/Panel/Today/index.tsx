@@ -6,14 +6,14 @@ import { Button } from "@/components/ui/button";
 import { useTaskStore, type Task } from "@/store";
 import { extractTimeStampSecond, getTodayRange } from "@/utils";
 import { showWindow } from "@/api";
-
+import { useI18n } from "@/hooks/use-i18n";
 import TaskList from "./TaskList";
 import "./index.css"
 
 
 
 const TodayView = () => {
-
+    const { t } = useI18n();
     const taskStore = useTaskStore()
     const todayDate = new Date()
 
@@ -77,7 +77,6 @@ const TodayView = () => {
     };
 
     const handleTaskStatueChange = (id: string) => {
-
         console.log(id)
         taskStore.toggleTaskCompletion(id)
     }
@@ -85,8 +84,10 @@ const TodayView = () => {
     return (
         <div className="today-view">
             <div className="today-title flex justify-between items-center">
-                <h2>今日任务 ({todayDate.toLocaleDateString()})</h2>
-                <Button variant="outline" className="cursor-pointer" onClick={() => handleCreateTask()}>创建任务</Button>
+                <h2>{t("Today")} {todayDate.toLocaleDateString()}</h2>
+                <Button variant="outline" className="cursor-pointer" onClick={() => handleCreateTask()}>
+                    {t("Create Task")}
+                </Button>
             </div>
             {totalCount > 0 &&
                 <div className="progress-bar">
@@ -94,7 +95,7 @@ const TodayView = () => {
                         style={{ width: `${progressPercent}%` }}
                     ></div>
                     <span>
-                        {completedValueCount} / {totalCount} 完成
+                        {completedValueCount} / {totalCount} {t("Completed")}
                     </span>
                 </div>
             }

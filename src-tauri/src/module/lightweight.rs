@@ -73,7 +73,7 @@ pub fn auto_lightweight_mode_init() {
             return;
         }
 
-        let is_silent_start = Config::global().lock().unwrap().silent_launch.unwrap_or(false);
+        let is_silent_start = Config::global().lock().silent_launch.unwrap_or(false);
         // let enable_auto = true;
 
         if is_silent_start {

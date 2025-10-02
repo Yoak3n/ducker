@@ -6,7 +6,7 @@ use tauri_plugin_notification::NotificationExt;
 pub fn setup_plugins(builder: tauri::Builder<tauri::Wry>) -> tauri::Builder<tauri::Wry> {
     #[allow(unused_mut)]
     let mut builder = builder
-        // .plugin(tauri_plugin_window_state::Builder::new().build())
+        .plugin(tauri_plugin_window_state::Builder::new().build())
         .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_shell::init())
@@ -114,64 +114,33 @@ pub fn check_periodic_task() {
     let db_guard = state.db.lock();
     let res = db_guard.get_enabled_periodic_tasks();
     if let Ok(tasks) = res {
-        let onstart_task_ids: Vec<String> = tasks
+
+        let prepared_tasks_ids: Vec<String> = tasks
             .iter()
-            .filter(|task| task.interval == 0)
+            .filter(|task| 
+                task.interval == 0 || 
+                (task.interval == 100 && task.last_period.map_or(false, |timestamp| !is_today(timestamp)))
+            )
             .map(|task| task.id.clone())
             .collect();
 
-        // 过滤 oncestarted 任务：排除今天已经运行过的任务
-        let oncestarted_task_ids: Vec<String> = tasks
-            .iter()
-            .filter(|task| {
-                task.interval == 100
-                    && task
-                        .last_period
-                        .map_or(true, |timestamp| !is_today(timestamp))
-            })
-            .map(|task| task.id.clone())
-            .collect();
-
-        if !onstart_task_ids.is_empty() {
-            if let Ok(onstart_task_records) = db_guard.get_tasks(&onstart_task_ids) {
+        if !prepared_tasks_ids.is_empty() {
+            if let Ok(prepared_task_records) = db_guard.get_tasks(&prepared_tasks_ids) {
                 // 收集所有立即执行任务的action ID
-                let onstart_action_ids: Vec<String> = onstart_task_records
+                let prepared_action_ids: Vec<String> = prepared_task_records
                     .iter()
                     .flat_map(|task| task.actions.iter().cloned())
                     .collect();
 
-                if !onstart_action_ids.is_empty() {
-                    if let Ok(onstart_actions) = db_guard.get_actions(&onstart_action_ids) {
-                        let onstart_actions: Vec<Action> = onstart_actions
+                if !prepared_action_ids.is_empty() {
+                    if let Ok(prepared_actions) = db_guard.get_actions(&prepared_action_ids) {
+                        let prepared_actions: Vec<Action> = prepared_actions
                             .into_iter()
                             .map(|action| action.into())
                             .collect();
-                        let _ = execute_plural_actions(onstart_actions);
+                        let _ = execute_plural_actions(prepared_actions);
                         let _ = db_guard
-                            .update_periodic_tasks_last_run(&onstart_task_ids)
-                            .unwrap();
-                    }
-                }
-            }
-        }
-
-        if !oncestarted_task_ids.is_empty() {
-            if let Ok(oncestarted_task_records) = db_guard.get_tasks(&oncestarted_task_ids) {
-                // 收集所有周期性任务的action ID
-                let oncestarted_action_ids: Vec<String> = oncestarted_task_records
-                    .iter()
-                    .flat_map(|task| task.actions.iter().cloned())
-                    .collect();
-
-                if !oncestarted_action_ids.is_empty() {
-                    if let Ok(oncestarted_actions) = db_guard.get_actions(&oncestarted_action_ids) {
-                        let oncestarted_actions: Vec<Action> = oncestarted_actions
-                            .into_iter()
-                            .map(|action| action.into())
-                            .collect();
-                        let _ = execute_plural_actions(oncestarted_actions);
-                        let _ = db_guard
-                            .update_periodic_tasks_last_run(&oncestarted_task_ids)
+                            .update_periodic_tasks_last_run(&prepared_tasks_ids)    
                             .unwrap();
                     }
                 }

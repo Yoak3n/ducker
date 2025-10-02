@@ -136,7 +136,7 @@ pub async fn resolve_setup(app: &mut App) {
         // logging!(trace, Type::System, true, "Initial hotkeys");
         // logging_error!(Type::System, true, hotkey::Hotkey::global().init());
         // logging!(info, Type::Window, true, "Creating window preview");
-        let config = Config::global().lock().unwrap();
+        let config = Config::global().lock();
         config.save().ok();
         if let Some(silent_start) = config.data().silent_launch {
             if !silent_start {

@@ -3,18 +3,20 @@ use crate::utils::{
     help::{read_yaml, save_yaml},
 };
 use anyhow::Result;
+use parking_lot::Mutex;
 use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
 pub struct Config {
     pub enable_auto_launch: Option<bool>,
     pub silent_launch: Option<bool>,
+    pub language: Option<String>,
 }
 
 impl Config {
-    pub fn global() -> &'static std::sync::Mutex<Config> {
-        static INSTANCE: std::sync::OnceLock<std::sync::Mutex<Config>> = std::sync::OnceLock::new();
-        INSTANCE.get_or_init(|| std::sync::Mutex::new(Self::new()))
+    pub fn global() -> &'static Mutex<Config> {
+        static INSTANCE: std::sync::OnceLock<Mutex<Config>> = std::sync::OnceLock::new();
+        INSTANCE.get_or_init(|| Mutex::new(Self::new()))
     }
 
     fn new() -> Self {
@@ -42,6 +44,7 @@ impl Config {
         Self {
             enable_auto_launch: Some(false),
             silent_launch: Some(false),
+            language: Some("zh".to_string()),
         }
     }
 
@@ -82,5 +85,6 @@ impl Config {
         }
         patch!(enable_auto_launch);
         patch!(silent_launch);
+        patch!(language);
     }
 }

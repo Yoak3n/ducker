@@ -8,6 +8,7 @@ import SettingItems from "./SettingItems"
 import "./index.css"
 
 
+
 const SettingLayout: FC = () => {
   return (
     <div className="setting">

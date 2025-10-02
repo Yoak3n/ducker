@@ -24,10 +24,17 @@ impl PeriodicTaskManager for Database {
             "INSERT INTO tasks (id, value, auto, parent_id, periodic, name, actions, created_at, due_to, reminder) 
              VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)",
         )?;
+        // 防止检查定时任务时，启动时任务也被当作自动任务，导致期望外的执行
+        let auto = if task.interval == 0 || task.interval == 100 {
+            false
+        } else {
+            true
+        };
+
         match stmt.insert(params![
             &task_record.id,
             &task_record.value,
-            &task_record.auto,
+            auto,
             &task_record.parent_id,
             Some(&task_record.id), // 直接设置periodic为任务ID
             &task_record.name,
