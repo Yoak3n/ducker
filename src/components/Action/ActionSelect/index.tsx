@@ -196,7 +196,7 @@ export default function ActionSelect({
         </div>
 
         <div
-          className="action-list overflow-y-auto p-2"
+          className="action-list overflow-y-auto p-2 custom-scrollbar"
           style={{ maxHeight: maxHeight || "300px" }}
         >
           {filteredActions.length > 0 ? (

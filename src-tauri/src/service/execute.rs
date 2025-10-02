@@ -3,11 +3,11 @@ use std::time::Duration;
 use tauri::{async_runtime, Manager};
 
 use crate::{
-    core::handle::Handle, 
-    feat::action::execute_action, logging, 
-    schema::{action::Action, AppState},
-    store::module::TaskManager,
-    service::hub::Hub, utils::logging::Type,
+    core::handle::Handle, feat::action::execute_action, 
+    get_app_handle, logging,
+    schema::{
+        action::Action, AppState
+    }, service::hub::Hub, store::module::TaskManager, utils::logging::Type
 };
 use tokio::time::timeout;
 
@@ -139,12 +139,17 @@ pub async fn execute_plural_actions(actions: Vec<Action>) -> Result<String, Stri
 }
 
 pub async fn marked_tasks_completed(tasks_ids: Vec<String>) -> Result<()> {
-    let app_handle = Handle::global().app_handle().unwrap();
+    let app_handle = get_app_handle!();
     let state = app_handle.state::<AppState>();
-    let db_guard = state.db.lock();
-    for task_id in tasks_ids {
-        db_guard.update_task_status(&task_id, true)?;
-    }
+    
+    // 在作用域内获取锁，处理完后立即释放
+    {
+        let db = state.db.lock();
+        for task_id in tasks_ids {
+            db.update_task_status(&task_id, true)?;
+        }
+    } // 数据库锁在这里自动释放
+    
     Ok(())
 }
 

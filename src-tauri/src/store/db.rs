@@ -1,14 +1,14 @@
 use anyhow::{Result,anyhow};
 use chrono::Local;
 use parking_lot::RwLock;
-use rusqlite::{params, Connection};
+use rusqlite::Connection;
 use std::path::PathBuf;
 
 use super::module::*;
 use crate::{
     logging,
     schema::{
-        Action, ActionRecord, ActionType, PeriodicTaskData, PeriodicTaskRecord, TaskData,
+        PeriodicTaskRecord, TaskData,
         TaskRecord,
     },
     utils::{

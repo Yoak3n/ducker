@@ -1,8 +1,5 @@
 use crate::{
-    core::{handle, timer::Timer, tray::Tray},
-    log_err, logging,
-    schema::{state::LightWeightState, AppState},
-    utils::{logging::Type, window_manager},
+    config::Config, core::{handle, timer::Timer, tray::Tray}, log_err, logging, schema::{state::LightWeightState, AppState}, utils::{logging::Type, window_manager}
 };
 
 #[cfg(target_os = "macos")]
@@ -76,26 +73,23 @@ pub fn auto_lightweight_mode_init() {
             return;
         }
 
-        let is_silent_start = false;
-        // { Config::verge().latest_ref().enable_silent_start }.unwrap_or(false);
-        let enable_auto = true;
-        // { Config::verge().latest_ref().enable_auto_light_weight_mode }.unwrap_or(false);
+        let is_silent_start = Config::global().lock().unwrap().silent_launch.unwrap_or(false);
+        // let enable_auto = true;
 
-        if enable_auto && !is_silent_start {
+        if is_silent_start {
             logging!(
                 info,
                 Type::Lightweight,
-                true,
                 "非静默启动直接挂载自动进入轻量模式监听器！"
             );
             set_lightweight_mode(true);
-            enable_auto_light_weight_mode();
 
             // 确保托盘状态更新
             if let Err(e) = Tray::global().update_part() {
                 log::warn!("Failed to update tray: {e}");
             }
         }
+        enable_auto_light_weight_mode();
     }
 }
 
@@ -356,7 +350,6 @@ fn setup_light_weight_timer() -> Result<()> {
     logging!(
         info,
         Type::Timer,
-        true,
         "计时器已设置，10 分钟后将自动进入轻量模式"
     );
 

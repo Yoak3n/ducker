@@ -35,6 +35,10 @@ const router = createBrowserRouter([
             element: <ActionsList />
           },
           {
+            path: "add",
+            element: <ActionModify />
+          },
+          {
             path: "modify/:id",
             element: <ActionModify />
           }

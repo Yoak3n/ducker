@@ -202,6 +202,27 @@ impl PeriodicTaskManager for Database {
         periodic_id: &str,
         task: &PeriodicTaskData,
     ) -> Result<PeriodicTaskRecord> {
-        todo!()
+        let current_periodic_task = self.get_periodic_task(periodic_id)?;
+        let conn = self.conn.write();
+        let query = "UPDATE periodic_tasks 
+                     SET name = ?1, interval = ?2, last_period = ?3, next_period = ?4
+                     WHERE id = ?5";
+        conn.execute(
+            query,
+            params![
+                task.name.as_str(),
+                task.interval,
+                current_periodic_task.last_period,  
+                current_periodic_task.next_period,
+                periodic_id
+            ],
+        )?;
+        Ok(PeriodicTaskRecord {
+            id: periodic_id.to_string(),
+            name: task.name.clone(),
+            interval: task.interval,
+            last_period: current_periodic_task.last_period,
+            next_period: current_periodic_task.next_period,
+        })
     }
 }

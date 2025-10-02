@@ -1,7 +1,10 @@
-use crate::schema::{Action, ActionType};
+use crate::schema::{Action, ActionType, AppState};
+use crate::store::module::ActionManager;
+use crate::get_app_handle;
 use std::process::Command;
 use tauri_plugin_notification::NotificationExt;
 use tauri_plugin_opener::OpenerExt;
+use tauri::Manager;
 
 pub async fn execute_action(action: Action) -> Result<String, String> {
     if let Ok(t) = ActionType::try_from(action.typ.as_str()) {
@@ -31,15 +34,107 @@ pub async fn execute_action(action: Action) -> Result<String, String> {
                 let handle = Handle::global();
                 let app_handle = handle.app_handle().unwrap();
                 let notification = app_handle.notification();
+                
+                // title 从 command 中获取
+                let title = if action.command.trim().is_empty() {
+                    "Ducker"
+                } else {
+                    &action.command
+                };
+                
+                // body 从 args 中获取
+                let body = if let Some(args) = &action.args {
+                    if let Some(custom_body) = args.first() {
+                        if !custom_body.trim().is_empty() {
+                            custom_body.trim()
+                        } else {
+                            "通知消息"
+                        }
+                    } else {
+                        "通知消息"
+                    }
+                } else {
+                    "通知消息"
+                };
+                
                 notification.builder()
-                    .title("Ducker")
-                    .body(&action.command)
+                    .title(title)
+                    .body(body)
                     .show()
                     .unwrap();
-                Ok(format!("notice: ok"))
+                Ok(format!("notice: sent notification with title '{}' and body '{}'", title, body))
             }
             ActionType::Group => {
-                Ok(format!("group: ok"))
+                // 解析 args 中的 action IDs（逗号分隔）
+                let action_ids = if let Some(args) = &action.args {
+                    args.iter()
+                        .flat_map(|arg| arg.split(','))
+                        .map(|id| id.trim().to_string())
+                        .filter(|id| !id.is_empty())
+                        .collect::<Vec<String>>()
+                } else {
+                    Vec::new()
+                };
+
+                if action_ids.is_empty() {
+                    return Ok("group: no actions to execute".to_string());
+                }
+
+                // 获取数据库实例并立即获取数据，然后释放锁
+                let actions_to_execute = {
+                    let app_handle = get_app_handle!();
+                    let state = app_handle.state::<AppState>();
+                    let db = state.db.lock();
+                    
+                    match db.get_actions(&action_ids) {
+                        Ok(action_records) => {
+                            action_records.into_iter()
+                                .map(Action::from)
+                                .collect::<Vec<Action>>()
+                        }
+                        Err(e) => {
+                            return Err(format!("Failed to get actions: {}", e));
+                        }
+                    }
+                };
+
+                if actions_to_execute.is_empty() {
+                    return Ok("group: no valid actions found".to_string());
+                }
+
+                // 执行所有 actions
+                let mut results = Vec::new();
+                let mut success_count = 0;
+                let mut error_count = 0;
+
+                for sub_action in actions_to_execute {
+                    let result = Box::pin(execute_action(sub_action.clone())).await;
+                    match result {
+                        Ok(result) => {
+                            results.push(format!("✓ {}: {}", sub_action.name, result));
+                            success_count += 1;
+                        }
+                        Err(error) => {
+                            results.push(format!("✗ {}: {}", sub_action.name, error));
+                            error_count += 1;
+                        }
+                    }
+                }
+
+                let summary = format!(
+                    "group: executed {} actions (success: {}, failed: {})",
+                    success_count + error_count,
+                    success_count,
+                    error_count
+                );
+
+                if error_count > 0 {
+                    // 如果有错误，返回详细信息
+                    Ok(format!("{}\nDetails:\n{}", summary, results.join("\n")))
+                } else {
+                    // 如果全部成功，返回简要信息
+                    Ok(summary)
+                }
             }
         }
     } else {

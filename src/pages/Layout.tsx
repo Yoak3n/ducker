@@ -5,7 +5,7 @@ const Layout = () => {
   return (
     <div className="app-container">
       <Header />
-      <main>
+      <main className='max-h-[calc(100vh-4rem)]'>
         <Outlet />
       </main>
     </div>

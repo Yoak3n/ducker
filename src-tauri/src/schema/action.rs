@@ -17,12 +17,45 @@ pub struct Action {
 impl From<ActionRecord> for Action {
 
     fn from(value: ActionRecord) -> Self {
+        let (command, args) = match value.typ {
+            ActionType::Notice => {
+                // Notice类型：command字段代表标题，args字段代表body（多个arg用逗号分割表示换行）
+                let title = value.command;
+                let body_parts: Vec<String> = if value.args.is_empty() {
+                    vec![]
+                } else {
+                    value.args.split(",").map(|s| s.trim().to_string()).collect()
+                };
+                (title, Some(body_parts))
+            },
+            ActionType::Group => {
+                // Group类型：command字段置"group"占位，args字段为组内各action的id
+                let group_placeholder = "group".to_string();
+                let action_ids: Vec<String> = if value.args.is_empty() {
+                    vec![]
+                } else {
+                    value.args.split(",").map(|s| s.trim().to_string()).collect()
+                };
+                (group_placeholder, Some(action_ids))
+            },
+            _ => {
+                // 其他类型保持原有逻辑：args按逗号分割
+                let command = value.command;
+                let args = if value.args.is_empty() {
+                    None
+                } else {
+                    Some(value.args.split(",").map(|s| s.trim().to_string()).collect())
+                };
+                (command, args)
+            }
+        };
+
         let mut action = Action {
             name: value.name,
             desc: value.desc,
             wait: value.wait,
-            command: value.command,
-            args: Some(value.args.split(",").map(|s| s.to_string()).collect()),
+            command,
+            args,
             typ: "".to_string(),
             id: Some(value.id),
             retry: value.retry,

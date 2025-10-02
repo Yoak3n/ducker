@@ -39,7 +39,7 @@ const ActionsList = () => {
 
 
     return (
-        <div className="flex w-full flex-col gap-6">
+        <div className="flex w-full flex-col gap-6 overflow-y-auto">
             <div className="flex w-full justify-between">
                 <div className="relative w-full pr-5">
                     <span className="material-symbols-outlined absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
@@ -54,7 +54,7 @@ const ActionsList = () => {
                 </div>
                 <Button variant="outline" size="icon" onClick={(e) => {
                     e.preventDefault();
-                    navigate("/action/modify/add");
+                    navigate("/action/add");
                     // loadActions();
                 }}>
                     <span className="material-symbols-outlined">
@@ -78,7 +78,7 @@ const ActionsList = () => {
                     </Button>
                 ))}
             </div>
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-3 gap-4 overflow-y-auto max-h-[calc(100vh-14rem)] custom-scrollbar">
                 {
                     actions.filter(action => {
                         if (selectedType === "all") {

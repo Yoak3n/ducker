@@ -7,8 +7,8 @@ mod schema;
 mod service;
 mod store;
 mod utils;
-use std::sync::{Arc, Once};
-use parking_lot::Mutex;
+use std::sync::Arc;
+use parking_lot::{Mutex, Once};
 use tauri::{AppHandle, Manager};
 
 // use utils::logging::Type;

@@ -1,6 +1,6 @@
 use super::logging::Type;
 use crate::logging;
-use chrono::{DateTime, Datelike, Local, NaiveDateTime, TimeZone, Timelike};
+use chrono::{DateTime, Datelike, Local, NaiveDateTime, TimeZone, Timelike, Utc};
 pub fn to_datetime(timestamp: i64) -> DateTime<Local> {
     DateTime::from_timestamp(timestamp, 0)
         .unwrap()
@@ -93,4 +93,13 @@ pub fn calculate_next_period_from_now(
         ret = calculate_next_period(ret, interval);
     }
     ret
+}
+
+pub fn is_today(timestamp: u64) -> bool {
+    let today = Local::now().date_naive();
+    let task_date = match Utc.timestamp_opt(timestamp as i64, 0) {
+        chrono::LocalResult::Single(dt) => dt.with_timezone(&Local).date_naive(),
+        _ => return false,
+    };
+    today == task_date
 }

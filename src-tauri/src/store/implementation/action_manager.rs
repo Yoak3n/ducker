@@ -182,7 +182,7 @@ impl ActionManager for Database {
         Ok(actions)
     }
 
-    fn get_all_actions(&self) -> anyhow::Result<Vec<crate::schema::ActionRecord>> {
+    fn get_all_actions(&self) -> anyhow::Result<Vec<ActionRecord>> {
         let conn = self.conn.read();
         let mut stmt = conn.prepare(
             "SELECT 

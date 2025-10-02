@@ -2,24 +2,20 @@ use std::{
     sync::atomic::{AtomicBool, Ordering},
     time::{Duration, Instant},
 };
-
 use anyhow::Result;
 use once_cell::sync::OnceCell;
 use parking_lot::Mutex;
-use tauri::Wry;
+
 use tauri::{
-    menu::CheckMenuItem,
+    menu::{Menu, MenuEvent, MenuItem, PredefinedMenuItem,CheckMenuItem},
     tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
-};
-use tauri::{
-    menu::{Menu, MenuEvent, MenuItem, PredefinedMenuItem},
-    AppHandle,
+    AppHandle,Wry
 };
 // use super::handle;
 use crate::{
     core::handle, // utils::logging::Type
     feat,
-    logging,
+    logging,get_app_handle,
     utils::{logging::Type, resolve, window_manager},
 };
 
@@ -91,7 +87,7 @@ impl Tray {
         if !should_force_update {
             return Ok(());
         }
-        let app_handle = handle::Handle::global().app_handle().unwrap();
+        let app_handle = get_app_handle!();
         self.menu_updating.store(true, Ordering::Release);
         let result = self.update_menu_internal(&app_handle);
 
@@ -105,7 +101,7 @@ impl Tray {
     }
 
     pub fn update_tooltip(&self) -> Result<()> {
-        let app_handle = handle::Handle::global().app_handle().unwrap();
+        let app_handle = get_app_handle!();
 
         let tray = app_handle.tray_by_id("main").unwrap();
         tray.set_tooltip(Some("Dida"))?;
@@ -124,7 +120,7 @@ impl Tray {
         Ok(())
     }
     pub fn update_tray_display(&self) -> Result<()> {
-        let app_handle = handle::Handle::global().app_handle().unwrap();
+        let app_handle = get_app_handle!();
         let _tray = app_handle.tray_by_id("main").unwrap();
 
         // 更新菜单
@@ -141,35 +137,29 @@ impl Tray {
     //     Ok(())
     // }
     pub fn update_menu_visible(&self, visible: bool) {
-        let app_handle = handle::Handle::global().app_handle().unwrap();
+        let app_handle = get_app_handle!();
         let tray = app_handle.tray_by_id("main").unwrap();
         tray.set_menu(Some(create_tray_menu(&app_handle, visible).unwrap()))
             .unwrap();
     }
 
     pub fn create_tray_from_handle(&self, app_handle: &AppHandle) -> Result<()> {
-        log::info!(target: "app", "正在从AppHandle创建系统托盘");
+        logging!(info,Type::Setup,"正在从AppHandle创建系统托盘");
         let mut builder = TrayIconBuilder::with_id("main")
             .icon(app_handle.default_window_icon().unwrap().clone())
             .icon_as_template(false);
-        // 不明所以
-        let tray_event = String::from("main_window");
-        if tray_event.as_str() != "tray_menu" {
-            builder = builder.show_menu_on_left_click(false);
-        }
+        // 禁用左键点击显示菜单，改为左键点击显示主窗口
+        builder = builder.show_menu_on_left_click(false);
         let tray = builder.build(app_handle)?;
         tray.on_tray_icon_event(|_, event| {
-            let tray_event = String::from("main_window");
             match event {
                 TrayIconEvent::Click {
                     button: MouseButton::Left,
                     button_state: MouseButtonState::Down,
                     ..
-                } => match tray_event.as_str() {
-                    "main_window" => {
-                        log::info!(target: "app", "Tray点击事件: 显示主窗口");
-                    }
-                    _ => {}
+                } => {
+                    logging!(info,Type::Tray,true,"Tray点击事件: 显示主窗口");
+                    // TODO: 这里应该添加显示主窗口的逻辑
                 },
                 TrayIconEvent::DoubleClick {
                     button: MouseButton::Left,
