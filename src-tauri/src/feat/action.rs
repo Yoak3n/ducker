@@ -1,12 +1,14 @@
 use crate::schema::{Action, ActionType, AppState};
 use crate::store::module::ActionManager;
-use crate::get_app_handle;
+use crate::utils::logging::Type;
+use crate::{get_app_handle, logging};
 use std::process::Command;
 use tauri_plugin_notification::NotificationExt;
 use tauri_plugin_opener::OpenerExt;
 use tauri::Manager;
 
 pub async fn execute_action(action: Action) -> Result<String, String> {
+    logging!(info, Type::Cmd,true, "执行动作{:?}",action);
     if let Ok(t) = ActionType::try_from(action.typ.as_str()) {
         match t {
             ActionType::Directory => {

@@ -68,6 +68,18 @@
   "Run on System Start": "随系统启动",
   "Slient Launch": "静默启动",
   "General": "通用",
-  "Appearance": "外观"
+  "Appearance": "外观",
+
+  "Startup Tasks": "启动时任务",
+  "View and manage tasks that run on application startup": "查看和管理应用启动时运行的任务",
+  "Loading": "加载中",
+  "No Startup Tasks": "暂无启动时任务",
+  "No startup tasks have been configured yet": "尚未配置任何启动时任务",
+  "Task Value": "任务价值",
+  "Last Run": "上次运行",
+  "Created": "创建时间",
+  "Actions": "操作",
+  "actions": "个操作",
+  "Never": "从未"
 
 }

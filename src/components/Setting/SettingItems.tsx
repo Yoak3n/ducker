@@ -84,8 +84,8 @@ const SettingItems: FC = () => {
                                 <SelectValue placeholder={t("Language")} />
                             </SelectTrigger>
                             <SelectContent>
-                                {Object.entries(supportedLanguagesMap).map(([key, value]) => (
-                                    <SelectItem key={key} value={key}>{value}</SelectItem>
+                                {Object.entries(supportedLanguagesMap).map(([key, label]) => (
+                                    <SelectItem key={key} value={key}>{label}</SelectItem>
                                 ))}
                             </SelectContent>
                         </Select>

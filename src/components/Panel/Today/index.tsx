@@ -8,6 +8,7 @@ import { extractTimeStampSecond, getTodayRange } from "@/utils";
 import { showWindow } from "@/api";
 import { useI18n } from "@/hooks/use-i18n";
 import TaskList from "./TaskList";
+import StartupTasksSheet from "./StartupTasksSheet";
 import "./index.css"
 
 
@@ -85,9 +86,16 @@ const TodayView = () => {
         <div className="today-view">
             <div className="today-title flex justify-between items-center">
                 <h2>{t("Today")} {todayDate.toLocaleDateString()}</h2>
-                <Button variant="outline" className="cursor-pointer" onClick={() => handleCreateTask()}>
-                    {t("Create Task")}
-                </Button>
+                <div className="flex gap-2">
+                    <StartupTasksSheet>
+                        <Button variant="ghost" className="cursor-pointer">
+                            {t("Startup Tasks")}
+                        </Button>
+                    </StartupTasksSheet>
+                    <Button variant="outline" className="cursor-pointer" onClick={() => handleCreateTask()}>
+                        {t("Create Task")}
+                    </Button>
+                </div>
             </div>
             {totalCount > 0 &&
                 <div className="progress-bar">

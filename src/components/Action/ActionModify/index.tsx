@@ -77,10 +77,15 @@ const ActionModify: React.FC = () => {
     const [isActionSelectOpen, setIsActionSelectOpen] = useState(false);
     const [selectedActions, setSelectedActions] = useState<Action[]>([]);
 
-    const actionStore = useActionStore();
     const navigate = useNavigate();
     const params = useParams()
     const id = params.id;
+
+    // 使用选择器来避免无限循环
+    const actions = useActionStore(state => state.actions);
+    const fetchActions = useActionStore(state => state.fetchActions);
+    const createAction = useActionStore(state => state.createAction);
+    const updateAction = useActionStore(state => state.updateAction);
 
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
@@ -105,15 +110,15 @@ const ActionModify: React.FC = () => {
             // 清空选中的actions
             setSelectedActions([]);
         }
-    }, [form]);
+    }, []);
 
     const currentAction = useMemo(() => {
         // 当 id 存在时，查找对应的 action（编辑模式）
         if (id) {
-            return actionStore.actions.find(action => action.id === id) || null;
+            return actions.find(action => action.id === id) || null;
         }
         return null;
-    }, [id, actionStore.actions]);
+    }, [id, actions]);
     
     const isAddAction = useMemo(() => {
         // 当没有 id 参数时为创建模式
@@ -122,10 +127,10 @@ const ActionModify: React.FC = () => {
 
     // 确保在组件挂载时获取 actions 数据
     useEffect(() => {
-        if (actionStore.actions.length === 0) {
-            actionStore.fetchActions();
+        if (actions.length === 0) {
+            fetchActions();
         }
-    }, [actionStore]);
+    }, []);
 
     // 处理表单数据填入
     useEffect(() => {
@@ -142,7 +147,7 @@ const ActionModify: React.FC = () => {
                 timeout: undefined,
             };
             form.reset(defaultValues);
-            handleTypeChange("file");
+            setCurrentActionType("file");
             setSelectedActions([]);
         } else if (currentAction) {
             const formData = {
@@ -156,16 +161,16 @@ const ActionModify: React.FC = () => {
                 timeout: currentAction.timeout,
             };
             form.reset(formData);
-            handleTypeChange(currentAction.type, true);
+            setCurrentActionType(currentAction.type);
             
             // 如果是 group 类型，设置选中的 actions
             if (currentAction.type === 'group' && currentAction.args) {
                 const actionIds = currentAction.args;
-                const actions = actionIds.map(id => actionStore.actions.find(a => a.id === id.trim())).filter(Boolean) as Action[];
-                setSelectedActions(actions);
+                const selectedActionsData = actionIds.map(id => actions.find(a => a.id === id.trim())).filter(Boolean) as Action[];
+                setSelectedActions(selectedActionsData);
             }
         }
-    }, [currentAction, form, handleTypeChange, isAddAction, actionStore.actions]);
+    }, [currentAction, form, isAddAction]);
 
 
 
@@ -206,11 +211,11 @@ const ActionModify: React.FC = () => {
             }
             
             if (isAddAction) {
-                await actionStore.createAction(actionData);
+                await createAction(actionData);
                 toast.success("Action created successfully!");
                 navigate("/action");
             } else {
-                await actionStore.updateAction(id!, actionData);
+                await updateAction(id!, actionData);
                 toast.success("Action updated successfully!");
                 navigate("/action");
             }
@@ -473,7 +478,7 @@ const ActionModify: React.FC = () => {
                                                 </div>
                                                 <div className="flex-1 overflow-y-auto space-y-1 min-h-0">
                                                     {selectedActions.map((action, index) => {
-                                                        const isValid = actionStore.actions.some(a => a.id === action.id);
+                                                        const isValid = actions.some(a => a.id === action.id);
                                                         return (
                                                             <div 
                                                                 key={action.id} 
@@ -549,7 +554,7 @@ const ActionModify: React.FC = () => {
                                                         );
                                                     })}
                                                 </div>
-                                                {selectedActions.some(action => !actionStore.actions.some(a => a.id === action.id)) && (
+                                                {selectedActions.some(action => !actions.some(a => a.id === action.id)) && (
                                                     <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded text-xs text-yellow-700 flex-shrink-0">
                                                         <span className="material-symbols-outlined text-xs mr-1">warning</span>
                                                         检测到无效的Action，建议删除或重新选择

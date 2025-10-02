@@ -134,6 +134,7 @@ export default function TaskModal({ onSave, task, parentTask }: TaskModalProps) 
   }, [formData.reminderOffset, formData.due_to]);
 
   const handleInputChange = useCallback((field: keyof TaskFormData, value: string | boolean | number | undefined | Action[] | Period) => {
+    console.log('输入字段:', field, '值:', value);
     setFormData((prev) => ({
       ...prev,
       [field]: value,
@@ -239,7 +240,7 @@ export default function TaskModal({ onSave, task, parentTask }: TaskModalProps) 
             className="px-4 py-2 rounded-md text-sm font-medium cursor-pointer transition-all duration-200 border min-w-[70px] bg-blue-500 text-white border-blue-500 hover:bg-blue-600 hover:border-blue-600 hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(59,130,246,0.3)] disabled:bg-gray-400 disabled:border-gray-400 disabled:cursor-not-allowed disabled:opacity-60 disabled:transform-none disabled:shadow-none"
             disabled={
               !formData.name.trim() ||
-              (isPeriodic && !formData.periodicInterval)
+              (isPeriodic && formData.periodicInterval === undefined)
             }
           >
             {task ? t("Save") : t("Create")}

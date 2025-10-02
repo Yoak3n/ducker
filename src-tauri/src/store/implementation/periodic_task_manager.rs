@@ -28,7 +28,7 @@ impl PeriodicTaskManager for Database {
         let auto = if task.interval == 0 || task.interval == 100 {
             false
         } else {
-            true
+            task.task.auto
         };
 
         match stmt.insert(params![
@@ -65,12 +65,17 @@ impl PeriodicTaskManager for Database {
              VALUES (?1, ?2, ?3, ?4, ?5)",
         )?;
         let next_period = calculate_next_period(task_record.due_to, task.interval as u8);
+        let last_period = if task.interval == 0 || task.interval == 100 {
+            None
+        } else {
+            Some(task_record.due_to)
+        };
         let row_id = stmt.insert(params![
             &task_record.id,
             &task.name,
             task.interval.clone() as u8,
             Some(next_period),
-            Some(task_record.due_to),
+            last_period,
         ])?;
 
         logging!(debug, Type::Database, "创建周期性任务成功: {}", row_id);
@@ -79,7 +84,7 @@ impl PeriodicTaskManager for Database {
             id: task_record.id.clone(),
             name: task.name.clone(),
             interval: task.interval.clone() as u8,
-            last_period: Some(task_record.due_to as u64),
+            last_period: last_period.map(|v| v as u64), 
             next_period: Some(next_period as u64),
         })
     }
@@ -175,6 +180,25 @@ impl PeriodicTaskManager for Database {
         let mut stmt = conn.prepare(
             "SELECT id, name, interval, last_period, next_period 
              FROM periodic_tasks ",
+        )?;
+
+        let periodic_tasks =
+            stmt.query_map([], |row| Self::build_periodic_task_record_from_row(row))?;
+
+        let mut result = Vec::new();
+        for task in periodic_tasks {
+            result.push(task?);
+        }
+
+        Ok(result)
+    }
+
+    fn get_startup_periodic_tasks(&self) -> Result<Vec<PeriodicTaskRecord>> {
+        let conn = self.conn.read();
+        let mut stmt = conn.prepare(
+            "SELECT id, name, interval, last_period, next_period 
+             FROM periodic_tasks 
+             WHERE interval = 0 OR interval = 100",
         )?;
 
         let periodic_tasks =

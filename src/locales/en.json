@@ -69,5 +69,17 @@
   "Run on System Start": "Run on System Startup",
   "Slient Launch": "Slient Launch",
   "General": "General",
-  "Appearance": "Appearance"
+  "Appearance": "Appearance",
+
+  "Startup Tasks": "Startup Tasks",
+  "View and manage tasks that run on application startup": "View and manage tasks that run on application startup",
+  "Loading": "Loading",
+  "No Startup Tasks": "No Startup Tasks",
+  "No startup tasks have been configured yet": "No startup tasks have been configured yet",
+  "Task Value": "Task Value",
+  "Last Run": "Last Run",
+  "Created": "Created",
+  "Actions": "Actions",
+  "actions": "actions",
+  "Never": "Never"
 }

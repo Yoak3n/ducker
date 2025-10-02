@@ -105,9 +105,10 @@ pub fn run() {
             Handle::global().init(app.handle().clone());
             tauri::async_runtime::block_on(async move {
                 resolve::resolve_setup(app).await;
+                // 启动时检查周期性任务
+                app_init::check_periodic_task().await;
             });
-            // 启动时检查周期性任务
-            app_init::check_periodic_task();
+
             Ok(())
         }).invoke_handler(app_init::generate_handlers())
         .build(tauri::generate_context!())

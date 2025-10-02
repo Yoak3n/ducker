@@ -34,11 +34,28 @@ function formatDatetime(date: Date) {
   const minute = ('0' + date.getMinutes()).slice(-2)
   const second = ('0' + date.getSeconds()).slice(-2)
     return `${year}-${month}-${day} ${hour}:${minute}:${second}`
-
-
 }
 
-export {extractDateViaDateObject,extractTimeStampSecond,getTodayRange,formatDatetime}
+/**
+ * 格式化日期字符串为简洁易读的日期形式（不包含时分秒）
+ * @param dateString 日期字符串，如 "2025-10-03 02:00:46 +08:00"
+ * @returns 格式化后的日期字符串，如 "2025-10-03"
+ */
+function formatDateOnly(dateString: string): string {
+  try {
+    const date = new Date(dateString);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  } catch (error) {
+    return dateString; // 如果解析失败，返回原字符串
+  }
+}
+
+
+
+export {extractDateViaDateObject,extractTimeStampSecond,getTodayRange,formatDatetime,formatDateOnly}
 
 
 

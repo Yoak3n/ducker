@@ -84,6 +84,7 @@ pub fn generate_handlers() -> impl Fn(tauri::ipc::Invoke<tauri::Wry>) -> bool + 
         cmd::task::get_tasks_by_status,
         cmd::task::get_tasks,
         cmd::task::get_enabled_periodic_tasks,
+        cmd::task::get_all_startup_periodic_tasks,
         // TODO 暂时不开放获取周期任务的接口
         // cmd::task::get_today_tasks,
         cmd::task::get_weekly_tasks,
@@ -99,20 +100,21 @@ pub fn generate_handlers() -> impl Fn(tauri::ipc::Invoke<tauri::Wry>) -> bool + 
     ]
 }
 
-pub fn check_periodic_task() {
+pub async fn check_periodic_task() {
     use crate::{
-        get_app_handle,
+        get_app_handle,logging,
         schema::action::Action,
         schema::AppState,
         service::execute::execute_plural_actions,
         store::module::{ActionManager, PeriodicTaskManager, TaskManager},
-        utils::date::is_today,
+        utils::date::is_today,utils::logging::Type,
     };
     use tauri::Manager;
     let app_handle = get_app_handle!();
     let state = app_handle.state::<AppState>();
     let db_guard = state.db.lock();
     let res = db_guard.get_enabled_periodic_tasks();
+    logging!(info, Type::Database,true, "获取所有启用的周期性任务");
     if let Ok(tasks) = res {
 
         let prepared_tasks_ids: Vec<String> = tasks
@@ -138,10 +140,18 @@ pub fn check_periodic_task() {
                             .into_iter()
                             .map(|action| action.into())
                             .collect();
-                        let _ = execute_plural_actions(prepared_actions);
+                        logging!(info, Type::Database,true, "获取所有启用的周期性任务的所有动作{:?}",prepared_action_ids);
+                        
                         let _ = db_guard
                             .update_periodic_tasks_last_run(&prepared_tasks_ids)    
                             .unwrap();
+                        drop(db_guard);
+                        let r = execute_plural_actions(prepared_actions).await;
+                        if let Err(e) = r {
+                            logging!(error, Type::Database,true, "执行周期性任务的所有动作失败{:?}",e);
+                        } else {
+                            logging!(info, Type::Database,true, "执行周期性任务的所有动作成功");
+                        }
                     }
                 }
             }

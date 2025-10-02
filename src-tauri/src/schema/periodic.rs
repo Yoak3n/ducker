@@ -44,7 +44,8 @@ impl TryFrom<(&PeriodicTaskRecord,&AppState)> for PeriodicTask {
 }
 
 
-#[derive(Deserialize, Serialize, Clone,Debug)]
+#[derive(Deserialize, Serialize, Clone, Debug)]
+#[serde(into = "u8", try_from = "u8")]
 #[repr(u8)]
 pub enum Period {
     OnStart = 0,
@@ -52,6 +53,27 @@ pub enum Period {
     Weekly = 7,
     Monthly = 30,
     OnceStarted = 100,
+}
+
+impl From<Period> for u8 {
+    fn from(period: Period) -> Self {
+        period as u8
+    }
+}
+
+impl TryFrom<u8> for Period {
+    type Error = String;
+
+    fn try_from(value: u8) -> Result<Self, Self::Error> {
+        match value {
+            0 => Ok(Period::OnStart),
+            1 => Ok(Period::Daily),
+            7 => Ok(Period::Weekly),
+            30 => Ok(Period::Monthly),
+            100 => Ok(Period::OnceStarted),
+            _ => Err(format!("Invalid period value: {}", value)),
+        }
+    }
 }
 
 #[derive(Deserialize, Serialize, Debug)]

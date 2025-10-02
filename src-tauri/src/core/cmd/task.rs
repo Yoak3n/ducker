@@ -218,9 +218,37 @@ pub async fn get_enabled_periodic_tasks(state: State<'_, AppState>) -> Result<Ve
 }
 
 #[tauri::command]
-pub async fn create_periodic_task(state: State<'_, AppState>, mut task: PeriodicTaskData) -> Result<String, String> {
+pub async fn get_all_startup_periodic_tasks(state: State<'_, AppState>) -> Result<Vec<PeriodicTask>, String> {
+    let records = {
+        let db = state.db.lock();
+        db.get_startup_periodic_tasks()
+    };
+
+    match records {
+        Ok(data) => {
+            let mut startup_tasks = Vec::new();
+            for record in data {
+                match PeriodicTask::try_from((&record, state.inner())) {
+                    Ok(task) => startup_tasks.push(task),
+                    Err(e) => {
+                        logging!(error, Type::Database, true, "转换启动时周期性任务失败: {:?}", e);
+                        return Err(e.to_string());
+                    }
+                }
+            }
+            Ok(startup_tasks)
+        }
+        Err(e) => {
+            logging!(error, Type::Database, true, "获取启动时周期性任务失败: {:?}", e);
+            Err(e.to_string())
+        }
+    }
+}
+
+#[tauri::command]
+pub async fn create_periodic_task(state: State<'_, AppState>,task: PeriodicTaskData) -> Result<String, String> {
+    logging!(info, Type::Database, true, "创建周期性任务: {:?}", task);
     let db = state.db.lock();
-    task.task.periodic = task.task.id.clone();
     let res = db.create_periodic_task(&task);
     match res {
         Ok(data) => {
