@@ -15,13 +15,13 @@ import "./index.css"
 
 const TodayView = () => {
     const { t } = useI18n();
-    const taskStore = useTaskStore()
+    const { tasks, periodicTasks, fetchTasks,toggleTaskCompletion } = useTaskStore()
     const todayDate = new Date()
 
     const todayRange = getTodayRange()
 
     useEffect(() => {
-        taskStore.fetchTasks()
+        fetchTasks()
         // taskStore.fetchTodayTasks()
         // 监听任务变更事件
         let unlistenTaskChanged: Promise<() => void> | null = null;
@@ -30,7 +30,7 @@ const TodayView = () => {
         if (typeof window !== 'undefined') {
             try {
                 unlistenTaskChanged = listen('task-changed', () => {
-                    taskStore.fetchTasks();
+                    fetchTasks();
                 });
             } catch (error) {
                 console.warn('事件监听器初始化失败:', error);
@@ -47,10 +47,20 @@ const TodayView = () => {
     }, [])
     const [tasksList, setTasksList] = useState<Task[]>([]);
     useEffect(() => {
-        setTasksList(taskStore
-            .tasks
-            .filter(task => (extractTimeStampSecond(task.due_to!) <= todayDate.getTime() / 1000 && !task.completed) || (extractTimeStampSecond(task.due_to!) >= todayRange.start && extractTimeStampSecond(task.due_to!) <= todayRange.end)))
-    }, [taskStore.tasks])
+        setTasksList(tasks
+            .filter(task => {
+                const isToday = (extractTimeStampSecond(task.due_to!) >= todayRange.start && extractTimeStampSecond(task.due_to!) <= todayRange.end);
+                const isOverdue = extractTimeStampSecond(task.due_to!) <= todayDate.getTime() / 1000 && !task.completed;
+                
+                // 过滤掉周期规则的interval为0或100的启动时任务
+                const isSpecialPeriodicTask = task.periodic && periodicTasks.some(pt => 
+                    pt.id === task.periodic && (pt.interval === 0 || pt.interval === 100)
+                );
+                
+                return (isToday || isOverdue) && !isSpecialPeriodicTask;
+            })
+        )
+    }, [tasks, periodicTasks])
 
 
     let completedValueCount = 0
@@ -79,11 +89,11 @@ const TodayView = () => {
 
     const handleTaskStatueChange = (id: string) => {
         console.log(id)
-        taskStore.toggleTaskCompletion(id)
+        toggleTaskCompletion(id)
     }
 
     return (
-        <div className="today-view">
+        <div className="today-view overflow-y-auto">
             <div className="today-title flex justify-between items-center">
                 <h2>{t("Today")} {todayDate.toLocaleDateString()}</h2>
                 <div className="flex gap-2">

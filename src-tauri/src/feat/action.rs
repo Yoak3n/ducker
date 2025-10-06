@@ -10,7 +10,6 @@ use tauri::Manager;
 use tokio::time::timeout;
 
 pub async fn execute_action(action: Action) -> Result<String, String> {
-    // 否则使用原始的执行逻辑
     execute_action_internal(action).await
 }
 use crate::core::handle::Handle;
@@ -249,6 +248,9 @@ pub async fn execute_action_internal(action: Action) -> Result<String, String> {
                 let mut error_count = 0;
 
                 for sub_action in actions_to_execute {
+                    let now = chrono::Local::now().to_rfc3339();
+                    logging!(info, Type::Cmd, true, "执行子动作时间: {:?}", now);
+
                     let result = Box::pin(execute_action_with_retry(sub_action.clone())).await;
                     match result {
                         Ok(result) => {
@@ -261,6 +263,7 @@ pub async fn execute_action_internal(action: Action) -> Result<String, String> {
                         }
                     }
                     // 等待指定时间避免过快执行
+                    
                     tokio::time::sleep(Duration::from_millis(sub_action.wait as u64)).await;
                 }
 

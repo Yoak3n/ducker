@@ -25,6 +25,7 @@ pub fn init_portable_flag() -> Result<()> {
     PORTABLE_FLAG.get_or_init(|| false);
     Ok(())
 }
+
 pub fn app_home_dir() -> Result<PathBuf> {
     use tauri::utils::platform::current_exe;
     let flag = PORTABLE_FLAG.get().unwrap_or(&false);

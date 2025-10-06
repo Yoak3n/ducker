@@ -1,5 +1,5 @@
 // 统一类型定义
-import type { Task, Action, TaskData, CreateActionData, UpdateActionData, Config } from "@/types";
+import type { Task, Action, TaskData, CreateActionData, UpdateActionData, Config, PeriodicTask } from "@/types";
 export type { Task, Action, TaskData, CreateActionData, UpdateActionData }
 
 // 过滤器类型
@@ -57,6 +57,7 @@ export interface AppState extends BaseState {
 
 export interface TaskState extends BaseState {
   tasks: Task[];
+  periodicTasks: PeriodicTask[];
   currentTask: Task | null;
   filters: TaskFilters;
 }

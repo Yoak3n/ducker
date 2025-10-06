@@ -1,4 +1,4 @@
-use crate::feat::action::{execute_action, execute_action_internal};
+use crate::feat::action::execute_action;
 use crate::logging;
 use crate::schema::{Action, AppState};
 use crate::utils::logging::Type;
@@ -24,7 +24,7 @@ pub async fn execute_actions(actions: Vec<Action>) -> Result<(), String> {
             let timeout_duration = Duration::from_secs(action.timeout.unwrap_or(30));
 
             while retry_count <= max_retries {
-                match timeout(timeout_duration, execute_action_internal(action.clone())).await {
+                match timeout(timeout_duration, execute_single_action(action.clone())).await {
                     Ok(result) => {
                         match result {
                             Ok(_) => {

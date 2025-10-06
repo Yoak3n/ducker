@@ -41,6 +41,7 @@ interface TaskStore extends TaskState {
 // 初始状态
 const initialState: TaskState = {
   tasks: [],
+  periodicTasks: [],
   currentTask: null,
   loading: false,
   error: null,
@@ -84,9 +85,14 @@ export const useTaskStore = create<TaskStore>()(
         fetchTasks: async () => {
           set({ loading: true, error: null }, false);
           try {
+            // 过滤周期任务
+            const periodicTasks = await taskApi.get_enabled_periodic_tasks();
+            set({ periodicTasks: periodicTasks || [] }, false);
             const tasks = await taskApi.get_all_tasks();
             console.log('获取所有任务:', tasks);
             set({ tasks: tasks || [], loading: false }, false);
+
+
           } catch (error) {
             console.log('获取所有任务失败:', error);
             set({

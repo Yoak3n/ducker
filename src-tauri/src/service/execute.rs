@@ -20,7 +20,7 @@ pub async fn execute_single_action(action: &Action) -> Result<String, String> {
         let mut last_error = String::new();
 
         // 获取超时时间，如果未设置则使用默认值（例如30秒）
-        let timeout_duration = Duration::from_secs(action.timeout.unwrap_or(30));
+        let timeout_duration = Duration::from_secs(action.timeout.unwrap_or(60));
 
         while retry_count <= max_retries {
             // 使用 timeout 包装 execute_action 调用

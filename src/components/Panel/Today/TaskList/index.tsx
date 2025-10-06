@@ -26,7 +26,7 @@ export default function TaskList({ tasks,todayDate,todayRange,changeTask,variant
         return 0;
     });
 
-    return <ul className="task-list">
+    return <ul className="task-list max-h-96 overflow-y-auto">
         {sortedTasks.map(task => (
             <TaskItem
             variant={variant}

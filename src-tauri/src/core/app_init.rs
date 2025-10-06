@@ -1,5 +1,3 @@
-use crate::schema::ActionType;
-
 use super::cmd;
 #[cfg(desktop)]
 use tauri_plugin_notification::NotificationExt;
@@ -122,11 +120,11 @@ pub async fn check_periodic_task() {
             .iter()
             .filter(|task| 
                 task.interval == 0 || 
-                (task.interval == 100 && task.last_period.map_or(false, |timestamp| !is_today(timestamp)))
+                (task.interval == 100 && task.last_period.map_or(true, |timestamp| !is_today(timestamp)))
             )
             .map(|task| task.id.clone())
             .collect();
-
+        logging!(info, Type::Database,true, "准备执行的周期性任务{:?}",prepared_tasks_ids);
         if !prepared_tasks_ids.is_empty() {
             if let Ok(prepared_task_records) = db_guard.get_tasks(&prepared_tasks_ids) {
                 // 收集所有立即执行任务的action ID
@@ -137,22 +135,11 @@ pub async fn check_periodic_task() {
 
                 if !prepared_action_ids.is_empty() {
                     if let Ok(prepared_actions) = db_guard.get_actions(&prepared_action_ids) {
-                        let mut collected_actions: Vec<Action> = Vec::new();
-                        prepared_actions
+                        let collected_actions: Vec<Action> = prepared_actions
                             .into_iter()
-                            .for_each(|a|{                     
-                                match a.typ{
-                                    ActionType::Group => {
-                                        if let Ok(aa) = db_guard.get_actions(&[a.args.clone()]){
-                                            for ar in aa {
-                                                collected_actions.push(ar.into());
-                                            }
-                                        }
-                                    }
-                                    _ => collected_actions.push(a.into()),
-                                }
-                            });
-                        logging!(info, Type::Database,true, "获取所有启用的周期性任务的所有动作{:?}",prepared_action_ids);
+                            .map(|a| a.into())
+                            .collect();
+                        logging!(info, Type::Database,true, "获取所有启用的周期性任务的所有动作{:?}",collected_actions);
                         
                         let _ = db_guard
                             .update_periodic_tasks_last_run(&prepared_tasks_ids)    
