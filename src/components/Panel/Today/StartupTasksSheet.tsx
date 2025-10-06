@@ -80,7 +80,7 @@ const StartupTasksSheet = ({ children }: StartupTasksSheetProps) => {
         {children}
       </SheetTrigger>
       <SheetContent className="w-[400px] sm:w-[540px]">
-        <SheetHeader>
+        <SheetHeader >
           <SheetTitle className="flex items-center gap-2">
             <Play className="w-5 h-5" />
             {t("Startup Tasks")}

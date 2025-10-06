@@ -62,6 +62,7 @@ pub async fn update_task_status(
 
 #[tauri::command]
 pub async fn delete_task(state: State<'_, AppState>, id: &str) -> Result<(), String> {
+    
     let db = state.db.lock();
 
     let res = db.delete_task(id);
@@ -267,8 +268,13 @@ pub async fn update_periodic_task(
     state: State<'_, AppState>,
     task: PeriodicTaskData,
 ) -> Result<PeriodicTask, String> {
+
     let record = {
         let db = state.db.lock();
+        if let Err(e) = db.update_task(task.task.id.clone().unwrap().as_str(), &task.task) {
+            logging!(error, Type::Database, true, "更新基本任务失败: {:?}", e);
+            return Err(e.to_string());
+        }
         db.update_periodic_task(task.task.id.clone().unwrap().as_str(), &task)
     };
 

@@ -1,11 +1,11 @@
-use crate::feat::action::execute_action;
+use crate::feat::action::{execute_action, execute_action_internal};
 use crate::logging;
 use crate::schema::{Action, AppState};
 use crate::utils::logging::Type;
 use anyhow::Result;
+use tokio::time::timeout;
 use std::time::Duration;
 use tauri::{async_runtime, AppHandle, State};
-use tokio::time::timeout;
 
 #[tauri::command]
 pub async fn execute_single_action(action: Action) -> Result<String, String> {
@@ -24,7 +24,7 @@ pub async fn execute_actions(actions: Vec<Action>) -> Result<(), String> {
             let timeout_duration = Duration::from_secs(action.timeout.unwrap_or(30));
 
             while retry_count <= max_retries {
-                match timeout(timeout_duration, execute_action(action.clone())).await {
+                match timeout(timeout_duration, execute_action_internal(action.clone())).await {
                     Ok(result) => {
                         match result {
                             Ok(_) => {
@@ -93,72 +93,15 @@ pub async fn execute_actions(actions: Vec<Action>) -> Result<(), String> {
         } else {
             // 异步执行 - 启动任务后添加最小延迟，避免与下一个任务同时执行
             let action_name = action.name.clone();
-            let timeout_duration = Duration::from_secs(action.timeout.unwrap_or(30));
 
             async_runtime::spawn(async move {
-                let max_retries = action.retry.unwrap_or(0);
-                let mut retry_count = 0;
-                let mut last_error = String::new();
-
-                while retry_count <= max_retries {
-                    match timeout(timeout_duration, execute_action(action.clone())).await {
-                        Ok(result) => {
-                            match result {
-                                Ok(_) => {
-                                    logging!(info, Type::Service, true, "异步任务 {} 执行成功", &action_name);
-                                    break;
-                                }
-                                Err(e) => {
-                                    last_error = e.to_string();
-                                    logging!(error, Type::Service, true, "异步任务 {} 执行失败: {}", &action_name, &last_error);
-                                    
-                                    if max_retries <= 0 {
-                                        break;
-                                    }
-                                    retry_count += 1;
-                                    if retry_count <= max_retries {
-                                        logging!(
-                                            info,
-                                            Type::Service,
-                                            true,
-                                            "异步任务 {} 执行失败，正在重试 ({}/{}): {}",
-                                            &action_name,
-                                            retry_count,
-                                            max_retries,
-                                            &last_error
-                                        );
-                                        tokio::time::sleep(tokio::time::Duration::from_millis(1000)).await;
-                                    }
-                                }
-                            }
-                        }
-                        Err(_) => {
-                            last_error = format!("任务执行超时（{}秒）", timeout_duration.as_secs());
-                            logging!(error, Type::Service, true, "异步任务 {} 执行超时: {}", &action_name, &last_error);
-                            
-                            if max_retries <= 0 {
-                                break;
-                            }
-                            retry_count += 1;
-                            if retry_count <= max_retries {
-                                logging!(
-                                    info,
-                                    Type::Service,
-                                    true,
-                                    "异步任务 {} 执行超时，正在重试 ({}/{}): {}",
-                                    &action_name,
-                                    retry_count,
-                                    max_retries,
-                                    &last_error
-                                );
-                                tokio::time::sleep(tokio::time::Duration::from_millis(1000)).await;
-                            }
-                        }
+                match execute_action(action).await {
+                    Ok(_) => {
+                        logging!(info, Type::Service, true, "异步任务 {} 执行成功", &action_name);
                     }
-                }
-
-                if retry_count > max_retries {
-                    logging!(error, Type::Service, true, "异步任务 {} 执行失败，已达到最大重试次数: {}", &action_name, &last_error);
+                    Err(e) => {
+                        logging!(error, Type::Service, true, "异步任务 {} 执行失败: {}", &action_name, e);
+                    }
                 }
             });
 

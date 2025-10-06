@@ -3,7 +3,7 @@ use rusqlite::params;
 
 use crate::{
     schema::{TaskData, TaskRecord},
-    store::{db::Database, module::TaskManager},
+    store::{db::Database, module::{TaskManager, PeriodicTaskManager}},
     utils::logging::Type,
     logging
 };
@@ -90,8 +90,35 @@ impl TaskManager for Database {
     }
 
     fn delete_task(&self, id: &str) -> Result<()> {
+        // 首先检查任务是否存在periodic字段
+        let task = self.get_task(id)?;
+        
+        // 如果任务有periodic字段，先删除对应的周期规则
+        if let Some(periodic_id) = &task.periodic {
+            // 使用PeriodicTaskManager trait来删除周期规则
+            if let Err(e) = self.delete_periodic_task(periodic_id) {
+                logging!(
+                    warn,
+                    Type::Database,
+                    "删除周期规则失败，但继续删除任务: periodic_id={}, error={}",
+                    periodic_id,
+                    e
+                );
+            } else {
+                logging!(
+                    info,
+                    Type::Database,
+                    "成功删除任务关联的周期规则: periodic_id={}",
+                    periodic_id
+                );
+            }
+        }
+        
+        // 删除任务本身
         let conn = self.conn.write();
         conn.execute("DELETE FROM tasks WHERE id = ?1", [id])?;
+        
+        logging!(info, Type::Database, "成功删除任务: id={}", id);
         Ok(())
     }
 

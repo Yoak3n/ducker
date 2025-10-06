@@ -1,3 +1,5 @@
+use crate::schema::ActionType;
+
 use super::cmd;
 #[cfg(desktop)]
 use tauri_plugin_notification::NotificationExt;
@@ -116,7 +118,6 @@ pub async fn check_periodic_task() {
     let res = db_guard.get_enabled_periodic_tasks();
     logging!(info, Type::Database,true, "获取所有启用的周期性任务");
     if let Ok(tasks) = res {
-
         let prepared_tasks_ids: Vec<String> = tasks
             .iter()
             .filter(|task| 
@@ -136,17 +137,28 @@ pub async fn check_periodic_task() {
 
                 if !prepared_action_ids.is_empty() {
                     if let Ok(prepared_actions) = db_guard.get_actions(&prepared_action_ids) {
-                        let prepared_actions: Vec<Action> = prepared_actions
+                        let mut collected_actions: Vec<Action> = Vec::new();
+                        prepared_actions
                             .into_iter()
-                            .map(|action| action.into())
-                            .collect();
+                            .for_each(|a|{                     
+                                match a.typ{
+                                    ActionType::Group => {
+                                        if let Ok(aa) = db_guard.get_actions(&[a.args.clone()]){
+                                            for ar in aa {
+                                                collected_actions.push(ar.into());
+                                            }
+                                        }
+                                    }
+                                    _ => collected_actions.push(a.into()),
+                                }
+                            });
                         logging!(info, Type::Database,true, "获取所有启用的周期性任务的所有动作{:?}",prepared_action_ids);
                         
                         let _ = db_guard
                             .update_periodic_tasks_last_run(&prepared_tasks_ids)    
                             .unwrap();
                         drop(db_guard);
-                        let r = execute_plural_actions(prepared_actions).await;
+                        let r = execute_plural_actions(collected_actions).await;
                         if let Err(e) = r {
                             logging!(error, Type::Database,true, "执行周期性任务的所有动作失败{:?}",e);
                         } else {

@@ -1,4 +1,4 @@
-import {type FormEvent, useState, useEffect, useCallback } from 'react';
+import { type FormEvent, useState, useEffect, useCallback } from 'react';
 import { emit } from '@tauri-apps/api/event';
 
 import { formatDatetime } from '@/utils';
@@ -39,6 +39,7 @@ const initialFormData: TaskFormData = {
 export default function TaskModal({ onSave, task, parentTask }: TaskModalProps) {
   const [formData, setFormData] = useState<TaskFormData>(initialFormData);
   const [isPeriodic, setIsPeriodic] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(Boolean(task));
   const { t } = useI18n();
 
   const calculateReminderOffset = (dueDate: Date, reminderDate: Date): string => {
@@ -112,6 +113,7 @@ export default function TaskModal({ onSave, task, parentTask }: TaskModalProps) 
         setIsPeriodic(true);
       }
       console.log("编辑模式 - 格式化后的时间数据:", { dueToStr, reminderStr });
+      setIsEditMode(true);
     } else {
       // 创建模式
       const newFormData = { ...initialFormData };
@@ -119,6 +121,8 @@ export default function TaskModal({ onSave, task, parentTask }: TaskModalProps) 
         newFormData.parent_id = parentTask.id;
       }
       setFormData(newFormData);
+      console.log('创建模式 - 初始化表单数据:', newFormData);
+      setIsEditMode(false);
     }
   }, [task, parentTask]);
 
@@ -134,7 +138,6 @@ export default function TaskModal({ onSave, task, parentTask }: TaskModalProps) 
   }, [formData.reminderOffset, formData.due_to]);
 
   const handleInputChange = useCallback((field: keyof TaskFormData, value: string | boolean | number | undefined | Action[] | Period) => {
-    console.log('输入字段:', field, '值:', value);
     setFormData((prev) => ({
       ...prev,
       [field]: value,
@@ -143,10 +146,8 @@ export default function TaskModal({ onSave, task, parentTask }: TaskModalProps) 
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    console.log('提交表单数据:', formData);
-
     // 将TaskFormData转换为TaskData
-    const taskData: TaskData = {
+    let taskData: TaskData = {
       name: formData.name,
       value: formData.value,
       completed: formData.completed,
@@ -159,7 +160,7 @@ export default function TaskModal({ onSave, task, parentTask }: TaskModalProps) 
     };
 
     // 编辑模式下保留原有ID和创建时间
-    if (task) {
+    if (isEditMode && task) {
       taskData.id = task.id;
       taskData.created_at = task.created_at;
     }
@@ -207,7 +208,7 @@ export default function TaskModal({ onSave, task, parentTask }: TaskModalProps) 
           value={formData.value}
           parentTask={parentTask}
           handleInputChange={handleInputChange}
-        />  
+        />
 
         {/* 时间设置区域 */}
         <Time
@@ -225,9 +226,9 @@ export default function TaskModal({ onSave, task, parentTask }: TaskModalProps) 
         />
 
         {/* 高级设置区域 */}
-        <Advanced 
-          actionsData={formData.actions} 
-          handleInputChange={handleInputChange} 
+        <Advanced
+          actionsData={formData.actions}
+          handleInputChange={handleInputChange}
         />
 
         {/* 操作区 */}

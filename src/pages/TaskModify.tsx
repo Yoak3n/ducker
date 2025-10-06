@@ -33,9 +33,11 @@ const TaskModify: FC = () => {
             if (isEditMode) {
                 // 编辑模式下，调用更新任务接口
                 await updateTask(id, taskData);
+                console.log('任务更新成功:', taskData);
             } else {
                 // 新建模式下，调用创建任务接口
                 await createTask(taskData);
+                console.log('任务创建成功:', taskData);
             }
             // 发送统一的任务变更事件
             await emit('task-changed', { 
