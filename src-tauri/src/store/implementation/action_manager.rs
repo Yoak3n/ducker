@@ -15,10 +15,13 @@ impl ActionManager for Database {
             args_text = args.join(",");
         }
         let action_id = format!("act{}", random_string(6));
-        // let data =ActionData::from_action(&action);
         let data = action.clone();
         let typ: ActionType = ActionType::try_from(data.typ.as_str())?;
-
+        let wait = if matches!(typ, ActionType::Group) {
+            0
+        } else {
+            data.wait
+        };
         conn.execute(
             "INSERT INTO actions (id, name, desc, command, args, type, wait, retry, timeout)
             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
@@ -29,7 +32,7 @@ impl ActionManager for Database {
                 &action.command,
                 &args_text,
                 &(typ.clone() as i8),
-                data.wait,
+                wait,
                 data.retry,
                 data.timeout,
             ),

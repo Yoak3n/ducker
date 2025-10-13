@@ -1,11 +1,13 @@
 header {
-    background-color: #3498db;
+    background-color: var(--sidebar);
     padding: .8rem 1rem;
-    color: white;
+    color: var(--sidebar-foreground);
     display: flex;
     border-radius: 2px 2px 0 0;
     justify-content: space-between;
     align-items: center;
+    border-bottom: 1px solid var(--sidebar-border);
+    backdrop-filter: saturate(180%) blur(8px);
 
     .header-title {
         user-select: none;
@@ -20,13 +22,14 @@ header {
             outline: none;
             cursor: pointer;
             background-color: transparent;
+            transition: color .15s ease, opacity .15s ease;
             span {
-                color: #fff;
+                color: currentColor;
+                transition: color .15s ease, opacity .15s ease;
             }
             &:hover {
                 span {
-                    color: #f0f0f0;
-                    filter: blur(1px);
+                    opacity: .85;
                 }
             }
         }

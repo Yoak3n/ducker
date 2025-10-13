@@ -85,13 +85,34 @@ export const useTaskStore = create<TaskStore>()(
         fetchTasks: async () => {
           set({ loading: true, error: null }, false);
           try {
-            // 过滤周期任务
+            // 获取所有周期任务
             const periodicTasks = await taskApi.get_enabled_periodic_tasks();
             set({ periodicTasks: periodicTasks || [] }, false);
-            const tasks = await taskApi.get_all_tasks();
-            console.log('获取所有任务:', tasks);
-            set({ tasks: tasks || [], loading: false }, false);
-
+            
+            // 创建周期规则映射表（规则ID -> interval值）
+            const periodicRuleMap: Map<string, number> = new Map();
+            (periodicTasks || []).forEach(periodicTask => {
+              if (periodicTask.id && periodicTask.interval !== 0 && periodicTask.interval !== 100) {
+                periodicRuleMap.set(periodicTask.id.toString(), periodicTask.interval);
+              }
+            });
+            
+            // 获取所有任务
+            const allTasks = await taskApi.get_all_tasks();
+            
+            // 过滤掉关联interval为0或100周期规则的任务
+            const filteredTasks = (allTasks || []).filter(task => {
+              // 如果任务有periodic字段，检查对应的周期规则
+              if (task.periodic) {
+                const interval = periodicRuleMap.get(task.periodic);
+                if(interval === undefined){
+                  return false;
+                }
+              }
+              return true;
+            });
+            
+            set({ tasks: filteredTasks, loading: false }, false);
 
           } catch (error) {
             console.log('获取所有任务失败:', error);

@@ -28,7 +28,7 @@ const SettingItems: FC = () => {
             if (enabled !== latest) {
                 console.warn("Auto launch state out of sync, correcting in store:", enabled)
                 if (latest){
-                    setConfigStateInStore({ enable_auto_launch: true });
+                    enable().then(() => handleConfigUpdate({ enable_auto_launch: true }))
                 }
             }
         }

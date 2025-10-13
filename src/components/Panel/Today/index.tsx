@@ -1,10 +1,7 @@
-import { useEffect, useState } from "react";
-import { listen } from "@tauri-apps/api/event";
-
+import { useMemo } from "react";
 import { Button } from "@/components/ui/button";
-
-import { useTaskStore, type Task } from "@/store";
-import { extractTimeStampSecond, getTodayRange } from "@/utils";
+import type { Task } from "@/types";
+import { extractTimeStampSecond } from "@/utils";
 import { showWindow } from "@/api";
 import { useI18n } from "@/hooks/use-i18n";
 import TaskList from "./TaskList";
@@ -13,54 +10,24 @@ import "./index.css"
 
 
 
-const TodayView = () => {
+type TodayViewProps = {
+    tasks: Task[];
+    todayDate: Date;
+    todayRange: { start: number; end: number };
+    onToggleTask: (id: string) => void;
+};
+
+const TodayView = ({ tasks, todayDate, todayRange, onToggleTask }: TodayViewProps) => {
     const { t } = useI18n();
-    const { tasks, periodicTasks, fetchTasks,toggleTaskCompletion } = useTaskStore()
-    const todayDate = new Date()
 
-    const todayRange = getTodayRange()
-
-    useEffect(() => {
-        fetchTasks()
-        // taskStore.fetchTodayTasks()
-        // 监听任务变更事件
-        let unlistenTaskChanged: Promise<() => void> | null = null;
-
-        // 检查是否在Tauri环境中
-        if (typeof window !== 'undefined') {
-            try {
-                unlistenTaskChanged = listen('task-changed', () => {
-                    fetchTasks();
-                });
-            } catch (error) {
-                console.warn('事件监听器初始化失败:', error);
-            }
-        }
-
-        // 清理事件监听器
-        return () => {
-            if (unlistenTaskChanged) {
-                unlistenTaskChanged.then(fn => fn()).catch(console.warn);
-            }
-        };
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [])
-    const [tasksList, setTasksList] = useState<Task[]>([]);
-    useEffect(() => {
-        setTasksList(tasks
+    const tasksList = useMemo(() => {
+        return tasks
             .filter(task => {
                 const isToday = (extractTimeStampSecond(task.due_to!) >= todayRange.start && extractTimeStampSecond(task.due_to!) <= todayRange.end);
                 const isOverdue = extractTimeStampSecond(task.due_to!) <= todayDate.getTime() / 1000 && !task.completed;
-                
-                // 过滤掉周期规则的interval为0或100的启动时任务
-                const isSpecialPeriodicTask = task.periodic && periodicTasks.some(pt => 
-                    pt.id === task.periodic && (pt.interval === 0 || pt.interval === 100)
-                );
-                
-                return (isToday || isOverdue) && !isSpecialPeriodicTask;
-            })
-        )
-    }, [tasks, periodicTasks])
+                return isToday || isOverdue;
+            });
+    }, [tasks, todayDate, todayRange]);
 
 
     let completedValueCount = 0
@@ -87,10 +54,7 @@ const TodayView = () => {
         showWindow("task")
     };
 
-    const handleTaskStatueChange = (id: string) => {
-        console.log(id)
-        toggleTaskCompletion(id)
-    }
+    const handleTaskStatueChange = (id: string) => onToggleTask(id)
 
     return (
         <div className="today-view overflow-y-auto">
