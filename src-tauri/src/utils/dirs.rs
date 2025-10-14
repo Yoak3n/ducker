@@ -9,34 +9,34 @@ use crate::core::handle;
 
 pub static SETUP_CONFIG: &str = "config.yaml";
 pub static APP_ID: &str = "com.Yoaken.ducker";
-pub static PORTABLE_FLAG: OnceCell<bool> = OnceCell::new();
+// pub static PORTABLE_FLAG: OnceCell<bool> = OnceCell::new();
 
-pub fn init_portable_flag() -> Result<()> {
-    use tauri::utils::platform::current_exe;
+// pub fn init_portable_flag() -> Result<()> {
+//     use tauri::utils::platform::current_exe;
 
-    let app_exe = current_exe()?;
-    if let Some(dir) = app_exe.parent() {
-        let dir = PathBuf::from(dir).join(".config/PORTABLE");
+//     let app_exe = current_exe()?;
+//     if let Some(dir) = app_exe.parent() {
+//         let dir = PathBuf::from(dir).join(".config/PORTABLE");
 
-        if dir.exists() {
-            PORTABLE_FLAG.get_or_init(|| true);
-        }
-    }
-    PORTABLE_FLAG.get_or_init(|| false);
-    Ok(())
-}
+//         if dir.exists() {
+//             PORTABLE_FLAG.get_or_init(|| true);
+//         }
+//     }
+//     PORTABLE_FLAG.get_or_init(|| false);
+//     Ok(())
+// }
 
 pub fn app_home_dir() -> Result<PathBuf> {
-    use tauri::utils::platform::current_exe;
-    let flag = PORTABLE_FLAG.get().unwrap_or(&false);
-    if *flag {
-        let app_exe = current_exe()?;
-        let app_exe = dunce::canonicalize(app_exe)?;
-        let app_dir = app_exe
-            .parent()
-            .ok_or(anyhow::anyhow!("failed to get the portable app dir"))?;
-        return Ok(PathBuf::from(app_dir).join(".config").join(APP_ID));
-    }
+    // use tauri::utils::platform::current_exe;
+    // let flag = PORTABLE_FLAG.get().unwrap_or(&false);
+    // if *flag {
+    //     let app_exe = current_exe()?;
+    //     let app_exe = dunce::canonicalize(app_exe)?;
+    //     let app_dir = app_exe
+    //         .parent()
+    //         .ok_or(anyhow::anyhow!("failed to get the portable app dir"))?;
+    //     return Ok(PathBuf::from(app_dir).join(".config").join(APP_ID));
+    // }
     let app_handle = match handle::Handle::global().app_handle() {
         Some(handle) => handle,
         None => {

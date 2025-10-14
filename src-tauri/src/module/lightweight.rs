@@ -51,29 +51,6 @@ where
     }
 }
 
-// pub async fn run_once_auto_lightweight() {
-//     LightWeightState::default().run_once_time(|| {
-//         let config = Config::global().lock().unwrap().clone();
-//         let is_silent_start = config
-//             .silent_launch
-//             .unwrap_or(false);
-//         if is_silent_start {
-//             logging!(
-//                 info,
-//                 Type::Lightweight,
-//                 true,
-//                 "在静默启动的情况下，创建窗口再添加自动进入轻量模式窗口监听器"
-//             );
-//             set_lightweight_mode(false);
-//             enable_auto_light_weight_mode();
-
-//             // 触发托盘更新
-//             if let Err(e) = Tray::global().update_part() {
-//                 log::warn!("Failed to update tray: {e}");
-//             }
-//         }
-//     });
-// }
 
 pub fn auto_lightweight_mode_init() {
     if let Some(app_handle) = handle::Handle::global().app_handle() {
@@ -97,7 +74,6 @@ pub fn auto_lightweight_mode_init() {
                 Type::Lightweight,
                 "非静默启动直接挂载自动进入轻量模式监听器！"
             );
-            set_lightweight_mode(true);
 
             // 确保托盘状态更新
             if let Err(e) = Tray::global().update_part() {
@@ -108,24 +84,6 @@ pub fn auto_lightweight_mode_init() {
     }
 }
 
-// 检查是否处于轻量模式
-pub fn is_in_lightweight_mode() -> bool {
-    with_lightweight_status(|state| state.is_lightweight).unwrap_or(false)
-}
-
-// 设置轻量模式状态
-pub fn set_lightweight_mode(value: bool) {
-    if with_lightweight_status(|state| {
-        state.set_lightweight_mode(value);
-    })
-    .is_some()
-    {
-        // 只有在状态可用时才触发托盘更新
-        if let Err(e) = Tray::global().update_part() {
-            log::warn!("Failed to update tray: {e}");
-        }
-    }
-}
 
 pub fn enable_auto_light_weight_mode() {
     Timer::global().init().unwrap();
@@ -135,11 +93,6 @@ pub fn enable_auto_light_weight_mode() {
     setup_window_close_listener();
 }
 
-// pub fn disable_auto_light_weight_mode() {
-//     logging!(info, Type::Lightweight, true, "关闭自动轻量模式");
-//     let _ = cancel_light_weight_timer();
-//     cancel_window_listeners();
-// }
 
 pub fn entry_lightweight_mode() {
     let result = window_manager::hide_main_window();
@@ -165,52 +118,12 @@ pub fn entry_lightweight_mode() {
         #[cfg(target_os = "macos")]
         AppHandleManager::global().set_activation_policy_accessory();
     }
-    set_lightweight_mode(true);
     let _ = cancel_light_weight_timer();
 
     // 更新托盘显示
     let _tray = crate::core::tray::Tray::global();
 }
 
-// 添加从轻量模式恢复的函数
-// pub fn exit_lightweight_mode() {
-//     // 使用原子操作检查是否已经在退出过程中，防止并发调用
-//     if EXITING_LIGHTWEIGHT
-//         .compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst)
-//         .is_err()
-//     {
-//         logging!(
-//             info,
-//             Type::Lightweight,
-//             true,
-//             "轻量模式退出操作已在进行中，跳过重复调用"
-//         );
-//         return;
-//     }
-
-//     // 使用defer确保无论如何都会重置标志
-//     let _guard = scopeguard::guard((), |_| {
-//         EXITING_LIGHTWEIGHT.store(false, Ordering::SeqCst);
-//     });
-
-//     // 确保当前确实处于轻量模式才执行退出操作
-//     if !is_in_lightweight_mode() {
-//         logging!(info, Type::Lightweight, true, "当前不在轻量模式，无需退出");
-//         return;
-//     }
-
-//     set_lightweight_mode(false);
-
-//     // macOS激活策略
-//     #[cfg(target_os = "macos")]
-//     AppHandleManager::global().set_activation_policy_regular();
-
-//     // 重置UI就绪状态
-//     crate::utils::resolve::reset_ui_ready();
-
-//     // 更新托盘显示
-//     let _tray = crate::core::tray::Tray::global();
-// }
 
 #[cfg(target_os = "macos")]
 pub fn add_light_weight_timer() {
@@ -298,48 +211,8 @@ pub fn add_window_listeners(window_label: &str) {
     }
 }
 
-// pub fn cancel_window_listeners() {
-//     with_lightweight_status(|state| {
-//         if let Some(app_handle) = handle::Handle::global().app_handle() {
-//             let window_labels = ["main", "dashboard", "task", "action", "setting"];
-
-//             // 取消关闭监听器
-//             for handler_id in &state.close_listeners {
-//                 for label in &window_labels {
-//                     if let Some(window) = app_handle.get_webview_window(label) {
-//                         window.unlisten(*handler_id);
-//                     }
-//                 }
-//             }
-//             state.close_listeners.clear();
-
-//             // 取消焦点监听器
-//             for handler_id in &state.focus_listeners {
-//                 for label in &window_labels {
-//                     if let Some(window) = app_handle.get_webview_window(label) {
-//                         window.unlisten(*handler_id);
-//                     }
-//                 }
-//             }
-//             state.focus_listeners.clear();
-
-//             // 清理已监听窗口的记录
-//             state.listened_windows.clear();
-
-//             logging!(info, Type::Lightweight, true, "已取消所有窗口监听器并清理跟踪记录");
-//         }
-//     });
-// }
-
 fn setup_light_weight_timer() -> Result<()> {
     Timer::global().init()?;
-
-    // 获取task_id
-    // let task_id = {
-    //     Timer::global()
-    //         .timer_count
-    //         .fetch_add(1, std::sync::atomic::Ordering::Relaxed)
-    // };
 
     // 创建任务
     let task = TaskBuilder::default()
