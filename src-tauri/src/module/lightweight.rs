@@ -1,5 +1,19 @@
 use crate::{
-    config::Config, core::{handle, timer::Timer, tray::Tray}, log_err, logging, schema::{state::LightWeightState, AppState}, utils::{logging::Type, window_manager}
+    config::Config, 
+    core::{
+        handle, 
+        timer::Timer, 
+        tray::Tray
+    }, 
+    log_err, logging, 
+    schema::{
+        state::LightWeightState, 
+        AppState
+    }, 
+    utils::{
+        logging::Type,
+        window_manager
+    }
 };
 
 #[cfg(target_os = "macos")]
@@ -12,7 +26,8 @@ use delay_timer::prelude::TaskBuilder;
 // use std::sync::atomic::{AtomicBool, Ordering};
 use tauri::{Listener, Manager};
 
-const LIGHT_WEIGHT_TASK_ID: u64 = 100000;
+// TODO 考虑为每个窗口添加单独的定时任务，当一个窗口关闭一分钟时，则销毁它
+const LIGHT_WEIGHT_TASK_ID: u64 = 10000000;
 
 // 添加退出轻量模式的锁，防止并发调用
 // static EXITING_LIGHTWEIGHT: AtomicBool = AtomicBool::new(false);
@@ -127,8 +142,6 @@ pub fn enable_auto_light_weight_mode() {
 // }
 
 pub fn entry_lightweight_mode() {
-    use crate::utils::window_manager;
-
     let result = window_manager::hide_main_window();
     logging!(
         info,
@@ -146,6 +159,7 @@ pub fn entry_lightweight_mode() {
                 logging!(info, Type::Lightweight, true, "销毁窗口: {}", label);
                 let _ = webview.destroy();
             }
+            window_manager::destroy_window_by_label(label);
         }
 
         #[cfg(target_os = "macos")]

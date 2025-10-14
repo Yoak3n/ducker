@@ -116,11 +116,10 @@ pub async fn resolve_setup(app: &mut App) {
 
     #[cfg(target_os = "windows")]
     {
-        logging_error!(Type::Tray, true, tray::Tray::global().init());
+        logging_error!(Type::Tray, tray::Tray::global().init());
         if let Some(app_handle) = handle::Handle::global().app_handle() {
             logging_error!(
                 Type::Tray,
-                true,
                 tray::Tray::global().create_tray_from_handle(&app_handle)
             );
         } else {
@@ -145,8 +144,8 @@ pub async fn resolve_setup(app: &mut App) {
         }
     }
     // #[cfg(desktop)]
-    logging_error!(Type::Tray, true, tray::Tray::global().update_part());
-    logging_error!(Type::System, true, timer::Timer::global().init());
+    logging_error!(Type::Tray, tray::Tray::global().update_part());
+    logging_error!(Type::System, timer::Timer::global().init());
     auto_lightweight_mode_init();
     let elapsed = start_time.elapsed();
     logging!(

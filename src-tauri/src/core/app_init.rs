@@ -1,6 +1,7 @@
 use super::cmd;
 #[cfg(desktop)]
 use tauri_plugin_notification::NotificationExt;
+use crate::core::handle::Handle;
 
 /// Setup plugins for the Tauri builder
 pub fn setup_plugins(builder: tauri::Builder<tauri::Wry>) -> tauri::Builder<tauri::Wry> {
@@ -29,7 +30,6 @@ pub fn setup_plugins(builder: tauri::Builder<tauri::Wry>) -> tauri::Builder<taur
     builder
 }
 
-// TODO Setup autostart plugin 修复更新后开机自启失效的问题
 pub fn setup_autostart(app: &tauri::App) -> Result<(), Box<dyn std::error::Error>> {
     #[cfg(target_os = "macos")]
     let mut auto_start_plugin_builder = tauri_plugin_autostart::Builder::new();
@@ -46,8 +46,7 @@ pub fn setup_autostart(app: &tauri::App) -> Result<(), Box<dyn std::error::Error
     Ok(())
 }
 
-pub fn generate_handlers() -> impl Fn(tauri::ipc::Invoke<tauri::Wry>) -> bool + Send + Sync + 'static
-{
+pub fn generate_handlers() -> impl Fn(tauri::ipc::Invoke<tauri::Wry>) -> bool + Send + Sync + 'static{
     tauri::generate_handler![
         // Window
         cmd::window::toggle_window,
@@ -152,6 +151,13 @@ pub async fn check_periodic_task() {
                             logging!(info, Type::Database,true, "执行周期性任务的所有动作成功");
                         }
                     }
+                    Handle::global().app_handle().map(|h| 
+                        h.notification()
+                        .builder()
+                        .title("Startup Tasks Completed")
+                        .show()
+                    );
+                    
                 }
             }
         }

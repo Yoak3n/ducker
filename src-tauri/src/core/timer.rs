@@ -75,7 +75,7 @@ impl Timer {
         if let Err(e) = self.refresh() {
             // Reset initialization flag on error
             self.initialized.store(false, Ordering::SeqCst);
-            logging_error!(Type::Timer, false, "Failed to initialize timer: {}", e);
+            logging_error!(Type::Timer, "Failed to initialize timer: {}", e);
             return Err(e);
         }
 
@@ -116,7 +116,6 @@ impl Timer {
             match diff {
                 DiffFlag::Del(tid) => {
                     timer_map.remove(&uid);
-                    // TODO 咋感觉你没删除成功呢？移除任务后为何可重复任务仍然在运行？
                     if let Err(e) = delay_timer.remove_task(tid) {
                         logging!(
                             warn,
@@ -380,7 +379,7 @@ impl Timer {
                 }
             },
             Err(_) => {
-                logging_error!(Type::Timer, false, "Timer task timed out for uid: {}", id);
+                logging_error!(Type::Timer, "Timer task timed out for uid: {}", id);
             }
         }
     }

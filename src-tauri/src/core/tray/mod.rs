@@ -159,7 +159,7 @@ impl Tray {
                     ..
                 } => {
                     logging!(info,Type::Tray,true,"Tray点击事件: 显示主窗口");
-                    // TODO: 这里应该添加显示主窗口的逻辑
+                    let _ = window_manager::toggle_main_window();
                 },
                 TrayIconEvent::DoubleClick {
                     button: MouseButton::Left,

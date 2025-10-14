@@ -1,11 +1,17 @@
-use crate::utils::{
-    dirs,
-    help::{read_yaml, save_yaml},
+use crate::{
+    core::handle::Handle, logging, 
+    module::auto_launch,
+    utils::{
+        dirs,
+        help::{read_yaml, save_yaml},
+        logging::Type,
+    }
 };
+
 use anyhow::Result;
 use parking_lot::Mutex;
 use serde::{Deserialize, Serialize};
-
+use tauri_plugin_autostart::ManagerExt;
 #[derive(Deserialize, Serialize, Clone, Debug)]
 pub struct Config {
     pub enable_auto_launch: Option<bool>,
@@ -23,6 +29,11 @@ impl Config {
         match dirs::config_path() {
             Ok(path) => match read_yaml::<Config>(&path) {
                 Ok(config) => {
+                    let is_enable = config.enable_auto_launch.unwrap_or(false);
+                    if let Err(err) = try_original_autostart_method(is_enable) {
+                        logging!(error,Type::System,true, "{:?}", err);
+                        auto_launch::enable_auto_launch(is_enable).unwrap();
+                    }
                     println!("read config success: {:?}", config);
                     config
                 }
@@ -50,24 +61,6 @@ impl Config {
 
     pub fn data(&self) -> &Self {
         self
-        // match dirs::config_path() {
-        //     Ok(path) => match read_yaml::<Config>(&path) {
-        //         Ok(config) => {
-        //             println!("read config success: {:?}", config);
-        //             config
-        //         }
-        //         Err(err) => {
-        //             println!("read config error: {err}");
-        //             log::error!(target: "app", "{err}");
-        //             Self::template()
-        //         }
-        //     },
-        //     Err(err) => {
-        //         log::error!(target: "app", "{err}");
-        //         println!("read config error: {err}");
-        //         Self::template()
-        //     }
-        // }
     }
 
     pub fn save(&self) -> Result<()> {
@@ -87,4 +80,25 @@ impl Config {
         patch!(silent_launch);
         patch!(language);
     }
+}
+
+fn try_original_autostart_method(is_enable: bool) ->Result<()>{
+    
+    let app_handle = if let Some(handle) = Handle::global().app_handle() {
+        handle
+    } else {
+        logging!(info,Type::System,true, "try_original_autostart_method: app_handle is None");
+        return Err(anyhow::anyhow!("app_handle is None"));
+    };
+    let autostart_manager = app_handle.autolaunch();
+    let autostart = autostart_manager.is_enabled().unwrap_or(false);
+    if is_enable != autostart {
+        logging!(info,Type::System,true, "try_original_autostart_method: {:?}", is_enable);
+        if is_enable {
+            autostart_manager.enable()?;
+        } else {
+            autostart_manager.disable()?;
+        }
+    }
+    Ok(())
 }

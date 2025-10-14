@@ -750,14 +750,18 @@ impl WindowManager {
             Some(window) => {
                 if let Err(e) = window.close() {
                     logging!(error, Type::Window, true, "窗口销毁失败: {:?}", e);
-                    return false;
+                    return false
                 }
                 self.update_window_state(window_type, WindowState::NotExist);
-                return true;
+                true
             }
-            None => return false,
+            None => {
+                self.update_window_state(window_type, WindowState::NotExist);
+                true
+            },
         }
     }
+    
     /// 检查是否所有窗口都已关闭（隐藏或不存在）
     pub fn are_all_windows_closed(&self) -> bool {
         for window_type in &WindowType::all() {

@@ -88,7 +88,7 @@ export const useTaskStore = create<TaskStore>()(
             // 获取所有周期任务
             const periodicTasks = await taskApi.get_enabled_periodic_tasks();
             set({ periodicTasks: periodicTasks || [] }, false);
-            
+
             // 创建周期规则映射表（规则ID -> interval值）
             const periodicRuleMap: Map<string, number> = new Map();
             (periodicTasks || []).forEach(periodicTask => {
@@ -96,22 +96,22 @@ export const useTaskStore = create<TaskStore>()(
                 periodicRuleMap.set(periodicTask.id.toString(), periodicTask.interval);
               }
             });
-            
+
             // 获取所有任务
             const allTasks = await taskApi.get_all_tasks();
-            
+
             // 过滤掉关联interval为0或100周期规则的任务
             const filteredTasks = (allTasks || []).filter(task => {
               // 如果任务有periodic字段，检查对应的周期规则
               if (task.periodic) {
                 const interval = periodicRuleMap.get(task.periodic);
-                if(interval === undefined){
+                if (interval === undefined) {
                   return false;
                 }
               }
               return true;
             });
-            
+
             set({ tasks: filteredTasks, loading: false }, false);
 
           } catch (error) {
@@ -132,15 +132,14 @@ export const useTaskStore = create<TaskStore>()(
             }
 
             // 重新获取任务列表以确保数据同步
-            const tasks = await taskApi.get_all_tasks();
-            const newTask = tasks?.find(task => task.id === taskId);
+            await get().fetchTasks();
+            // const tasks = await taskApi.get_all_tasks();
+            // const newTask = tasks?.find(task => task.id === taskId);
 
-            if (!newTask) {
-              throw new Error('创建任务失败：无法找到新创建的任务');
-            }
-
-            set({ tasks: tasks || [], loading: false }, false);
-            return newTask;
+            // if (!newTask) {
+            //   throw new Error('创建任务失败：无法找到新创建的任务');
+            // }
+            return taskData;
           } catch (error) {
             set({
               loading: false,
@@ -171,13 +170,14 @@ export const useTaskStore = create<TaskStore>()(
             }
 
             // 重新获取任务列表以确保数据同步
-            const tasks = await taskApi.get_all_tasks();
-
             set(state => ({
-              tasks: tasks || [],
+              tasks: state.tasks.map(t => t.id === id ? updatedTask : t),
               currentTask: state.currentTask?.id === id ? updatedTask : state.currentTask,
               loading: false
             }), false);
+            await get().fetchTasks();
+
+
 
             return updatedTask;
           } catch (error) {
@@ -195,12 +195,13 @@ export const useTaskStore = create<TaskStore>()(
             await taskApi.delete_task(id);
 
             // 重新获取任务列表以确保数据同步
-            const tasks = await taskApi.get_all_tasks();
             set(state => ({
-              tasks: tasks || [],
+              tasks: state.tasks.filter(t => t.id !== id),
               currentTask: state.currentTask?.id === id ? null : state.currentTask,
               loading: false
             }), false);
+            await get().fetchTasks();
+
           } catch (error) {
             set({
               loading: false,
@@ -337,7 +338,7 @@ export const useTaskStore = create<TaskStore>()(
           try {
             const res = await taskApi.get_today_tasks();
             let tasks: Task[] = [];
-            
+
             console.log('获取今日任务:', res);
             return tasks || [];
           } catch (error) {
