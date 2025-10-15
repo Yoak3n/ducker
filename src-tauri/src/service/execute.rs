@@ -1,9 +1,9 @@
 use anyhow::Result;
 use std::time::Duration;
-use tauri::{async_runtime, Manager};
+use tauri::{async_runtime, Emitter, Manager};
 
 use crate::{
-    core::handle::Handle, feat::action::execute_action, 
+    feat::action::execute_action, 
     get_app_handle, logging,
     schema::{
         action::Action, AppState
@@ -130,6 +130,9 @@ pub async fn execute_single_action(action: &Action) -> Result<String, String> {
 }
 
 pub async fn execute_plural_actions(actions: Vec<Action>) -> Result<String, String> {
+    if actions.is_empty() {
+        return Ok("".to_string());
+    }
     let mut out = "".to_string();
     for action in actions {
         let out_action: String = execute_single_action(&action).await?;
@@ -139,6 +142,7 @@ pub async fn execute_plural_actions(actions: Vec<Action>) -> Result<String, Stri
 }
 
 pub async fn marked_tasks_completed(tasks_ids: Vec<String>) -> Result<()> {
+    logging!(info, Type::Database, "开始更新任务 {} 的状态为已完成", tasks_ids.join(","));
     let app_handle = get_app_handle!();
     let state = app_handle.state::<AppState>();
     
@@ -148,6 +152,7 @@ pub async fn marked_tasks_completed(tasks_ids: Vec<String>) -> Result<()> {
         for task_id in tasks_ids {
             db.update_task_status(&task_id, true)?;
         }
+        logging!(info, Type::Database,true, "更新任务的状态为已完成");
     } // 数据库锁在这里自动释放
     
     Ok(())
@@ -168,7 +173,8 @@ pub async fn execute_tasks(id: &str, ts: i64) -> Result<String, String> {
         out_tasks += &out_task;
         tasks_ids.push(task.id);
     }
-    let _ = marked_tasks_completed(tasks_ids);
-    Handle::notice_message("Task", format!("任务{}执行完成", tasks_name.join(",")));
+    if let Err(e) = marked_tasks_completed(tasks_ids).await {
+        logging!(error, Type::Database, true, "更新任务状态失败: {}", e);
+    }
     Ok(out_tasks)
 }

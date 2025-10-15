@@ -14,9 +14,11 @@ interface Props {
 
 export default function TodayTaskItem({root,task,changeTask,today,todayDate,variant}:Props) {
     return <TaskItem 
-    variant={variant}
-    root={root} 
-    task={task} 
-    changeTask={changeTask} 
-    addedClassName={`${today ? "today" : ""} ${extractTimeStampSecond(task.due_to!) <= todayDate.getTime()/1000 ? "dued" : ""} ${task.completed ? "completed" : ""}`} />
+        variant={variant}
+        root={root} 
+        task={task} 
+        changeTask={changeTask} 
+        addedClassName={`${today ? "today" : ""} 
+            ${extractTimeStampSecond(task.due_to!) <= todayDate.getTime()/1000 ? "dued" : ""} 
+            ${task.completed ? "completed" : ""}`} /> 
 }

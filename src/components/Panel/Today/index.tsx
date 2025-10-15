@@ -4,7 +4,7 @@ import type { Task } from "@/types";
 import { extractTimeStampSecond } from "@/utils";
 import { showWindow } from "@/api";
 import { useI18n } from "@/hooks/use-i18n";
-import TaskList from "./TaskList";
+import TodayTaskList from "./TaskList";
 import StartupTasksSheet from "./StartupTasksSheet";
 import "./index.css"
 
@@ -81,7 +81,7 @@ const TodayView = ({ tasks, todayDate, todayRange, onToggleTask }: TodayViewProp
                     </span>
                 </div>
             }
-            <TaskList tasks={tasksList} todayDate={todayDate} todayRange={todayRange} changeTask={handleTaskStatueChange} variant="today" />
+            <TodayTaskList  tasks={tasksList} todayDate={todayDate} todayRange={todayRange} changeTask={handleTaskStatueChange} variant="today" />
         </div>
     );
 };

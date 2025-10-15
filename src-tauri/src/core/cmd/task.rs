@@ -2,7 +2,7 @@ use crate::{
     logging, schema::{
         task::{TaskData, TaskRecord, TaskView},
         AppState, PeriodicTask, PeriodicTaskData,
-    }, service::periodic, store::module::{
+    }, service::{execute::execute_plural_actions, periodic}, store::module::{
         PeriodicTaskManager, TaskManager
     }, utils::{
         help::random_string, 
@@ -77,13 +77,37 @@ pub async fn delete_task(state: State<'_, AppState>, id: &str) -> Result<(), Str
 
 #[tauri::command]
 pub async fn get_task(state: State<'_, AppState>, id: &str) -> Result<TaskView, String> {
-    let db = state.db.lock();
-
-    let res = db.get_task(id);
+    let res = {
+        let db = state.db.lock();
+        db.get_task(id)
+    };
     match res {
         Ok(data) => Ok(TaskView::try_from((&data, state.inner())).unwrap()),
         Err(e) => {
             logging!(error, Type::Database, true, "获取任务失败: {:?}", e);
+            Err(e.to_string())
+        }
+    }
+}
+
+#[tauri::command]
+pub async fn execute_task(state: State<'_, AppState>, id: &str) -> Result<(), String> {
+    // 快速获取数据并立即释放数据库锁
+    let res = {
+        let db = state.db.lock();
+        db.get_task(id)
+    };
+    match res {
+        Ok(data) => {
+            let task = TaskView::try_from((&data, state.inner())).unwrap();
+            if let Err(e) = execute_plural_actions(task.actions.unwrap_or_default()).await {
+                logging!(error, Type::Database, "执行任务失败: {:?}", e);
+                return Err(e.to_string());
+            }
+            Ok(())
+        },
+        Err(e) => {
+            logging!(error, Type::Database, "执行任务失败: {:?}", e);
             Err(e.to_string())
         }
     }

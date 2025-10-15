@@ -2,18 +2,21 @@ use anyhow::{Result,anyhow};
 use chrono::Local;
 use parking_lot::RwLock;
 use rusqlite::Connection;
+use tauri::Emitter;
 use std::path::PathBuf;
 
 use super::module::*;
 use crate::{
-    logging,
+    logging,get_app_handle,
     schema::{
         PeriodicTaskRecord, TaskData,
         TaskRecord,
     },
     utils::{
         date::{
-            calculate_next_period, calculate_next_period_from_now, next_month, to_datetime_str
+            calculate_next_period, 
+            calculate_next_period_from_now, 
+            next_month, to_datetime_str
         }, 
         help::random_string, 
         logging::Type
@@ -141,15 +144,23 @@ impl Database {
 
     pub fn on_task_completed(&self, task_id: &str) -> Result<()> {
         // 更新任务为已完成
+        logging!(info, Type::Database, true, "调用任务 {} 完成后回调", task_id);
         let task = self.get_task(task_id)?;
         // 如果是周期性任务，创建下一个周期
         if let Some(_) = &task.periodic {
             match self.create_next_periodic_task(&task) {
-                Ok(_) => {},
+                Ok(_) => {
+                    logging!(info, Type::Database, true, "创建下一个周期性任务成功");
+                    // 刷新任务列表，会不会有种不该在这里的感觉？
+                    let app_handle = get_app_handle!();
+                    app_handle.emit("task-changed", None::<()>)?;
+                },
                 Err(e) => {
                     logging!(error, Type::Database, true, "创建下一个周期性任务失败: {:?}", e);
                 }
             }
+        }else {
+            logging!(info, Type::Database, true, "任务 {} 不是周期性任务，无需创建下一个周期", task_id);
         }
         Ok(())
     }
@@ -157,7 +168,7 @@ impl Database {
     pub fn create_next_periodic_task(&self, current_periodic_task: &TaskRecord) -> Result<PeriodicTaskRecord> {
         let current_periodic_task_id = current_periodic_task.clone().periodic.unwrap();
         // 获取当前的 next_period 和 interval
-        let res = self.get_periodic_task(&current_periodic_task_id).expect("获取周期性任务失败");
+        let res = self.get_periodic_task(&current_periodic_task_id)?;
         let current_last_period = res.last_period;
         let current_next_period = res.next_period;
         let interval = res.interval;
@@ -213,7 +224,7 @@ impl Database {
             } else {
                 return Err(anyhow!("周期性任务已过期，无法创建下一个周期任务"));
             };
-        // 创建下一个周期任务
+        // 创建下一个周期任务实体
         self.create_task(&next_task)?;
         // 更新周期性任务记录
         self.update_periodic_task_last_period(&current_periodic_task_id, if special_flag {Some(calculated_next_period)}else{None})?;

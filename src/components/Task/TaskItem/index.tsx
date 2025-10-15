@@ -1,10 +1,4 @@
-import {
-    ContextMenu,
-    ContextMenuContent,
-    ContextMenuTrigger,
-} from "@/components/ui/context-menu"
-
-import ContextItem from "./ContextItem";
+import TaskContextMenu from "../TaskContextMenu";
 import ItemBody from "./ItemBody";
 import type { Task } from "@/types";
 
@@ -24,15 +18,9 @@ export default function TaskItem({ root = true, task, changeTask, addedClassName
     return (
         <li className={itemClassName + " " + addedClassName} key={task.id}>
             {variant == "today" ?
-                <ContextMenu >
-                    <ContextMenuTrigger>
-                        <ItemBody task={task} changeTask={changeTask} root/>
-                    </ContextMenuTrigger>
-                    <ContextMenuContent>
-                        <ContextItem task={task} />
-                    </ContextMenuContent>
-
-                </ContextMenu> :
+                <TaskContextMenu taskId={task.id}>
+                    <ItemBody task={task} changeTask={changeTask} root/>
+                </TaskContextMenu> :
                 <ItemBody task={task} changeTask={changeTask} root/>
             }
         </li>

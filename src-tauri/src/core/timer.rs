@@ -347,7 +347,6 @@ impl Timer {
     // Async task with better error handling and logging
     async fn async_task(id: String, timestamp: i64) {
         let task_start = std::time::Instant::now();
-        // let task_start = Local::now();
 
         logging!(
             info,

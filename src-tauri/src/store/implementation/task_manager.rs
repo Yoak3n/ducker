@@ -84,6 +84,7 @@ impl TaskManager for Database {
             )?;
         }
         if completed {
+            logging!(info, Type::Database, true, "任务 {} 已完成", id);
             self.on_task_completed(id)?;
         }
         Ok(true)

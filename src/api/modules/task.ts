@@ -16,6 +16,11 @@ async function update_task(id: string, task: TaskData): Promise<Task> {
     return result;
 }
 
+async function execute_task(id: string): Promise<void> {
+    const result = await invoke<void>("execute_task", { id });
+    return result;
+}
+
 async function update_task_status(id: string, completed: boolean): Promise<Task> {
     const result = await invoke<Task>("update_task_status", { id, completed });
     return result;
@@ -104,6 +109,7 @@ export {
     create_task, 
     get_all_tasks,
     get_task,
+    execute_task,
     get_tasks_by_date_range,
     get_tasks_by_status,
     get_tasks,

@@ -1,6 +1,6 @@
 import type { Task } from "@/types";
 
-import TaskItem from "../TaskItem";
+import TodayTaskItem from "../TaskItem";
 import { extractTimeStampSecond } from "@/utils";
 
 interface Props {
@@ -14,7 +14,7 @@ interface Props {
     variant?: "today" | "weekly";
 }
 
-export default function TaskList({ tasks,todayDate,todayRange,changeTask,variant }: Props) {
+export default function TodayTaskList({ tasks,todayDate,todayRange,changeTask,variant }: Props) {
     const handleTaskChange = (id: string) => {
         changeTask(id)
     }
@@ -28,7 +28,7 @@ export default function TaskList({ tasks,todayDate,todayRange,changeTask,variant
 
     return <ul className="task-list max-h-96 overflow-y-auto">
         {sortedTasks.map(task => (
-            <TaskItem
+            <TodayTaskItem
             variant={variant}
              key={task.id} 
              task={task} 
