@@ -1,6 +1,6 @@
 use anyhow::Result;
 use std::time::Duration;
-use tauri::{async_runtime, Emitter, Manager};
+use tauri::{async_runtime, Manager};
 
 use crate::{
     feat::action::execute_action, 

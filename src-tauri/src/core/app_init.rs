@@ -95,7 +95,9 @@ pub fn generate_handlers() -> impl Fn(tauri::ipc::Invoke<tauri::Wry>) -> bool + 
         // Config
         cmd::config::save_config,
         cmd::config::get_config,
-        cmd::config::update_config
+        cmd::config::update_config,
+        // Sound
+        cmd::sound::play_sound,
     ]
 }
 

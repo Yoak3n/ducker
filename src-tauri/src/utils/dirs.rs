@@ -1,5 +1,4 @@
 use anyhow::Result;
-use once_cell::sync::OnceCell;
 use std::path::PathBuf;
 use tauri::Manager;
 
