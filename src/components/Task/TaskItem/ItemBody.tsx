@@ -5,6 +5,7 @@ import { execute_actions } from "@/api";
 import type { Task } from "@/types";
 import { useState } from "react";
 import TaskItem from "./index";
+import { formatHourAndMinute } from "@/utils/date";
 
 interface ItemBodyProps {
     root?: boolean;
@@ -20,10 +21,12 @@ const ItemBody = ({ root, task, changeTask }: ItemBodyProps) => {
                 checked={task.completed}
                 onCheckedChange={() => root ? changeTask(task.id) : changeTask(task.id, true)}
             />
-            <div className="task-item-content" onClick={(e) => { e.preventDefault(); execute_actions(task.actions) }}>
+            <div className="task-item-content">
                 <Tooltip>
-                    <TooltipTrigger>
-                        <div className="task-item-title">{task.name}</div>
+                    <TooltipTrigger onClick={(e) => { e.preventDefault(); execute_actions(task.actions) }}>
+                        <div className="task-item-title">
+                            {task.name}
+                        </div>
                     </TooltipTrigger>
                     {
                         task.actions && task.actions.length > 0 &&
@@ -35,8 +38,13 @@ const ItemBody = ({ root, task, changeTask }: ItemBodyProps) => {
                             ))}
                         </TooltipContent>
                     }
-
                 </Tooltip>
+                {task.auto && <div className="task-item-tail">
+                    <span className="material-symbols-outlined">
+                        autoplay
+                    </span>
+                    {formatHourAndMinute(task.due_to || "")}
+                </div>}
             </div>
             {task.children && task.children.length > 0 &&
                 <button className="dropdown-button" onClick={() => { setIsExpanded(!isExpanded) }}>

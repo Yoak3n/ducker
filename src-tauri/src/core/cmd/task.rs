@@ -6,7 +6,7 @@ use crate::{
         PeriodicTaskManager, TaskManager
     }, utils::{
         help::random_string, 
-        logging::Type
+        logging::Type, sound
     }
 };
 use tauri::State;
@@ -31,12 +31,30 @@ pub async fn update_task(
     task: TaskData,
 ) -> Result<TaskRecord, String> {
     let db = state.db.lock();
-
-    let res = db.update_task(id, &task);
+    let res = {
+        let record = match db.get_task(id) {
+            Ok(record) => record,
+            Err(e) => {
+                logging!(error, Type::Database, true, "更新任务失败: {:?}", e);
+                return Err(e.to_string());
+            }
+        };
+        
+        if let Some(periodic_id) = &record.periodic {
+            // 如果从周期任务转换为非周期任务，需要删除周期规则
+            if task.periodic.is_none() {
+                if let Err(e) = db.delete_periodic_task(periodic_id) {
+                    logging!(error, Type::Database, true, "删除周期任务失败: {:?}", e);
+                    return Err(e.to_string());
+                }
+            }
+        }
+        db.update_task(id, &task)
+    };
     match res {
         Ok(data) => Ok(data),
         Err(e) => {
-            println!("更新任务失败: {:?}", e);
+            logging!(error, Type::Database, true, "更新任务失败: {:?}", e);
             Err(e.to_string())
         }
     }
@@ -49,7 +67,6 @@ pub async fn update_task_status(
     completed: bool,
 ) -> Result<bool, String> {
     let db = state.db.lock();
-
     let res = db.update_task_status(id, completed);
     match res {
         Ok(data) => Ok(data),
@@ -290,18 +307,30 @@ pub async fn create_periodic_task(state: State<'_, AppState>,task: PeriodicTaskD
 #[tauri::command]
 pub async fn update_periodic_task(
     state: State<'_, AppState>,
+    task_id: &str,
     task: PeriodicTaskData,
 ) -> Result<PeriodicTask, String> {
 
     let record = {
         let db = state.db.lock();
+        let record = match db.get_task(task_id) {
+            Ok(record) => record,
+            Err(e) => {
+                logging!(error, Type::Database, true, "获取周期性任务失败: {:?}", e);
+                return Err(e.to_string());
+            }
+        };
         if let Err(e) = db.update_task(task.task.id.clone().unwrap().as_str(), &task.task) {
             logging!(error, Type::Database, true, "更新基本任务失败: {:?}", e);
             return Err(e.to_string());
         }
-        db.update_periodic_task(task.task.id.clone().unwrap().as_str(), &task)
+        if let Some(periodic_id) = &record.periodic {
+            db.update_periodic_task(periodic_id, &task)
+        }else{
+            // 如果从非周期任务转换为周期任务，需要创建周期规则
+            db.create_periodic_task(&task)
+        }
     };
-
     match record {
         Ok(data) => {
             logging!(info, Type::Database, "更新周期性任务成功: {}", data.id);

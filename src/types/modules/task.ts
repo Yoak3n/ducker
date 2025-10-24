@@ -43,6 +43,18 @@ export const Period = {
   OnceStarted: 100,
 } as const;
 
+export function PeriodicFromNumber(interval: number): Period {
+  switch (interval) {
+    case 0: return Period.OnStart;
+    case 1: return Period.Daily;
+    case 7: return Period.Weekly;
+    case 30: return Period.Monthly;
+    case 100: return Period.OnceStarted;
+    default: return Period.OnStart;
+  }
+}
+
+
 export type Period = typeof Period[keyof typeof Period];
 
 // 周期任务基础接口

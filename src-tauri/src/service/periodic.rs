@@ -153,13 +153,6 @@ fn get_periodic_tasks_with_occurrences(
     result
 }
 
-/// 通用的时间范围任务获取函数
-/// 
-/// # 参数
-/// - `start_timestamp`: 开始时间戳（秒）
-/// - `end_timestamp`: 结束时间戳（秒）
-/// 
-/// # 返回
 /// 返回按时间戳分组的任务视图映射
 fn get_tasks_by_time_range(start_timestamp: i64, end_timestamp: i64) -> HashMap<i64, Vec<TaskView>> {
     let app_handle = Handle::global().app_handle().unwrap();
@@ -211,20 +204,6 @@ fn get_tasks_by_time_range(start_timestamp: i64, end_timestamp: i64) -> HashMap<
     result
 }
 
-/// 获取今天的所有任务（包括重复任务的准确执行时间）
-// pub fn get_today_tasks() -> HashMap<i64, Vec<TaskView>> {
-//     let now = Local::now();
-//     let start_of_day = Local
-//         .with_ymd_and_hms(now.year(), now.month(), now.day(), 0, 0, 0)
-//         .unwrap()
-//         .timestamp();
-//     let end_of_day = Local
-//         .with_ymd_and_hms(now.year(), now.month(), now.day(), 23, 59, 59)
-//         .unwrap()
-//         .timestamp();
-    
-//     get_tasks_by_time_range(start_of_day, end_of_day)
-// }
 
 /// 获取本周的所有任务（包括重复任务的准确执行时间）
 pub fn get_weekly_tasks() -> HashMap<i64, Vec<TaskView>> {

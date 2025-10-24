@@ -54,8 +54,32 @@ function formatDateOnly(dateString: string): string {
 }
 
 
+function formatTimeOnly(dateString: string): string {
+  try {
+    const date = new Date(dateString);
+    const hour = String(date.getHours()).padStart(2, '0');
+    const minute = String(date.getMinutes()).padStart(2, '0');
+    const second = String(date.getSeconds()).padStart(2, '0');
+    return `${hour}:${minute}:${second}`;
+  } catch (error) {
+    return dateString; // 如果解析失败，返回原字符串
+  }
+}
 
-export {extractDateViaDateObject,extractTimeStampSecond,getTodayRange,formatDatetime,formatDateOnly}
+function formatHourAndMinute(dateString: string): string {
+  try {
+    const date = new Date(dateString);
+    const hour = String(date.getHours()).padStart(2, '0');
+    const minute = String(date.getMinutes()).padStart(2, '0');
+    return `${hour}:${minute}`;
+  } catch (error) {
+    return dateString; // 如果解析失败，返回原字符串
+  }
+}
+
+
+
+export {extractDateViaDateObject,extractTimeStampSecond,getTodayRange,formatDatetime,formatDateOnly,formatTimeOnly,formatHourAndMinute}
 
 
 

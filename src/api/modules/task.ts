@@ -63,7 +63,6 @@ async function create_periodic_task(task: PeriodicTaskData): Promise<string> {
 }
 
 async function update_periodic_task(id: string, task: PeriodicTaskData): Promise<PeriodicTask> {
-    console.log('更新周期任务:', id, task);
     const result = await invoke<PeriodicTask>("update_periodic_task", { id, task });
     return result;
 }

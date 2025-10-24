@@ -3,17 +3,20 @@ import { useParams } from "react-router-dom";
 import { emit } from "@tauri-apps/api/event";
 
 import { TaskForm } from "@/components/Task";
-import type { Task, TaskData } from '@/types';
+import type { Task, TaskData, PeriodicTaskData } from '@/types';
+import { PeriodicFromNumber } from '@/types/modules/task';
+
 import { useTaskStore } from "@/store";
+import { update_periodic_task } from "@/api";
 
 const TaskModify: FC = () => {
     const { id } = useParams<{ id?: string }>();
     const { fetchTasks, tasks, updateTask, createTask } = useTaskStore(state => state)
     const [editingTask, setEditingTask] = useState<Task | undefined>(undefined)
-    
+
     // 如果有id参数，说明是编辑模式；否则是新建模式
     const isEditMode = !!id;
-    
+
     useEffect(() => {
         fetchTasks()
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -28,22 +31,37 @@ const TaskModify: FC = () => {
         }
     }, [isEditMode, id, tasks])
 
-    const modifyTask = async (taskData: TaskData) => {
+    const modifyTask = async (taskData: TaskData, periodic?: number) => {
         try {
-            if (isEditMode) {
-                // 编辑模式下，调用更新任务接口
-                await updateTask(id, taskData);
-                console.log('任务更新成功:', taskData);
+            if (periodic) {
+                const periodicTask: PeriodicTaskData = {
+                    name: taskData.name,
+                    interval: PeriodicFromNumber(periodic),
+                    task: taskData,
+                };
+                if (isEditMode) {
+                    // 编辑模式下，调用更新任务接口
+                    await update_periodic_task(id, periodicTask);
+                } else {
+                    // 新建模式下，调用创建任务接口
+                    await createTask(taskData);
+                    console.log('任务创建成功:', taskData);
+                }
             } else {
-                // 新建模式下，调用创建任务接口
-                await createTask(taskData);
-                console.log('任务创建成功:', taskData);
+                if (isEditMode) {
+                    // 编辑模式下，调用更新任务接口
+                    await updateTask(id, taskData);
+                } else {
+                    // 新建模式下，调用创建任务接口
+                    await createTask(taskData);
+                    console.log('任务创建成功:', taskData);
+                }
             }
             // 发送统一的任务变更事件
-            await emit('task-changed', { 
+            await emit('task-changed', {
                 action: isEditMode ? 'update' : 'create',
                 taskId: isEditMode ? id : undefined,
-                timestamp: Date.now() 
+                timestamp: Date.now()
             });
         } catch (error) {
             console.error('任务操作失败:', error);

@@ -50,9 +50,7 @@ const TodayView = ({ tasks, todayDate, todayRange, onToggleTask }: TodayViewProp
     });
     const progressPercent = totalCount > 0 ? (completedValueCount / totalCount) * 100 : 0;
 
-    const handleCreateTask = () => {
-        showWindow("task")
-    };
+    const handleCreateTask = () => showWindow("task")
 
     const handleTaskStatueChange = (id: string) => onToggleTask(id)
 

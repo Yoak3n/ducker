@@ -17,7 +17,7 @@ import Time from './Time';
 import Information from './Information';
 
 interface TaskModalProps {
-  onSave: (taskData: TaskData) => void;
+  onSave: (taskData: TaskData, periodic?: number) => void;
   task?: Task; // 编辑模式时传入任务数据
   parentTask?: Task; // 创建子任务时传入父任务
 }
@@ -166,24 +166,7 @@ export default function TaskModal({ onSave, task, parentTask }: TaskModalProps) 
     }
 
     // 如果是周期任务，创建周期任务记录
-    if (isPeriodic) {
-      try {
-        // 创建周期任务需要先有任务ID，这里假设onSave会返回创建的任务
-        // 实际使用中可能需要调整这个逻辑
-        const periodicTaskData: PeriodicTaskData = {
-          name: formData.name,
-          interval: formData.periodicInterval,
-          task: taskData,
-        };
-        task ? await update_periodic_task(task.id!, periodicTaskData) : await create_periodic_task(periodicTaskData);
-        emit('task-changed', { timestamp: Date.now() })
-      } catch (error) {
-        console.error('创建周期任务失败:', error);
-      }
-    } else {
-      onSave(taskData);
-    }
-
+    onSave(taskData,isPeriodic?formData.periodicInterval:undefined);
     destroyWindow('task');
   };
 

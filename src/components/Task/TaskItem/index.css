@@ -54,13 +54,25 @@
     align-items: center;
 }
 
+.task-item-content {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+}
+
 .task-item-title {
     cursor: pointer;
-    width: 100%;
     padding: 10px;
     font-size: 16px;
-
 }
+
+.task-item-tail {
+    display: flex;
+    align-items: center;
+    color: #3498db;
+    gap: 5px;
+}
+
 
 .root-task.completed,
 .sub-task.completed {

@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { devtools, subscribeWithSelector } from 'zustand/middleware';
 import type { TaskState, Task, TaskData, TaskFilters, TaskStats } from './types';
 import * as taskApi from '@/api/modules/task';
+import { invoke } from '@tauri-apps/api/core';
 
 // 任务状态管理接口
 interface TaskStore extends TaskState {
@@ -230,10 +231,14 @@ export const useTaskStore = create<TaskStore>()(
         toggleTaskCompletion: async (id) => {
           const task = get().getTaskById(id);
           if (!task) throw new Error('任务不存在');
+          const status = !task.completed;
+          if (status){
+            invoke('play_sound', { name: 'completion' });
+          }
+          await taskApi.update_task_status(id, status);
           
-          await taskApi.update_task_status(id, !task.completed);
           set(state => ({
-            tasks: state.tasks.map(t => t.id === id ? { ...t, completed: !t.completed } : t)
+            tasks: state.tasks.map(t => t.id === id ? { ...t, completed: status } : t)
           }), false);
         },
 

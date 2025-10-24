@@ -674,7 +674,7 @@ impl WindowManager {
 
         // 更新托盘菜单状态
         let update_tray = |visible: bool| {
-            if matches!(window_type, WindowType::Main | WindowType::Dashboard) {
+            if matches!(window_type, WindowType::Main ) {
                 tray::Tray::global().update_menu_visible(visible);
             }
         };

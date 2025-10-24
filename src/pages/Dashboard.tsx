@@ -97,28 +97,21 @@ const TaskDashboard: React.FC = () => {
 
   const startOfMonth = (d: Date) => new Date(d.getFullYear(), d.getMonth(), 1, 0, 0, 0, 0);
   const endOfMonth = (d: Date) => new Date(d.getFullYear(), d.getMonth() + 1, 0, 23, 59, 59, 999);
-  const monthRange = useMemo(() => ({ start: toSecond(startOfMonth(currentMonthDate)), end: toSecond(endOfMonth(currentMonthDate)) }), [currentMonthDate]);
+
+  const monthRange = useMemo(() => ({ 
+      start: toSecond(startOfMonth(currentMonthDate)), 
+      end: toSecond(endOfMonth(currentMonthDate)) 
+    })
+  , [currentMonthDate]);
+
   const monthlyTasks = useMemo(() => tasks.filter(t => t.due_to && (() => {
     const ts = extractTimeStampSecond(t.due_to!);
     return ts >= monthRange.start && ts <= monthRange.end;
   })()), [tasks, monthRange]);
+
   const monthlyCompleted = monthlyTasks.filter(t => t.completed).length;
   const monthlyTotal = monthlyTasks.length;
   const monthlyProgress = monthlyTotal > 0 ? (monthlyCompleted / monthlyTotal) * 100 : 0;
-
-  // 获取星期名称
-  // const getDayName = (day: DayOfWeek): string => {
-  //   const dayNames = {
-  //     monday: '周一',
-  //     tuesday: '周二',
-  //     wednesday: '周三',
-  //     thursday: '周四',
-  //     friday: '周五',
-  //     saturday: '周六',
-  //     sunday: '周日'
-  //   };
-  //   return dayNames[day];
-  // };
 
   const { t } = useI18n();
 
