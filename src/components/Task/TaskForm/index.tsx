@@ -1,9 +1,7 @@
 import { type FormEvent, useState, useEffect, useCallback } from 'react';
-import { emit } from '@tauri-apps/api/event';
 
 import { formatDatetime } from '@/utils';
-import type { Task, TaskData, Action, Period, PeriodicTaskData } from '@/types';
-import { create_periodic_task, update_periodic_task } from '@/api/modules/task';
+import type { Task, TaskData, Action, Period } from '@/types';
 import { destroyWindow } from '@/api/modules/window';
 import { useI18n } from '@/hooks/use-i18n';
 
