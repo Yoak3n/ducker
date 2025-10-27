@@ -68,6 +68,9 @@
   "Run on System Start": "Sistem Başlangıcında Çalıştır",
   "Slient Launch": "Sessiz Başlatma",
   "General": "Genel",
-  "Appearance": "Görünüm"
+  "Appearance": "Görünüm",
+
+  "Auto": "Otomatik",
+  "Auto Description": "Görevi belirtilen zaman aralığında otomatik olarak yürüt"
 
 }

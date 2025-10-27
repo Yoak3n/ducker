@@ -68,6 +68,9 @@
   "Run on System Start": "Beim Systemstart ausführen",
   "Slient Launch": "Stiller Start",
   "General": "Allgemein",
-  "Appearance": "Erscheinungsbild"
+  "Appearance": "Erscheinungsbild",
+  
+  "Auto": "Automatisch",
+  "Auto Description": "Führe die Aufgabe automatisch im angegebenen Zeitraum aus"
 
 }

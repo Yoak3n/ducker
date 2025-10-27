@@ -68,6 +68,9 @@
   "Run on System Start": "التشغيل عند بدء النظام",
   "Slient Launch": "البدء الصامت",
   "General": "عام",
-  "Appearance": "المظهر"
+  "Appearance": "المظهر",
+  
+  "Auto": "تلقائي",
+  "Auto Description": "تنفيذ المهمة تلقائيًا في الفترة المحددة"
 
 }

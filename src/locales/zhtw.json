@@ -68,6 +68,8 @@
   "Run on System Start": "系統啟動時執行",
   "Slient Launch": "靜默啟動",
   "General": "一般",
-  "Appearance": "外觀"
+  "Appearance": "外觀",
 
+  "Auto": "自動執行",
+  "Auto Description": "任務將按設定的時間自動重複執行"
 }

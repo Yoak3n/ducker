@@ -68,6 +68,9 @@
   "Run on System Start": "システム起動時に実行",
   "Slient Launch": "サイレント起動",
   "General": "一般",
-  "Appearance": "外観"
+  "Appearance": "外観",
+  
+  "Auto": "自動",
+  "Auto Description": "タスクは設定された時間に従って自動的に繰り返し実行されます。"
 
 }

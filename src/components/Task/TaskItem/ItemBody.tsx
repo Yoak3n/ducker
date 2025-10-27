@@ -6,6 +6,7 @@ import type { Task } from "@/types";
 import { useState } from "react";
 import TaskItem from "./index";
 import { formatHourAndMinute } from "@/utils/date";
+import { t } from "i18next";
 
 interface ItemBodyProps {
     root?: boolean;
@@ -16,15 +17,15 @@ interface ItemBodyProps {
 const ItemBody = ({ root, task, changeTask }: ItemBodyProps) => {
     const [isExpanded, setIsExpanded] = useState(false);
     return (
-        <div className="task-item">
+        <div className="flex items-center w-full ">
             <Checkbox
                 checked={task.completed}
                 onCheckedChange={() => root ? changeTask(task.id) : changeTask(task.id, true)}
             />
-            <div className="task-item-content">
+            <div className="flex justify-between w-full">
                 <Tooltip>
                     <TooltipTrigger onClick={(e) => { e.preventDefault(); execute_actions(task.actions) }}>
-                        <div className="task-item-title">
+                        <div className="cursor-pointer p-2.5 text-base ">
                             {task.name}
                         </div>
                     </TooltipTrigger>
@@ -39,12 +40,21 @@ const ItemBody = ({ root, task, changeTask }: ItemBodyProps) => {
                         </TooltipContent>
                     }
                 </Tooltip>
-                {task.auto && <div className="task-item-tail">
-                    <span className="material-symbols-outlined">
-                        autoplay
-                    </span>
-                    {formatHourAndMinute(task.due_to || "")}
-                </div>}
+                {task.auto && <Tooltip>
+                    <TooltipTrigger>
+                        <div className="flex items-center gap-2 text-sm text-[#3498db] cursor-default">
+                            <span className="material-symbols-outlined">
+                                autoplay
+                            </span>
+                            {formatHourAndMinute(task.due_to || "")}
+                        </div>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                        <div>
+                            {t("Auto Description")}
+                        </div>
+                    </TooltipContent>
+                </Tooltip>}
             </div>
             {task.children && task.children.length > 0 &&
                 <button className="dropdown-button" onClick={() => { setIsExpanded(!isExpanded) }}>

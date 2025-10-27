@@ -7,7 +7,7 @@ import type { Task, TaskData, PeriodicTaskData } from '@/types';
 import { PeriodicFromNumber } from '@/types/modules/task';
 
 import { useTaskStore } from "@/store";
-import { update_periodic_task } from "@/api";
+import { create_periodic_task, update_periodic_task } from "@/api";
 
 const TaskModify: FC = () => {
     const { id } = useParams<{ id?: string }>();
@@ -44,7 +44,7 @@ const TaskModify: FC = () => {
                     await update_periodic_task(id, periodicTask);
                 } else {
                     // 新建模式下，调用创建任务接口
-                    await createTask(taskData);
+                    await create_periodic_task(periodicTask);
                     console.log('任务创建成功:', taskData);
                 }
             } else {

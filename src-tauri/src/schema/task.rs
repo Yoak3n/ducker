@@ -1,7 +1,7 @@
 use crate::{
     schema::AppState, store::module::{ActionManager, TaskManager}, utils::{
         date::{str_to_datetime, to_datetime_str},
-        help::random_string
+        help::{get_uid, random_string}
     }
 };
 use super::Action;
@@ -70,7 +70,7 @@ impl From<TaskData> for TaskRecord {
         // 随机生成id
         let id = match &data.id {
             Some(id) => id.clone(),
-            None => format!("task{}", random_string(6)),
+            None => get_uid("task"),
         };
         let now = Local::now();
         let created_at = if let Some(s) = data.created_at {

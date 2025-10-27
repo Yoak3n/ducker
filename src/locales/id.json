@@ -68,6 +68,9 @@
   "Run on System Start": "Jalankan saat Sistem Dimulai",
   "Slient Launch": "Peluncuran Senyap",
   "General": "Umum",
-  "Appearance": "Tampilan"
+  "Appearance": "Tampilan",
+  
+  "Auto": "Otomatis",
+  "Auto Description": "Jalankan tugas secara otomatis pada waktu yang ditetapkan"
 
 }

@@ -81,5 +81,8 @@
   "Created": "Created",
   "Actions": "Actions",
   "actions": "actions",
-  "Never": "Never"
+  "Never": "Never",
+  
+  "Auto": "Auto",
+  "Auto Description": "Execute the task automatically at the set time"
 }

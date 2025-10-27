@@ -6,7 +6,7 @@ use crate::{
         PeriodicTaskManager, TaskManager
     }, utils::{
         help::random_string, 
-        logging::Type, sound
+        logging::Type
     }
 };
 use tauri::State;

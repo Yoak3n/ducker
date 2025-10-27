@@ -32,7 +32,7 @@ impl TaskManager for Database {
             &record.reminder
         ]) {
             Ok(id) => {
-                logging!(info, Type::Database, "创建任务成功: {id}");
+                logging!(info, Type::Database,true, "创建任务成功: {id}");
             }
             Err(e) => {
                 logging!(

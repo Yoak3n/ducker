@@ -68,6 +68,10 @@
   "Run on System Start": "시스템 시작 시 실행",
   "Slient Launch": "무음 시작",
   "General": "일반",
-  "Appearance": "외관"
+  "Appearance": "외관",
+
+
+  "Auto": "자동",
+  "Auto Description": "설정된 시간에 따라 작업을 반복 실행합니다."
 
 }

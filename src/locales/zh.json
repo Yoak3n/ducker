@@ -80,6 +80,8 @@
   "Created": "创建时间",
   "Actions": "操作",
   "actions": "个操作",
-  "Never": "从未"
+  "Never": "从未",
 
+  "Auto": "自动执行",
+  "Auto Description": "任务将按设定的时间自动重复执行"
 }

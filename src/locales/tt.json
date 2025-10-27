@@ -68,6 +68,9 @@
   "Run on System Start": "Система башлангычта эшләү",
   "Slient Launch": "Тын башлау",
   "General": "Гомуми",
-  "Appearance": "Күренеш"
+  "Appearance": "Күренеш",
 
+  
+  "Auto": "Автоматик",
+  "Auto Description": "Биремне бишәлге аракеттә, аракеттә аракеттә"
 }

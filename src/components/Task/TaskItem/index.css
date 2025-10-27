@@ -53,27 +53,6 @@
     border-radius: 4px;
     align-items: center;
 }
-
-.task-item-content {
-    display: flex;
-    justify-content: space-between;
-    width: 100%;
-}
-
-.task-item-title {
-    cursor: pointer;
-    padding: 10px;
-    font-size: 16px;
-}
-
-.task-item-tail {
-    display: flex;
-    align-items: center;
-    color: #3498db;
-    gap: 5px;
-}
-
-
 .root-task.completed,
 .sub-task.completed {
     background: #e8f8f5;

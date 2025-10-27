@@ -68,6 +68,9 @@
   "Run on System Start": "اجرا در هنگام راه‌اندازی سیستم",
   "Slient Launch": "راه‌اندازی بی‌صدا",
   "General": "عمومی",
-  "Appearance": "ظاهر"
+  "Appearance": "ظاهر",
+  
+  "Auto": " خودکار",
+  "Auto Description": "اجرا خودکار با فاصله زمانی مشخص"
 
 }

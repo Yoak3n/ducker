@@ -68,6 +68,9 @@
   "Run on System Start": "Ejecutar al inicio del sistema",
   "Slient Launch": "Inicio silencioso",
   "General": "General",
-  "Appearance": "Apariencia"
+  "Appearance": "Apariencia",
+  
+  "Auto": "Automático",
+  "Auto Description": "Ejecutar la tarea automáticamente en el intervalo predefinido"
 
 }
