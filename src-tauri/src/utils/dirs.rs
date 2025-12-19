@@ -96,13 +96,13 @@ pub fn config_path() -> Result<PathBuf> {
     Ok(app_home_dir()?.join(SETUP_CONFIG))
 }
 
-pub fn path_to_str(path: &PathBuf) -> Result<&str> {
-    let path_str = path
-        .as_os_str()
-        .to_str()
-        .ok_or(anyhow::anyhow!("failed to get path from {:?}", path))?;
-    Ok(path_str)
-}
+// pub fn path_to_str(path: &PathBuf) -> Result<&str> {
+//     let path_str = path
+//         .as_os_str()
+//         .to_str()
+//         .ok_or(anyhow::anyhow!("failed to get path from {:?}", path))?;
+//     Ok(path_str)
+// }
 
 /// get the resources dir
 pub fn app_resources_dir() -> Result<PathBuf> {

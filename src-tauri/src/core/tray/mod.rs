@@ -8,7 +8,7 @@ use parking_lot::Mutex;
 
 use tauri::{
     menu::{Menu, MenuEvent, MenuItem, PredefinedMenuItem,CheckMenuItem},
-    tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
+    tray::{MouseButton, TrayIconBuilder, TrayIconEvent},
     AppHandle,Wry
 };
 // use super::handle;
@@ -153,19 +153,18 @@ impl Tray {
         let tray = builder.build(app_handle)?;
         tray.on_tray_icon_event(|_, event| {
             match event {
-                TrayIconEvent::Click {
-                    button: MouseButton::Left,
-                    button_state: MouseButtonState::Down,
-                    ..
-                } => {
-                    logging!(info,Type::Tray,true,"Tray点击事件: 显示主窗口");
-                    let _ = window_manager::toggle_main_window();
-                },
+                // TrayIconEvent::Click {
+                //     button: MouseButton::Left,
+                //     button_state: MouseButtonState::Down,
+                //     ..
+                // } => {
+                    
+                // },
                 TrayIconEvent::DoubleClick {
                     button: MouseButton::Left,
                     ..
                 } => {
-                    let _ = window_manager::toggle_main_window();
+                    let _ = window_manager::toggle_window_by_label("dashboard");
                 }
                 _ => {}
             }

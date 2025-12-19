@@ -783,9 +783,9 @@ impl WindowManager {
 }
 
 // 保持向后兼容的公共API
-pub fn toggle_main_window() -> WindowOperationResult {
-    WindowManager::global().toggle_window(WindowType::Main)
-}
+// pub fn toggle_main_window() -> WindowOperationResult {
+//     WindowManager::global().toggle_window(WindowType::Main)
+// }
 
 pub fn hide_main_window() -> WindowOperationResult {
     WindowManager::global().close_window(WindowType::Main)

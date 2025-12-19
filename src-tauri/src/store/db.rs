@@ -171,16 +171,16 @@ impl Database {
         let res = self.get_periodic_task(&current_periodic_task_id)?;
         let current_last_period = res.last_period;
         let current_next_period = res.next_period;
-        let interval = res.interval;
+        let period = res.interval;
 
         // 计算新的 next_period
-        let mut calculated_next_period = calculate_next_period(current_periodic_task.due_to, interval);
+        let mut calculated_next_period = calculate_next_period(current_periodic_task.due_to, period);
         // 用来标记是否需要特殊处理，如日期天数不一致
         let mut special_flag = false;
         // 如果计算出的时间与当前 next_period 相同，意味着需要创建下一个周期任务，否则意味着是已过期的周期任务,阻止创建下一个任务
         let next_task = if Some(calculated_next_period as u64) == current_next_period {
                 // 只对月度任务进行日期天数一致性检查
-                if interval == 30 {
+                if period == 30 {
                     // 检查current_last_period, current_next_period的日期的天数是否一致 
                     if let (Some(last_period), Some(next_period)) = (current_last_period, current_next_period) {
                         use chrono::{Datelike, TimeZone};
@@ -206,8 +206,12 @@ impl Database {
                     }
                 }
                 // 再检查是否早于当前时间，重新计算
-                let next_period = calculate_next_period_from_now(calculated_next_period, interval);
-                calculated_next_period = next_period;
+                let next_period = calculate_next_period_from_now(calculated_next_period, period);
+                // 如果重新计算的时间晚于当前计算的时间，采用重新计算的时间
+                if calculated_next_period > next_period{
+                    special_flag = true;
+                    calculated_next_period = next_period;
+                }
                 TaskData{
                     id: format!("task{}", random_string(6)).into(),
                     completed: false,
@@ -222,6 +226,7 @@ impl Database {
                     periodic: current_periodic_task_id.clone().into(),
                 }
             } else {
+                // 说明是过期的周期任务，阻止创建下一个任务
                 return Err(anyhow!("周期性任务已过期，无法创建下一个周期任务"));
             };
         // 创建下一个周期任务实体
@@ -231,7 +236,7 @@ impl Database {
         Ok(PeriodicTaskRecord {
             id: current_periodic_task_id,
             name: next_task.name.clone(),   
-            interval,
+            interval: period,
             last_period: Some(calculated_next_period as u64),
             next_period: Some(calculated_next_period as u64),
         })
