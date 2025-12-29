@@ -14,7 +14,7 @@ import Periodic from './Periodic';
 import Time from './Time';
 import Information from './Information';
 
-interface TaskModalProps {
+interface TaskFormProps {
   onSave: (taskData: TaskData, periodic?: number) => void;
   task?: Task; // 编辑模式时传入任务数据
   parentTask?: Task; // 创建子任务时传入父任务
@@ -34,7 +34,7 @@ const initialFormData: TaskFormData = {
   periodicInterval: 1 as Period, // Period.Daily
 };
 
-export default function TaskModal({ onSave, task, parentTask }: TaskModalProps) {
+export default function TaskForm({ onSave, task, parentTask }: TaskFormProps) {
   const [formData, setFormData] = useState<TaskFormData>(initialFormData);
   const [isPeriodic, setIsPeriodic] = useState(false);
   const [isEditMode, setIsEditMode] = useState(Boolean(task));
