@@ -50,13 +50,13 @@ jobs:
       - name: install frontend dependencies
         run: npm i -g pnpm && pnpm install 
 
-      - uses: tauri-apps/tauri-action@v0
+      - uses: tauri-apps/tauri-action@v1
         env:
           GITHUB_TOKEN: ${{ secrets._GITHUB_TOKEN }}
         with:
           tagName: __VERSION__ # the action automatically replaces \_\_VERSION\_\_ with the app version.
           releaseName: 'v__VERSION__'
-          releaseBody: 'a `beta version` for light weight mode     when close all windows after 5min of inactivity, the app will keep only the tray icon.'
+          releaseBody: 'add action count to tray menu when click the tray icon. it is a breaking change, should update the sqlite database schema.'
           releaseDraft: false
           prerelease: false
           updaterJsonPreferNsis: true
