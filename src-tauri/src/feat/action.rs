@@ -10,7 +10,30 @@ use tauri::Manager;
 use tokio::time::timeout;
 
 pub async fn execute_action(action: Action) -> Result<String, String> {
-    execute_action_internal(action).await
+    let action_id = action.id.clone();
+    let res = execute_action_internal(action).await;
+    if res.is_ok() {
+        if let Some(id) = action_id {
+            {
+                let app_handle = get_app_handle!();
+                let state = app_handle.state::<AppState>();
+                let db = state.db.lock();
+                let _ = db.update_action_count(&id);
+            } // 锁在这里被释放
+            // 执行成功后更新托盘菜单，确保频率列表实时更新
+            let _ = crate::core::tray::Tray::global().update_menu();
+        }
+    }
+    res
+}
+
+pub async fn execute_action_by_id(app_handle: &tauri::AppHandle, id: &str) -> Result<String, String> {
+    let state = app_handle.state::<AppState>();
+    let action = {
+        let db = state.db.lock();
+        db.get_action(id).map_err(|e| e.to_string())?
+    };
+    execute_action(Action::from(action)).await
 }
 use crate::core::handle::Handle;
 async fn open_path(path: String) -> Result<(), String> {

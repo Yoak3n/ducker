@@ -23,8 +23,8 @@ impl ActionManager for Database {
             data.wait
         };
         conn.execute(
-            "INSERT INTO actions (id, name, desc, command, args, type, wait, retry, timeout)
-            VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
+            "INSERT INTO actions (id, name, desc, command, args, type, wait, retry, timeout, count)
+            VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)",
             (
                 &action_id,
                 &action.name,
@@ -35,6 +35,7 @@ impl ActionManager for Database {
                 wait,
                 data.retry,
                 data.timeout,
+                0,
             ),
         )?;
         let record = ActionRecord {
@@ -47,6 +48,7 @@ impl ActionManager for Database {
             typ,
             retry: data.retry,
             timeout: data.timeout,
+            count: data.count,
         };
         Ok(record)
     }
@@ -57,9 +59,10 @@ impl ActionManager for Database {
         if let Some(args) = &action.args {
             args_text = args.join(",");
         }
+        let count = action.count.unwrap_or(0);
         conn.execute(
-            "UPDATE actions SET name = ?1, desc = ?2, command = ?3, args = ?4, type = ?5,wait = ?6, retry = ?7, timeout =?8
-            WHERE id = ?9",
+            "UPDATE actions SET name = ?1, desc = ?2, command = ?3, args = ?4, type = ?5,wait = ?6, retry = ?7, timeout =?8, count = ?9
+            WHERE id = ?10",
             (
                 &action.name,
                 &action.desc,
@@ -69,7 +72,8 @@ impl ActionManager for Database {
                 &action.wait,
                 &action.retry,
                 &action.timeout,
-                id
+                &count,
+                id,
             ))?;
         let record = ActionRecord {
             id: id.to_string(),
@@ -81,8 +85,18 @@ impl ActionManager for Database {
             typ: ActionType::try_from(action.typ.as_str())?,
             retry: action.retry,
             timeout: action.timeout,
+            count: action.count,
         };
         Ok(record)
+    }
+
+    fn update_action_count(&self, id: &str) -> Result<()> {
+        let conn = self.conn.write();
+        conn.execute(
+            "UPDATE actions SET count = IFNULL(count, 0) + 1 WHERE id = ?1",
+            [id],
+        )?;
+        Ok(())
     }
 
     fn delete_action(&self, id: &str) -> Result<()> {
@@ -95,7 +109,7 @@ impl ActionManager for Database {
         let conn = self.conn.read();
         let mut stmt = conn.prepare(
             "SELECT 
-            id, name, desc, command, args, type, wait, retry, timeout 
+            id, name, desc, command, args, type, wait, retry, timeout, count
             FROM actions WHERE id = ?1",
         )?;
         let action = stmt.query_row([id], |row| {
@@ -109,6 +123,7 @@ impl ActionManager for Database {
             let wait = row.get(6)?;
             let retry: Option<usize> = row.get(7)?;
             let timeout: Option<u64> = row.get(8)?;
+            let count: Option<usize> = row.get(9)?;
             Ok(ActionRecord {
                 id,
                 name,
@@ -119,6 +134,7 @@ impl ActionManager for Database {
                 typ,
                 retry,
                 timeout,
+                count,
             })
         })?;
         Ok(action)
@@ -132,7 +148,7 @@ impl ActionManager for Database {
         let placeholders = ids.iter().map(|_| "?").collect::<Vec<_>>().join(",");
         let query = format!(
             "SELECT 
-            id, name, desc, command, args, type, wait, retry, timeout
+            id, name, desc, command, args, type, wait, retry, timeout, count
             FROM actions WHERE id IN ({})",
             placeholders
         );
@@ -154,6 +170,7 @@ impl ActionManager for Database {
             let wait = row.get(6)?;
             let retry: Option<usize> = row.get(7)?;
             let timeout: Option<u64> = row.get(8)?;
+            let count: Option<usize> = row.get(9)?;
             Ok(ActionRecord {
                 id,
                 name,
@@ -164,6 +181,7 @@ impl ActionManager for Database {
                 wait,
                 retry,
                 timeout,
+                count,
             })
         })?;
 
@@ -189,7 +207,7 @@ impl ActionManager for Database {
         let conn = self.conn.read();
         let mut stmt = conn.prepare(
             "SELECT 
-            id, name, desc, command, args, type, wait, retry, timeout 
+            id, name, desc, command, args, type, wait, retry, timeout, count
             FROM actions",
         )?;
 
@@ -204,6 +222,7 @@ impl ActionManager for Database {
             let wait = row.get(6)?;
             let retry: Option<usize> = row.get(7)?;
             let timeout: Option<u64> = row.get(8)?;
+            let count: Option<usize> = row.get(9)?;
             Ok(ActionRecord {
                 id,
                 name,
@@ -214,6 +233,7 @@ impl ActionManager for Database {
                 wait,
                 retry,
                 timeout,
+                count,
             })
         })?;
 
@@ -223,4 +243,47 @@ impl ActionManager for Database {
         }
         Ok(actions)
     }
+
+    fn get_frequent_actions_with_limit(&self, limit: usize) -> Result<Vec<ActionRecord>> {
+        let conn = self.conn.read();
+        let mut stmt = conn.prepare(
+            "SELECT 
+            id, name, desc, command, args, type, wait, retry, timeout, count
+            FROM actions
+            ORDER BY count DESC
+            LIMIT ?1",
+        )?;
+        let action_iter = stmt.query_map([limit as i64], |row| {
+            let id = row.get(0)?;
+            let name = row.get(1)?;
+            let desc = row.get(2)?;
+            let command = row.get(3)?;
+            let args_text: String = row.get(4)?;
+            let typ_number: u8 = row.get(5)?;
+            let typ = ActionType::try_from(typ_number).unwrap_or(ActionType::Command);
+            let wait = row.get(6)?;
+            let retry: Option<usize> = row.get(7)?;
+            let timeout: Option<u64> = row.get(8)?;
+            let count: Option<usize> = row.get(9)?;
+            Ok(ActionRecord {
+                id,
+                name,
+                desc,
+                command,
+                args: args_text,
+                typ,
+                wait,
+                retry,
+                timeout,
+                count,
+            })
+        })?;
+
+        let mut actions = Vec::new();
+        for action in action_iter {
+            actions.push(action?);
+        }
+        Ok(actions)
+    }
+
 }

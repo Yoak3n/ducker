@@ -58,7 +58,8 @@ impl Database {
                 type INTEGER NOT NULL,
                 wait INTEGER NOT NULL DEFAULT 0,
                 retry INTEGER  DEFAULT 0,
-                timeout INTEGER
+                timeout INTEGER,
+                count INTEGER DEFAULT 0
             )",
             [],
         )?;

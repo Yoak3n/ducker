@@ -12,6 +12,7 @@ pub struct Action {
     pub timeout: Option<u64>,
     pub command: String,
     pub args: Option<Vec<String>>,
+    pub count: Option<usize>,
 }
 
 impl From<ActionRecord> for Action {
@@ -60,6 +61,7 @@ impl From<ActionRecord> for Action {
             id: Some(value.id),
             retry: value.retry,
             timeout: value.timeout,
+            count: value.count,
         };
         action.typ = value.typ.into();
 
@@ -79,6 +81,7 @@ pub struct ActionRecord {
     pub desc: String,
     pub command: String,
     pub args: String,
+    pub count: Option<usize>,
 }
 
 #[derive(Deserialize, Debug, Clone)]

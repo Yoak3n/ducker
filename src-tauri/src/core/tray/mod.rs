@@ -7,15 +7,15 @@ use once_cell::sync::OnceCell;
 use parking_lot::Mutex;
 
 use tauri::{
-    menu::{Menu, MenuEvent, MenuItem, PredefinedMenuItem,CheckMenuItem},
-    tray::{MouseButton, TrayIconBuilder, TrayIconEvent},
-    AppHandle,Wry
+    AppHandle, Manager, Wry, menu::{CheckMenuItem, Menu, MenuEvent, MenuItem, PredefinedMenuItem, Submenu}, tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent}
 };
 // use super::handle;
 use crate::{
     core::handle, // utils::logging::Type
     feat,
     logging,get_app_handle,
+    schema::state::AppState,
+    store::module::ActionManager,
     utils::{logging::Type, resolve, window_manager},
 };
 
@@ -104,7 +104,7 @@ impl Tray {
         let app_handle = get_app_handle!();
 
         let tray = app_handle.tray_by_id("main").unwrap();
-        tray.set_tooltip(Some("Dida"))?;
+        tray.set_tooltip(Some("ducker"))?;
         Ok(())
     }
 
@@ -153,13 +153,13 @@ impl Tray {
         let tray = builder.build(app_handle)?;
         tray.on_tray_icon_event(|_, event| {
             match event {
-                // TrayIconEvent::Click {
-                //     button: MouseButton::Left,
-                //     button_state: MouseButtonState::Down,
-                //     ..
-                // } => {
-                    
-                // },
+                TrayIconEvent::Click { 
+                    button: MouseButton::Left,
+                    button_state: MouseButtonState::Down,
+                    ..
+                 } => {
+                    let _ = Tray::global().update_menu();
+                }
                 TrayIconEvent::DoubleClick {
                     button: MouseButton::Left,
                     ..
@@ -189,8 +189,26 @@ fn create_tray_menu(app_handle: &AppHandle, visiable: bool) -> Result<Menu<Wry>>
     let dashboard_item =
         &MenuItem::with_id(app_handle, "dashboard", "Dashboard", true, None::<&str>).unwrap();
     let separator = &PredefinedMenuItem::separator(app_handle).unwrap();
-    let action_item =
-        &MenuItem::with_id(app_handle, "action", "Action", true, None::<&str>).unwrap();
+
+    // 动态加载最常用的 Action
+    let action_submenu = &Submenu::with_id(app_handle, "action_submenu", "Action", true).unwrap();
+    {
+        let state = app_handle.state::<AppState>();
+        let db = state.db.lock();
+        if let Ok(top_actions) = db.get_frequent_actions_with_limit(5) {
+            for action in top_actions {
+                let id = format!("action_run_{}", action.id);
+                let item = MenuItem::with_id(app_handle, id, action.name, true, None::<&str>).unwrap();
+                let _ = action_submenu.append(&item);
+            }
+            if !action_submenu.items().unwrap().is_empty() {
+                let _ = action_submenu.append(&PredefinedMenuItem::separator(app_handle).unwrap());
+            }
+        }
+    }
+    let action_manage_item = MenuItem::with_id(app_handle, "action", "Manage Actions...", true, None::<&str>).unwrap();
+    let _ = action_submenu.append(&action_manage_item);
+
     let about_item = &MenuItem::with_id(
         app_handle,
         "about",
@@ -207,7 +225,7 @@ fn create_tray_menu(app_handle: &AppHandle, visiable: bool) -> Result<Menu<Wry>>
         .items(&[
             show_item,
             dashboard_item,
-            action_item,
+            action_submenu,
             about_item,
             setting_item,
             separator,
@@ -219,8 +237,22 @@ fn create_tray_menu(app_handle: &AppHandle, visiable: bool) -> Result<Menu<Wry>>
     Ok(menu)
 }
 
-fn on_menu_event(_: &AppHandle, event: MenuEvent) {
-    match event.id.as_ref() {
+fn on_menu_event(app_handle: &AppHandle, event: MenuEvent) {
+    let id = event.id.as_ref();
+    
+    if id.starts_with("action_run_") {
+        let action_id = id["action_run_".len()..].to_string();
+        let app_handle_clone = app_handle.clone();
+        logging!(info, Type::Tray, true, "执行托盘 Action: {}", action_id);
+        tauri::async_runtime::spawn(async move {
+            if let Err(e) = feat::action::execute_action_by_id(&app_handle_clone, &action_id).await {
+                logging!(error, Type::Tray, true, "执行托盘 Action 失败: {}", e);
+            }
+        });
+        return;
+    }
+
+    match id {
         "open_window" => {
             let _ = window_manager::toggle_window_by_label("main");
         }
@@ -239,7 +271,4 @@ fn on_menu_event(_: &AppHandle, event: MenuEvent) {
         }
         _ => {}
     }
-    // if let Err(e) = Tray::global().update_all_states() {
-    //     log::warn!(target: "app", "更新托盘状态失败: {}", e);
-    // }
 }

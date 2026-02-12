@@ -3,10 +3,12 @@ use anyhow::Result;
 pub trait ActionManager {
     fn create_action(&self, action: &Action) -> Result<ActionRecord>;
     fn update_action(&self, id: &str, action: &Action) -> Result<ActionRecord>;
+    fn update_action_count(&self, id: &str) -> Result<()>;
     fn delete_action(&self, id: &str) -> Result<()>;
     fn get_action(&self, id: &str) -> Result<ActionRecord>;
     fn get_actions(&self, ids: &[String]) -> Result<Vec<ActionRecord>>;
     fn get_all_actions(&self) -> Result<Vec<ActionRecord>>;
+    fn get_frequent_actions_with_limit(&self,limit: usize) -> Result<Vec<ActionRecord>>;
 }
 pub trait TaskManager {
     fn create_task(&self, task: &TaskData) -> Result<TaskRecord>;

@@ -1,7 +1,10 @@
-use crate::feat::action::execute_action;
-use crate::logging;
-use crate::schema::{Action, AppState};
-use crate::utils::logging::Type;
+use crate::{
+    feat::action::execute_action, store::module::ActionManager,
+    logging,
+    schema::{Action, AppState},
+    utils::logging::Type,
+};
+
 use anyhow::Result;
 use tokio::time::timeout;
 use std::time::Duration;
@@ -13,8 +16,14 @@ pub async fn execute_single_action(action: Action) -> Result<String, String> {
 }
 
 #[tauri::command]
-pub async fn execute_actions(actions: Vec<Action>) -> Result<(), String> {
+pub async fn execute_actions(state: State<'_, AppState>,actions: Vec<Action>) -> Result<(), String> {
     for action in actions {
+        {
+            let db = state.db.lock();
+            if let Err(e) = db.update_action_count(action.id.clone().unwrap().as_str()) {
+                logging!(error, Type::Service, true, "更新任务 {} 执行次数失败:{}", action.name, e);
+            }
+        }
         // 根据等待时间决定执行模式
         if action.wait > 0 {
             // 同步执行 - 等待任务完成后再执行下一个
@@ -126,7 +135,6 @@ pub async fn create_action(state: State<'_, AppState>, action: Action) -> Result
     }
 }
 
-use crate::store::module::ActionManager;
 #[tauri::command]
 pub async fn get_action(state: State<'_, AppState>, id: &str) -> Result<Action, String> {
     let db = state.db.lock();
