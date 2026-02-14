@@ -3,7 +3,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useI18n } from '@/hooks/use-i18n';
 import { listen } from '@tauri-apps/api/event';
 import '@/assets/Dashboard.css';
-import type { Task } from '@/types';
+// import type { Task } from '@/types';
 import type { WeekDay } from '@/types/modules/task';
 import { useTaskStore } from '@/store';
 import { extractTimeStampSecond } from '@/utils';
@@ -47,11 +47,11 @@ const TaskDashboard: React.FC = () => {
   };
 
   // 计算每周进度
-  const calculateWeeklyProgress = (weeklyTasks: Task[][]): number => {
-    const totalTasks = weeklyTasks.reduce((acc, list) => acc + list.length, 0);
-    const completedTasks = weeklyTasks.reduce((acc, list) => acc + list.filter(t => t.completed).length, 0);
-    return totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
-  };
+  // const calculateWeeklyProgress = (weeklyTasks: Task[][]): number => {
+  //   const totalTasks = weeklyTasks.reduce((acc, list) => acc + list.length, 0);
+  //   const completedTasks = weeklyTasks.reduce((acc, list) => acc + list.filter(t => t.completed).length, 0);
+  //   return totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+  // };
 
   // 计算每日进度（目前未使用，可按需恢复）
 
