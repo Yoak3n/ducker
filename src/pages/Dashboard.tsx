@@ -86,14 +86,14 @@ const TaskDashboard: React.FC = () => {
     });
   }, []);
 
-  const tasksByRange = (range: { start: number; end: number }) =>
-    tasks.filter(t => t.due_to && (() => {
-      const ts = extractTimeStampSecond(t.due_to!);
-      return ts >= range.start && ts <= range.end;
-    })());
+  // const tasksByRange = (range: { start: number; end: number }) =>
+  //   tasks.filter(t => t.due_to && (() => {
+  //     const ts = extractTimeStampSecond(t.due_to!);
+  //     return ts >= range.start && ts <= range.end;
+  //   })());
 
-  const weeklyBuckets = useMemo(() => weekDays.map(w => tasksByRange(w.range)), [tasks, weekDays]);
-  const weekProgress = calculateWeeklyProgress(weeklyBuckets);
+  // const weeklyBuckets = useMemo(() => weekDays.map(w => tasksByRange(w.range)), [tasks, weekDays]);
+  // const weekProgress = calculateWeeklyProgress(weeklyBuckets);
 
   const startOfMonth = (d: Date) => new Date(d.getFullYear(), d.getMonth(), 1, 0, 0, 0, 0);
   const endOfMonth = (d: Date) => new Date(d.getFullYear(), d.getMonth() + 1, 0, 23, 59, 59, 999);
@@ -153,10 +153,10 @@ const TaskDashboard: React.FC = () => {
         {activeTab === 'weekly' && (
           <div>
             <h2>{t('Weekly')}</h2>
-            <div className="progress-bar">
+            {/* <div className="progress-bar">
               <div className="progress" style={{ width: `${weekProgress}%` }}></div>
               <span>{Math.round(weekProgress)}% 完成</span>
-            </div>
+            </div> */}
             <WeeklyView tasks={tasks} weekDays={weekDays} todayDate={todayDate} onToggleTask={onToggleTask} />
           </div>
         )}

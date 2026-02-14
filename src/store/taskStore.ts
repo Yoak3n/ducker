@@ -342,7 +342,7 @@ export const useTaskStore = create<TaskStore>()(
         fetchTodayTasks: async () => {
           try {
             const res = await taskApi.get_today_tasks();
-            let tasks: Task[] = [];
+            const tasks: Task[] = [];
 
             console.log('获取今日任务:', res);
             return tasks || [];

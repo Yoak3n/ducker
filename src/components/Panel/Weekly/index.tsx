@@ -19,7 +19,7 @@ export default function WeeklyView({ tasks, weekDays, todayDate, onToggleTask }:
     });
 
   return (
-    <div className="weekly-view">
+    <div className="weekly-view custom-scrollbar">
       <div className="week-days">
         {weekDays.map(({ day, label, range }) => {
           const dayTasks = getTasksByRange(range);
@@ -29,20 +29,22 @@ export default function WeeklyView({ tasks, weekDays, todayDate, onToggleTask }:
           return (
             <div key={day} className="day-column">
               <h3>{label}</h3>
-              <div className="day-progress">
-                <small>{percent}% 完成</small>
-                <div className="mini-progress">
-                  <div style={{ width: `${percent}%` }}></div>
+              <div className="day-content">
+                <div className="day-progress">
+                  <small>{percent}% 完成</small>
+                  <div className="mini-progress">
+                    <div style={{ width: `${percent}%` }}></div>
+                  </div>
                 </div>
+                <TaskList
+                  tasks={dayTasks}
+                  todayDate={todayDate}
+                  todayRange={range}
+                  changeTask={onToggleTask}
+                  variant="weekly"
+                />
+                {total === 0 && <ul className="task-list"><li className="empty">无任务</li></ul>}
               </div>
-              <TaskList
-                tasks={dayTasks}
-                todayDate={todayDate}
-                todayRange={range}
-                changeTask={onToggleTask}
-                variant="weekly"
-              />
-              {total === 0 && <ul className="task-list"><li className="empty">无任务</li></ul>}
             </div>
           );
         })}

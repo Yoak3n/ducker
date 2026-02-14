@@ -49,6 +49,7 @@ function formatDateOnly(dateString: string): string {
     const day = String(date.getDate()).padStart(2, '0');
     return `${year}-${month}-${day}`;
   } catch (error) {
+    console.error('日期格式化错误:', error);
     return dateString; // 如果解析失败，返回原字符串
   }
 }
@@ -62,6 +63,7 @@ function formatTimeOnly(dateString: string): string {
     const second = String(date.getSeconds()).padStart(2, '0');
     return `${hour}:${minute}:${second}`;
   } catch (error) {
+    console.error('时间格式化错误:', error);
     return dateString; // 如果解析失败，返回原字符串
   }
 }
@@ -73,6 +75,7 @@ function formatHourAndMinute(dateString: string): string {
     const minute = String(date.getMinutes()).padStart(2, '0');
     return `${hour}:${minute}`;
   } catch (error) {
+    console.error('时间格式化错误:', error);
     return dateString; // 如果解析失败，返回原字符串
   }
 }
