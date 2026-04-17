@@ -1,6 +1,6 @@
 import { useEffect, useState, type FC } from "react";
-import { useParams } from "react-router-dom";
-import { emit } from "@tauri-apps/api/event";
+import { useParams, useNavigate } from "react-router-dom";
+import { emit, listen } from "@tauri-apps/api/event";
 
 import { TaskForm } from "@/components/Task";
 import type { Task, TaskData, PeriodicTaskData } from '@/types';
@@ -13,12 +13,20 @@ const TaskModify: FC = () => {
     const { id } = useParams<{ id?: string }>();
     const { fetchTasks, tasks, updateTask, createTask } = useTaskStore(state => state)
     const [editingTask, setEditingTask] = useState<Task | undefined>(undefined)
+    const navigate = useNavigate()
 
     // 如果有id参数，说明是编辑模式；否则是新建模式
     const [isEditMode, setIsEditMode] = useState(false);
     useEffect(() => {
         fetchTasks()
-        // eslint-disable-next-line react-hooks/exhaustive-deps
+
+        const unlisten =  listen('renavigate', (event) => {
+            const target = event.payload as string
+            console.log(target)
+            // 试试看能不能更新整个页面
+            navigate(target)
+        })
+        return () => {unlisten.then(cb => cb())}
     }, [])
 
     useEffect(() => {

@@ -21,4 +21,10 @@ function destroyWindow(windowType: string) {
     return invoke("destroy_window", { windowType });
 }
 
-export { toggleWindow, showWindow, minimizeWindow, closeWindow, destroyWindow };
+function navigate(url: string) {
+    return invoke("navigate", { url });
+}
+
+
+
+export { toggleWindow, showWindow, minimizeWindow, closeWindow, destroyWindow, navigate };

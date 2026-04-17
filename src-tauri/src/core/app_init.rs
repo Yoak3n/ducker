@@ -1,4 +1,5 @@
 use super::cmd;
+use tauri::{AppHandle, RunEvent};
 #[cfg(desktop)]
 use tauri_plugin_notification::NotificationExt;
 use crate::core::handle::Handle;
@@ -21,11 +22,8 @@ pub fn setup_plugins(builder: tauri::Builder<tauri::Wry>) -> tauri::Builder<taur
                 .unwrap();
         }))
         .plugin(tauri_plugin_opener::init())
-        .plugin(
-            tauri_plugin_autostart::Builder::new()
-                .app_name("ducker")
-                .build(),
-        );
+        .plugin(tauri_plugin_autostart::Builder::new().app_name("ducker").build());
+    
 
     builder
 }
@@ -163,5 +161,94 @@ pub async fn check_periodic_task() {
                 }
             }
         }
+    }
+}
+
+
+
+use crate::{utils::logging::Type, logging};
+#[cfg(target_os = "macos")]
+use crate::log_err;
+
+#[allow(unused_variables)]
+pub fn app_event_handle(app_handle: &AppHandle, event: RunEvent){
+match event {
+        tauri::RunEvent::Ready | tauri::RunEvent::Resumed => {
+            #[cfg(target_os = "macos")]
+            {
+                if let Some(window) = AppHandleManager::global()
+                    .get_handle()
+                    .get_webview_window("main")
+                {
+                    let _ = window.set_title("ducker");
+                }
+            }
+        }
+        #[cfg(target_os = "macos")]
+        tauri::RunEvent::Reopen {
+            has_visible_windows,
+            ..
+        } => {
+            if !has_visible_windows {
+                AppHandleManager::global().set_activation_policy_regular();
+            }
+            AppHandleManager::global().init(app_handle.clone());
+        }
+        tauri::RunEvent::ExitRequested { api, code, .. } => {
+            if code.is_none() {
+                api.prevent_exit();
+            }
+        }
+        tauri::RunEvent::WindowEvent { label, event, .. } => {
+            // if label == "main" {
+            match event {
+                tauri::WindowEvent::CloseRequested { api, .. } => {
+                    // use crate::core::handle;
+
+                    logging!(info, Type::Window, "窗口关闭请求, 窗口标签: {}", label);
+                    use super::handle::Handle;
+
+                    #[cfg(target_os = "macos")]
+                    AppHandleManager::global().set_activation_policy_accessory();
+                    if Handle::global().is_exiting() {
+                        return;
+                    }
+                    api.prevent_close();
+                    let window = Handle::global()
+                        .get_window_by_label(&label)
+                        .unwrap();
+                    let _ = window.hide();
+                }
+                tauri::WindowEvent::Focused(true) => {
+                    #[cfg(target_os = "macos")]
+                    {
+                        log_err!(hotkey::Hotkey::global().register("CMD+Q", "quit"));
+                        log_err!(hotkey::Hotkey::global().register("CMD+W", "hide"));
+                    }
+
+                    #[cfg(not(target_os = "macos"))]
+                    {
+                        // log_err!(hotkey::Hotkey::global().register("Control+Q", "quit"));
+                    };
+                }
+                tauri::WindowEvent::Focused(false) => {
+                    #[cfg(target_os = "macos")]
+                    {
+                        log_err!(hotkey::Hotkey::global().unregister("CMD+Q"));
+                        log_err!(hotkey::Hotkey::global().unregister("CMD+W"));
+                    }
+                }
+                tauri::WindowEvent::Destroyed => {
+                    #[cfg(target_os = "macos")]
+                    {
+                        log_err!(hotkey::Hotkey::global().unregister("CMD+Q"));
+                        log_err!(hotkey::Hotkey::global().unregister("CMD+W"));
+                    }
+                }
+                _ => {}
+            }
+            // }
+        }
+        _ => {}
     }
 }
