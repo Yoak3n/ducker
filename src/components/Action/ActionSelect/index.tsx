@@ -6,6 +6,8 @@ import { Separator } from "@/components/ui/separator"
 import ActionCard from "../ActionCard";
 import { type Action, actionTypes } from "@/types";
 import { useActionStore } from '@/store';
+import { ActionIcon } from "@/utils/icon";
+import { Link, X, ArrowRight, Search, SearchX } from "lucide-react";
 
 interface ActionSelectProps {
   selectedActions?: Action[];
@@ -106,9 +108,7 @@ export default function ActionSelect({
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <h4 className="text-sm font-medium flex items-center gap-2">
-              <span className="material-symbols-outlined text-sm">
-                link
-              </span>
+              <Link size={14} />
               Action 调用链 ({currentSelectedActions.length})
             </h4>
             <Button
@@ -134,15 +134,11 @@ export default function ActionSelect({
                     onClick={() => handleActionRemove(action)}
                     className="ml-1 h-4 w-4 p-0 hover:bg-red-100"
                   >
-                    <span className="material-symbols-outlined text-xs text-red-500">
-                      close
-                    </span>
+                    <X size={12} className="text-red-500" />
                   </Button>
                 </Badge>
                 {index < currentSelectedActions.length - 1 && (
-                  <span className="material-symbols-outlined text-xs text-gray-400">
-                    arrow_forward
-                  </span>
+                  <ArrowRight size={12} className="text-gray-400" />
                 )}
               </div>
             ))}
@@ -153,9 +149,7 @@ export default function ActionSelect({
       )}
       {/* 搜索框 */}
       <div className="relative">
-        <span className="material-symbols-outlined absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
-          search
-        </span>
+        <Search size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
         <Input
           placeholder="搜索 actions..."
           value={searchTerm}
@@ -175,9 +169,7 @@ export default function ActionSelect({
             onClick={() => setSelectedType(type.value)}
             className="text-xs"
           >
-            <span className="material-symbols-outlined text-sm mr-1">
-              {type.icon}
-            </span>
+            <ActionIcon name={type.icon} size={14} className="mr-1" />
             {type.label}
           </Button>
         ))}
@@ -221,9 +213,7 @@ export default function ActionSelect({
             </div>
           ) : (
             <div className="text-center py-8 text-gray-500">
-              <span className="material-symbols-outlined text-4xl mb-2 block">
-                search_off
-              </span>
+              <SearchX size={40} className="mb-2 mx-auto" />
               <p className="text-sm">未找到匹配的 Actions</p>
               <p className="text-xs text-gray-400 mt-1">尝试调整搜索条件或类型过滤器</p>
             </div>

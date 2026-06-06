@@ -2,6 +2,7 @@ import React from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 import type { InputHandle } from "./type";
 import type { Task } from "@/types";
+import { Pencil, CornerDownRight } from "lucide-react";
 
 interface Props {
     editing: boolean;
@@ -17,7 +18,7 @@ const Information = React.memo(function Information({ editing, completed, name, 
     return (
         <div className="bg-gradient-to-br from-slate-50 to-slate-100 border border-slate-300 rounded-lg p-4 transition-all duration-200 hover:border-slate-400 hover:shadow-md">
           <div className="flex items-center gap-2 mb-3 pb-2 border-b border-gray-200 bg-white/80 rounded px-3 py-2 -mx-2">
-            <span className="material-symbols-outlined text-slate-800 text-lg">edit</span>
+            <Pencil size={18} className="text-slate-800" />
             <h3 className="m-0 text-sm font-semibold text-gray-800">基本信息</h3>
           </div>
 
@@ -68,7 +69,7 @@ const Information = React.memo(function Information({ editing, completed, name, 
 
           {parentTask && (
             <div className="flex items-center gap-2 px-3 py-2 bg-sky-50 border border-sky-200 rounded-md mb-3 text-sky-700 text-sm">
-              <span className="material-symbols-outlined">subdirectory_arrow_right</span>
+              <CornerDownRight size={16} />
               <span>父任务: {parentTask.name}</span>
             </div>
           )}

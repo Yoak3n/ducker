@@ -22,15 +22,16 @@ header {
             outline: none;
             cursor: pointer;
             background-color: transparent;
-            transition: color .15s ease, opacity .15s ease;
-            span {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: opacity .15s ease;
+            svg {
                 color: currentColor;
-                transition: color .15s ease, opacity .15s ease;
+                transition: opacity .15s ease;
             }
             &:hover {
-                span {
-                    opacity: .85;
-                }
+                opacity: .85;
             }
         }
     }

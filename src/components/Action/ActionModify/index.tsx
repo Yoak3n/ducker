@@ -14,8 +14,13 @@ import { toast } from "sonner"
 
 import { useActionStore } from '@/store';
 import { open_file_select_dialog } from '@/utils';
+import { ActionIcon } from '@/utils/icon';
 import type { Action, ActionTypeValue } from '@/types';
 import ActionSelect from '@/components/Action/ActionSelect';
+import {
+  ArrowLeft, FolderOpen, Plus, ChevronUp, ChevronDown, X, TriangleAlert,
+  RefreshCw, Loader2, Pencil,
+} from "lucide-react";
 
 const formSchema = z.object({
     name: z.string().min(2, {
@@ -313,9 +318,7 @@ const ActionModify: React.FC = () => {
             <CardHeader className="flex-shrink-0">
                 <CardTitle>{isAddAction ? "Add Action" : "Modify Action"}</CardTitle>
                 <CardAction className='cursor-pointer' onClick={() => navigate("/action")}>
-                    <span className="material-symbols-outlined">
-                        arrow_back
-                    </span>
+                    <ArrowLeft size={18} />
                 </CardAction>
             </CardHeader>
             <CardContent className="flex-1 overflow-y-auto min-h-0 custom-scrollbar">
@@ -367,9 +370,7 @@ const ActionModify: React.FC = () => {
                                                     {actionTypeOptions.map((option) => (
                                                         <SelectItem key={option.value} value={option.value}>
                                                             <div className="flex items-center gap-2">
-                                                                <span className="material-symbols-outlined text-sm">
-                                                                    {option.icon}
-                                                                </span>
+                                                                <ActionIcon name={option.icon} size={14} />
                                                                 {option.label}
                                                             </div>
                                                         </SelectItem>
@@ -427,7 +428,7 @@ const ActionModify: React.FC = () => {
                                                         onClick={handleSelectFile}
                                                         className="px-3"
                                                     >
-                                                        <span className="material-symbols-outlined text-sm">folder_open</span>
+                                                        <FolderOpen size={14} />
                                                     </Button>
                                                 )}
                                             </div>
@@ -462,7 +463,7 @@ const ActionModify: React.FC = () => {
                                                 onClick={() => setIsActionSelectOpen(true)}
                                                 className="w-full justify-start"
                                             >
-                                                <span className="material-symbols-outlined text-sm mr-2">add</span>
+                                                <Plus size={14} className="mr-2" />
                                                 选择Actions ({selectedActions.length})
                                             </Button>
                                             <Input
@@ -517,7 +518,7 @@ const ActionModify: React.FC = () => {
                                                                             className="h-6 w-6 p-0 hover:bg-gray-200"
                                                                             title="上移"
                                                                         >
-                                                                            <span className="material-symbols-outlined text-xs">keyboard_arrow_up</span>
+                                                                            <ChevronUp size={12} />
                                                                         </Button>
                                                                     )}
                                                                     {index < selectedActions.length - 1 && (
@@ -533,7 +534,7 @@ const ActionModify: React.FC = () => {
                                                                             className="h-6 w-6 p-0 hover:bg-gray-200"
                                                                             title="下移"
                                                                         >
-                                                                            <span className="material-symbols-outlined text-xs">keyboard_arrow_down</span>
+                                                                            <ChevronDown size={12} />
                                                                         </Button>
                                                                     )}
                                                                     <Button
@@ -547,7 +548,7 @@ const ActionModify: React.FC = () => {
                                                                         className={`h-6 w-6 p-0 ${isValid ? 'hover:bg-red-100 hover:text-red-600' : 'hover:bg-red-200 text-red-600'}`}
                                                                         title="删除"
                                                                     >
-                                                                        <span className="material-symbols-outlined text-xs">close</span>
+                                                                        <X size={12} />
                                                                     </Button>
                                                                 </div>
                                                             </div>
@@ -556,7 +557,7 @@ const ActionModify: React.FC = () => {
                                                 </div>
                                                 {selectedActions.some(action => !actions.some(a => a.id === action.id)) && (
                                                     <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded text-xs text-yellow-700 flex-shrink-0">
-                                                        <span className="material-symbols-outlined text-xs mr-1">warning</span>
+                                                        <TriangleAlert size={12} className="inline mr-1" />
                                                         检测到无效的Action，建议删除或重新选择
                                                     </div>
                                                 )}
@@ -653,9 +654,7 @@ const ActionModify: React.FC = () => {
                                 disabled={isSubmitting}
                                 className="flex-1 flex items-center justify-center gap-2"
                             >
-                                <span className="material-symbols-outlined text-sm">
-                                    refresh
-                                </span>
+                                <RefreshCw size={14} className="mr-1" />
                                 Reset
                             </Button>
                             <Button 
@@ -665,16 +664,12 @@ const ActionModify: React.FC = () => {
                             >
                                 {isSubmitting ? (
                                     <>
-                                        <span className="material-symbols-outlined animate-spin text-sm mr-2">
-                                            progress_activity
-                                        </span>
+                                        <Loader2 size={14} className="animate-spin mr-2" />
                                         {isAddAction ? "Creating..." : "Updating..."}
                                     </>
                                 ) : (
                                     <>
-                                        <span className="material-symbols-outlined text-sm mr-2">
-                                            {isAddAction ? "add" : "edit"}
-                                        </span>
+                                        {isAddAction ? <Plus size={14} className="mr-2" /> : <Pencil size={14} className="mr-2" />}
                                         {isAddAction ? "Create Action" : "Update Action"}
                                     </>
                                 )}
@@ -697,7 +692,7 @@ const ActionModify: React.FC = () => {
                             onClick={() => setIsActionSelectOpen(false)}
                             className="h-8 w-8 p-0"
                         >
-                            <span className="material-symbols-outlined">close</span>
+                            <X size={18} />
                         </Button>
                     </div>
                     <div className="h-96 overflow-y-auto custom-scrollbar">

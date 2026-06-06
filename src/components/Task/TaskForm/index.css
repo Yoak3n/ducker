@@ -51,17 +51,8 @@
   .md\:grid-cols-2 {
     grid-template-columns: 1fr;
   }
-  
+
   .md\:grid-cols-3 {
     grid-template-columns: 1fr 1fr;
   }
-}
-
-/* 确保 Material Icons 正确显示 */
-.material-symbols-outlined {
-  font-variation-settings:
-    'FILL' 0,
-    'wght' 400,
-    'GRAD' 0,
-    'opsz' 24;
 }

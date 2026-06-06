@@ -9,6 +9,7 @@ import { useState } from "react";
 import TaskItem from "./index";
 import { formatHourAndMinute } from "@/utils/date";
 import { t } from "i18next";
+import { Play, ChevronUp, ChevronDown } from "lucide-react";
 
 interface ItemBodyProps {
     root?: boolean;
@@ -68,9 +69,7 @@ const ItemBody = ({ root, task, changeTask }: ItemBodyProps) => {
                 {task.auto && <Tooltip>
                     <TooltipTrigger>
                         <div className="flex items-center gap-2 text-sm text-[#3498db] cursor-default">
-                            <span className="material-symbols-outlined">
-                                autoplay
-                            </span>
+                            <Play size={14} />
                             {formatHourAndMinute(task.due_to || "")}
                         </div>
                     </TooltipTrigger>
@@ -83,9 +82,7 @@ const ItemBody = ({ root, task, changeTask }: ItemBodyProps) => {
             </div>
             {task.children && task.children.length > 0 &&
                 <button className="dropdown-button" onClick={() => { setIsExpanded(!isExpanded) }}>
-                    <span className="material-symbols-outlined">
-                        {isExpanded ? "arrow_drop_up" : "arrow_drop_down"}
-                    </span>
+                    {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
                 </button>}
             {isExpanded && task.children &&
                 <ul className="sub-task-list">

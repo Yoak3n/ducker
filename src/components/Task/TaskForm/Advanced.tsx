@@ -6,6 +6,7 @@ import { ActionSelect } from "@/components/Action";
 import { useI18n } from "@/hooks/use-i18n";
 import type { Action, Period } from "@/types";
 import type { TaskFormData } from "./type.d";
+import { ChevronUp, ChevronDown, Settings, CirclePlus, Brain, X, Check } from "lucide-react";
 
 
 interface Props {
@@ -29,9 +30,7 @@ const TaskFormAdvanced = memo(function TaskFormAdvanced({ actionsData, handleInp
                         className="flex items-center justify-between cursor-pointer w-full px-3 py-2 text-gray-500 text-sm font-medium transition-all duration-200 bg-slate-50 border border-slate-200 rounded-md hover:text-gray-600 hover:bg-slate-100 hover:border-slate-300"
                     >
                         <div className="flex items-center gap-2">
-                            <span className="material-symbols-outlined">
-                                {showAdvanced ? 'expand_less' : 'expand_more'}
-                            </span>
+                            {showAdvanced ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
                             {t("Advanced")}
                         </div>
                     </button>
@@ -40,7 +39,7 @@ const TaskFormAdvanced = memo(function TaskFormAdvanced({ actionsData, handleInp
                     <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 mt-2">
                         <div className="flex justify-between items-center">
                             <div className="flex items-center gap-2">
-                                <span className="material-symbols-outlined text-slate-600 text-lg">settings</span>
+                                <Settings size={18} className="text-slate-600" />
                                 <h3 className="m-0 text-sm font-semibold text-slate-700">
                                     {t("Associated Action")}
                                 </h3>
@@ -51,14 +50,14 @@ const TaskFormAdvanced = memo(function TaskFormAdvanced({ actionsData, handleInp
                                 className="flex items-center gap-2 px-3 py-2 bg-blue-500 text-white border-none rounded-md text-sm font-medium cursor-pointer transition-all duration-200 hover:bg-blue-600 hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(59,130,246,0.3)]"
                                 onClick={() => setActionSelectOpen(true)}
                             >
-                                <span className="material-symbols-outlined text-sm">add_circle</span>
+                                <CirclePlus size={14} />
                                 {t("Add Action")}
                             </button>
                         </div>
 
                         {actionsData.length === 0 && (
                             <div className="flex flex-col items-center py-6 px-3 text-center text-slate-600">
-                                <span className="material-symbols-outlined text-4xl text-slate-300 mb-2">psychology_alt</span>
+                                <Brain size={40} className="text-slate-300 mb-2" />
                                 <p className="m-0 mb-2 text-sm font-medium text-slate-700">
                                     {t("No Associated Action")}
                                 </p>
@@ -88,7 +87,7 @@ const TaskFormAdvanced = memo(function TaskFormAdvanced({ actionsData, handleInp
                                                     handleInputChange('actions', newActions);
                                                 }}
                                             >
-                                                <span className="material-symbols-outlined text-xs">close</span>
+                                                <X size={12} />
                                             </button>
                                         </div>
                                     ))}
@@ -104,7 +103,7 @@ const TaskFormAdvanced = memo(function TaskFormAdvanced({ actionsData, handleInp
                     <div className="bg-white rounded-xl shadow-[0_25px_50px_-12px_rgba(0,0,0,0.25)] w-[90%] max-w-[800px] max-h-[80vh] flex flex-col overflow-hidden animate-[slideIn_0.3s_ease-out]">
                         <div className="flex items-center justify-between px-6 py-5 border-b border-gray-200 bg-gradient-to-r from-slate-50 to-gray-100 text-slate-800">
                             <h2 className="m-0 text-xl font-semibold flex items-center gap-2 text-slate-700">
-                                <span className="material-symbols-outlined text-2xl text-slate-600">psychology_alt</span>
+                                <Brain size={24} className="text-slate-600" />
                                 {t("To Select Action")}
                             </h2>
                             <button
@@ -112,7 +111,7 @@ const TaskFormAdvanced = memo(function TaskFormAdvanced({ actionsData, handleInp
                                 className="flex items-center justify-center w-8 h-8 border-none bg-slate-600/10 text-slate-600 rounded-lg cursor-pointer transition-all duration-200 hover:bg-slate-600/20 hover:text-slate-700 hover:scale-105"
                                 onClick={() => setActionSelectOpen(false)}
                             >
-                                <span className="material-symbols-outlined text-xl">close</span>
+                                <X size={20} />
                             </button>
                         </div>
                         <div className="flex-1 p-6 overflow-y-auto min-h-0">
@@ -136,7 +135,7 @@ const TaskFormAdvanced = memo(function TaskFormAdvanced({ actionsData, handleInp
                                 className="px-5 py-2 border border-blue-500 bg-blue-500 text-white rounded-lg text-sm font-medium cursor-pointer transition-all duration-200 flex items-center gap-2 hover:bg-blue-600 hover:border-blue-600 hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(59,130,246,0.3)]"
                                 onClick={() => setActionSelectOpen(false)}
                             >
-                                <span className="material-symbols-outlined text-base">check</span>
+                                <Check size={16} />
                                 {t("Confirm")}
                             </button>
                         </div>

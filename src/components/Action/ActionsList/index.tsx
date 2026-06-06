@@ -14,6 +14,8 @@ import { actionTypes,type ActionTypeSelector } from "@/types";
 import { useActionStore } from "@/store";
 import ActionCard from "../ActionCard";
 import { toast } from "sonner";
+import { ActionIcon } from "@/utils/icon";
+import { Search, Plus } from "lucide-react";
 
 
 const ActionsList = () => {
@@ -42,9 +44,7 @@ const ActionsList = () => {
         <div className="flex w-full flex-col gap-6 overflow-y-auto">
             <div className="flex w-full justify-between">
                 <div className="relative w-full pr-5">
-                    <span className="material-symbols-outlined absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
-                        search
-                    </span>
+                    <Search size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                     <Input
                         placeholder="搜索 actions..."
                         value={searchTerm}
@@ -57,9 +57,7 @@ const ActionsList = () => {
                     navigate("/action/add");
                     // loadActions();
                 }}>
-                    <span className="material-symbols-outlined">
-                        add
-                    </span>
+                    <Plus size={16} />
                 </Button>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -71,9 +69,7 @@ const ActionsList = () => {
                         onClick={() => setSelectedType(type.value)}
                         className="text-xs"
                     >
-                        <span className="material-symbols-outlined text-sm mr-1">
-                            {type.icon}
-                        </span>
+                        <ActionIcon name={type.icon} size={14} className="mr-1" />
                         {type.label}
                     </Button>
                 ))}

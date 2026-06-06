@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { reminderOptions } from "./options";
 import { useI18n } from "@/hooks/use-i18n";
+import { Clock } from "lucide-react";
 
 interface Props {
     dueTo: string;
@@ -18,7 +19,7 @@ const Time = memo(function Time({ dueTo, reminderOffset, handleInputChange }: Pr
     return (
         <div className="bg-gradient-to-br from-purple-50 to-purple-100 border border-purple-200 rounded-lg p-4 transition-all duration-200 hover:border-purple-300 hover:shadow-md">
             <div className="flex items-center gap-2 mb-3 pb-2 border-b border-gray-200 bg-white/80 rounded px-3 py-2 -mx-2">
-                <span className="material-symbols-outlined text-purple-600 text-lg">schedule</span>
+                <Clock size={18} className="text-purple-600" />
                 <h3 className="m-0 text-sm font-semibold text-gray-800">{t("Time Setting")}</h3>
             </div>
 

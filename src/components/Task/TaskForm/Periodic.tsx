@@ -7,6 +7,7 @@ import type { TaskFormData } from "./type";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 import { useI18n } from "@/hooks/use-i18n";
+import { Repeat } from "lucide-react";
 
 interface Props {
     periodicInterval: Period;
@@ -20,7 +21,7 @@ const Periodic = memo(function Periodic({ periodicInterval, isPeriodic, setIsPer
     return (
         <div className="bg-gradient-to-br from-slate-50 to-slate-100 border border-slate-200 rounded-lg p-4 transition-all duration-200 hover:border-slate-300 hover:shadow-md">
             <div className="flex items-center gap-2 mb-3 pb-2 border-b border-gray-200 bg-white/80 rounded px-3 py-2 -mx-2">
-                <span className="material-symbols-outlined text-purple-500 text-lg">repeat</span>
+                <Repeat size={18} className="text-purple-500" />
                 <h3 className="m-0 text-sm font-semibold text-gray-800">{t("Period Setting")}</h3>
             </div>
 

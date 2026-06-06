@@ -11,6 +11,8 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import type{ Action } from "@/types/modules/action"
 import { actionTypes } from "@/types"
+import { ActionIcon } from "@/utils/icon"
+import { X } from "lucide-react"
 
 interface ActionCardProps {
   action: Action;
@@ -54,9 +56,7 @@ export default function ActionCard({
       <CardHeader className="pb-2 h-6">
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-2">
-            <span className="material-symbols-outlined text-lg">
-              {actionType?.icon || 'settings'}
-            </span>
+            <ActionIcon name={actionType?.icon || 'settings'} size={18} />
             <CardTitle className="text-sm font-medium">{action.name}</CardTitle>
             {isSelected && selectionOrder !== undefined && (
               <Badge variant="secondary" className="text-xs p-0">
@@ -72,9 +72,7 @@ export default function ActionCard({
                 onClick={handleRemove}
                 className="h-6 w-6 p-0 hover:bg-red-100"
               >
-                <span className="material-symbols-outlined text-sm text-red-500">
-                  close
-                </span>
+                <X size={14} className="text-red-500" />
               </Button>
             </CardAction>
           )}
