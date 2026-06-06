@@ -1,13 +1,11 @@
+import { useMemo } from "react";
 import type { Task } from "@/types";
-import { extractTimeStampSecond, formatDateOnly } from "@/utils";
-import { Card } from "@/components/ui/card";
+import { extractTimeStampSecond } from "@/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Badge } from "@/components/ui/badge";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 type MonthlyViewProps = {
   tasks: Task[];
-  monthDate: Date; // any date within the month to display
+  monthDate: Date;
   onToggleTask: (id: string) => void;
 };
 
@@ -22,23 +20,19 @@ function endOfDay(date: Date): Date {
 function getMonthMatrix(target: Date) {
   const firstDay = new Date(target.getFullYear(), target.getMonth(), 1);
   const lastDay = new Date(target.getFullYear(), target.getMonth() + 1, 0);
-  // Monday as first column, map JS getDay (0=Sun) to (1..7), where 1=Mon, 7=Sun
-  const firstWeekday = ((firstDay.getDay() + 6) % 7) + 1; // 1..7
+  const firstWeekday = ((firstDay.getDay() + 6) % 7) + 1;
   const daysInMonth = lastDay.getDate();
 
   const cells: Date[] = [];
-  // Leading blanks from previous month
-  const leading = firstWeekday - 1; // 0..6
+  const leading = firstWeekday - 1;
   for (let i = 0; i < leading; i++) {
     const d = new Date(firstDay);
     d.setDate(firstDay.getDate() - (leading - i));
     cells.push(d);
   }
-  // Current month days
   for (let d = 1; d <= daysInMonth; d++) {
     cells.push(new Date(target.getFullYear(), target.getMonth(), d));
   }
-  // Trailing blanks to complete the last week
   const remainder = cells.length % 7;
   if (remainder !== 0) {
     const need = 7 - remainder;
@@ -52,91 +46,143 @@ function getMonthMatrix(target: Date) {
   return cells;
 }
 
+function getMonthLabel(date: Date) {
+  const months = ["一月", "二月", "三月", "四月", "五月", "六月", "七月", "八月", "九月", "十月", "十一月", "十二月"];
+  return months[date.getMonth()];
+}
+
 export default function MonthlyView({ tasks, monthDate, onToggleTask }: MonthlyViewProps) {
-  const todayStr = formatDateOnly(new Date().toISOString());
-  const monthCells = getMonthMatrix(monthDate);
+  const today = useMemo(() => {
+    const d = new Date();
+    return { year: d.getFullYear(), month: d.getMonth(), date: d.getDate() };
+  }, []);
+
+  const monthCells = useMemo(() => getMonthMatrix(monthDate), [monthDate]);
+
+  const isSameMonth = (date: Date) => date.getMonth() === monthDate.getMonth();
+  const isWeekend = (date: Date) => {
+    const d = date.getDay();
+    return d === 0 || d === 6;
+  };
+  const isToday = (date: Date) =>
+    date.getFullYear() === today.year &&
+    date.getMonth() === today.month &&
+    date.getDate() === today.date;
 
   const getTasksForDate = (date: Date) => {
     const start = Math.floor(startOfDay(date).getTime() / 1000);
     const end = Math.floor(endOfDay(date).getTime() / 1000);
-    return tasks.filter(t => {
+    return tasks.filter((t) => {
       if (!t.due_to) return false;
       const ts = extractTimeStampSecond(t.due_to);
       return ts >= start && ts <= end;
     });
   };
 
-  const isSameMonth = (date: Date) => date.getMonth() === monthDate.getMonth();
-  const isWeekend = (date: Date) => {
-    const d = date.getDay();
-    return d === 0 || d === 6; // Sun or Sat
-  };
+  const weekLabels = [
+    { label: "一", weekend: false },
+    { label: "二", weekend: false },
+    { label: "三", weekend: false },
+    { label: "四", weekend: false },
+    { label: "五", weekend: false },
+    { label: "六", weekend: true },
+    { label: "日", weekend: true },
+  ];
 
-  const weekLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  const monthStats = useMemo(() => {
+    const monthStart = new Date(monthDate.getFullYear(), monthDate.getMonth(), 1);
+    const monthEnd = new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 0, 23, 59, 59, 999);
+    const startTs = Math.floor(monthStart.getTime() / 1000);
+    const endTs = Math.floor(monthEnd.getTime() / 1000);
+    const monthTasks = tasks.filter((t) => {
+      if (!t.due_to) return false;
+      const ts = extractTimeStampSecond(t.due_to);
+      return ts >= startTs && ts <= endTs;
+    });
+    const total = monthTasks.length;
+    const done = monthTasks.filter((t) => t.completed).length;
+    return { total, done, pending: total - done };
+  }, [tasks, monthDate]);
 
   return (
-    <div className="monthly-grid">
-      <div className="grid grid-cols-7 gap-2 mb-2 text-sm text-muted-foreground">
-        {weekLabels.map(w => (
-          <div key={w} className="text-center select-none">{w}</div>
-        ))}
-      </div>
-      <ScrollArea className="h-[60vh] w-full">
-        <div className="grid grid-cols-7 gap-2 pr-2">
+    <ScrollArea className="monthly-scroll-area">
+      <div className="monthly-container">
+        <div className="monthly-header">
+          <div className="monthly-title-group">
+            <span className="monthly-title">{getMonthLabel(monthDate)}</span>
+            <span className="monthly-year">{monthDate.getFullYear()}</span>
+          </div>
+          <div className="monthly-stats">
+            <span className="monthly-stat">
+              <span className="monthly-stat-dot monthly-stat-dot--total" />
+              <strong>{monthStats.total}</strong> 总计
+            </span>
+            <span className="monthly-stat">
+              <span className="monthly-stat-dot monthly-stat-dot--done" />
+              <strong>{monthStats.done}</strong> 已完成
+            </span>
+            <span className="monthly-stat">
+              <span className="monthly-stat-dot monthly-stat-dot--pending" />
+              <strong>{monthStats.pending}</strong> 待完成
+            </span>
+          </div>
+        </div>
+
+        <div className="monthly-weekdays">
+          {weekLabels.map(({ label, weekend }) => (
+            <div key={label} className={`monthly-weekday ${weekend ? "monthly-weekday--weekend" : ""}`}>
+              {label}
+            </div>
+          ))}
+        </div>
+
+        <div className="monthly-grid">
           {monthCells.map((date) => {
-            const dateStr = formatDateOnly(date.toISOString());
             const dayTasks = getTasksForDate(date);
-            const isToday = dateStr === todayStr;
+            const outside = !isSameMonth(date);
             const weekend = isWeekend(date);
+            const todayCell = isToday(date);
+            const sorted = [...dayTasks].sort((a, b) => {
+              if (!a.completed && b.completed) return -1;
+              if (a.completed && !b.completed) return 1;
+              return 0;
+            });
+
             return (
-              <Card
+              <div
                 key={date.toISOString()}
-                className={`min-h-28 p-2 transition-all duration-150 outline-none hover:shadow-sm ${
-                  isSameMonth(date) ? '' : 'opacity-40'
-                } ${isToday ? 'bg-gradient-to-br from-primary/5 to-transparent ring-inset ring-1 ring-primary border-primary/60' : ''} ${weekend ? 'bg-muted/20' : ''}`}
+                className={`monthly-cell${outside ? " monthly-cell--outside" : ""}${weekend ? " monthly-cell--weekend" : ""}${todayCell ? " monthly-cell--today" : ""}`}
               >
-                <div className="flex items-center justify-between mb-1">
-                  <span className={`text-xs font-medium select-none ${weekend ? 'text-muted-foreground' : ''}`}>{date.getDate()}</span>
+                <div className="monthly-cell-header">
+                  <span className="monthly-cell-num">{date.getDate()}</span>
                   {dayTasks.length > 0 && (
-                    <Badge variant="outline" className="h-5 px-1.5 py-0 text-[10px] text-primary border-primary/30">
-                      {dayTasks.length}
-                    </Badge>
+                    <span className="monthly-cell-count">{dayTasks.length}</span>
                   )}
                 </div>
-                <ScrollArea className="pr-1" style={{ height: '6rem' }}>
-                  <ul className="space-y-1">
-                    {dayTasks.map(t => (
-                      <li key={t.id} className="group flex items-center gap-2 text-xs">
+                <div className="monthly-cell-tasks">
+                  {sorted.length > 0 ? (
+                    sorted.map((t) => (
+                      <div key={t.id} className="monthly-task-row">
                         <input
-                          className="size-3.5 accent-primary cursor-pointer"
                           type="checkbox"
+                          className="monthly-task-check"
                           checked={t.completed}
                           onChange={() => onToggleTask(t.id)}
                         />
-                        <TooltipProvider disableHoverableContent>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <span className={`truncate transition-colors ${t.completed ? 'line-through text-muted-foreground/70' : 'group-hover:text-foreground'}`}>{t.name}</span>
-                            </TooltipTrigger>
-                            <TooltipContent side="top" className="max-w-64">
-                              <span className="break-words text-xs">{t.name}</span>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                      </li>
-                    ))}
-                    {dayTasks.length === 0 && (
-                      <li className="text-[11px] text-muted-foreground/60">—</li>
-                    )}
-                  </ul>
-                </ScrollArea>
-              </Card>
+                        <span className={`monthly-task-name ${t.completed ? "monthly-task-name--done" : ""}`}>
+                          {t.name}
+                        </span>
+                      </div>
+                    ))
+                  ) : (
+                    <span className="monthly-cell-empty">-</span>
+                  )}
+                </div>
+              </div>
             );
           })}
         </div>
-      </ScrollArea>
-    </div>
+      </div>
+    </ScrollArea>
   );
 }
-
-

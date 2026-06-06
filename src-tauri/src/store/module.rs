@@ -37,4 +37,5 @@ pub trait PeriodicTaskManager {
     fn get_enabled_periodic_tasks(&self) -> Result<Vec<PeriodicTaskRecord>>;
     fn get_startup_periodic_tasks(&self) -> Result<Vec<PeriodicTaskRecord>>;
     fn get_periodic_task(&self, id: &str) -> Result<PeriodicTaskRecord>;
+    fn create_periodic_rule_only(&self, task: &PeriodicTaskData) -> Result<PeriodicTaskRecord>;
 }

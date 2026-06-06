@@ -307,13 +307,13 @@ pub async fn create_periodic_task(state: State<'_, AppState>,task: PeriodicTaskD
 #[tauri::command]
 pub async fn update_periodic_task(
     state: State<'_, AppState>,
-    task_id: &str,
+    id: &str,
     task: PeriodicTaskData,
 ) -> Result<PeriodicTask, String> {
 
     let record = {
         let db = state.db.lock();
-        let record = match db.get_task(task_id) {
+        let record = match db.get_task(id) {
             Ok(record) => record,
             Err(e) => {
                 logging!(error, Type::Database, true, "获取周期性任务失败: {:?}", e);
@@ -327,8 +327,8 @@ pub async fn update_periodic_task(
         if let Some(periodic_id) = &record.periodic {
             db.update_periodic_task(periodic_id, &task)
         }else{
-            // 如果从非周期任务转换为周期任务，需要创建周期规则
-            db.create_periodic_task(&task)
+            // 如果从非周期任务转换为周期任务，只创建周期规则，不重复插入task
+            db.create_periodic_rule_only(&task)
         }
     };
     match record {

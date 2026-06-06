@@ -112,6 +112,7 @@ export default function ActionSelect({
               Action 调用链 ({currentSelectedActions.length})
             </h4>
             <Button
+              type="button"
               variant="ghost"
               size="sm"
               onClick={handleClearAll}
@@ -127,6 +128,7 @@ export default function ActionSelect({
                 <Badge variant="secondary" className="text-xs">
                   {index + 1}. {action.name}
                   <Button
+                    type="button"
                     variant="ghost"
                     size="sm"
                     onClick={() => handleActionRemove(action)}
@@ -166,6 +168,7 @@ export default function ActionSelect({
       <div className="flex flex-wrap gap-2">
         {actionTypes.map(type => (
           <Button
+            type="button"
             key={type.value}
             variant={selectedType === type.value ? "default" : "outline"}
             size="sm"

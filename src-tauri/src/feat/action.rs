@@ -9,9 +9,42 @@ use tauri_plugin_opener::OpenerExt;
 use tauri::Manager;
 use tokio::time::timeout;
 
+#[derive(Debug, Clone, Copy)]
+struct ExecutionContext {
+    force_sync_command: bool,
+}
+
+impl ExecutionContext {
+    const DEFAULT: Self = Self {
+        force_sync_command: false,
+    };
+
+    const GROUP: Self = Self {
+        force_sync_command: true,
+    };
+}
+
+#[derive(Debug, Clone, Copy)]
+enum CommandExecutionMode {
+    Foreground,
+    Detached,
+}
+
+fn resolve_command_execution_mode(action: &Action, context: ExecutionContext) -> CommandExecutionMode {
+    if context.force_sync_command
+        || action.retry.unwrap_or(0) > 0
+        || action.timeout.unwrap_or(0) > 0
+        || action.wait > 0
+    {
+        CommandExecutionMode::Foreground
+    } else {
+        CommandExecutionMode::Detached
+    }
+}
+
 pub async fn execute_action(action: Action) -> Result<String, String> {
     let action_id = action.id.clone();
-    let res = execute_action_internal(action).await;
+    let res = execute_action_internal(action, ExecutionContext::DEFAULT).await;
     if res.is_ok() {
         if let Some(id) = action_id {
             {
@@ -57,14 +90,33 @@ async fn open_url(url: String) -> Result<(), String> {
 }
 
 #[cfg(target_os = "windows")]
-async fn execute_command(command: String, args: Option<Vec<String>>) -> Result<String, String> {
-    let mut cmd = Command::new("cmd");
-    cmd.arg("/C").arg(&command);
-    if let Some(args) = args.as_ref() {
-        for arg in args {
-            cmd.arg(arg);
-        }
+fn quote_windows_cmd_arg(arg: &str) -> String {
+    if arg.is_empty() {
+        return "\"\"".to_string();
     }
+
+    if !arg.chars().any(|c| c.is_whitespace() || c == '"' || c == '^' || c == '&' || c == '|' || c == '<' || c == '>') {
+        return arg.to_string();
+    }
+
+    let escaped = arg.replace('"', "\\\"");
+    format!("\"{}\"", escaped)
+}
+
+#[cfg(target_os = "windows")]
+fn build_windows_command_line(command: &str, args: Option<&Vec<String>>) -> String {
+    let mut parts = vec![command.to_string()];
+    if let Some(args) = args {
+        parts.extend(args.iter().map(|arg| quote_windows_cmd_arg(arg)));
+    }
+    parts.join(" ")
+}
+
+#[cfg(target_os = "windows")]
+async fn execute_command(command: String, args: Option<Vec<String>>) -> Result<String, String> {
+    let full_command = build_windows_command_line(&command, args.as_ref());
+    let mut cmd = Command::new("cmd");
+    cmd.args(["/S", "/C", &full_command]);
     let output = cmd.output().map_err(|e| e.to_string())?;
     if !output.status.success() {
         let error_message = String::from_utf8_lossy(&output.stderr);
@@ -82,13 +134,9 @@ async fn execute_command_indepent(
     command: String,
     args: Option<Vec<String>>,
 ) -> Result<String, String> {
+    let full_command = build_windows_command_line(&command, args.as_ref());
     let mut cmd = Command::new("cmd");
-    cmd.arg("/C").arg(&command);
-    if let Some(args) = args.as_ref() {
-        for arg in args {
-            cmd.arg(arg);
-        }
-    }
+    cmd.args(["/S", "/C", &full_command]);
     cmd.creation_flags(0x08000000);
     match cmd.spawn() {
         Ok(_child) => {
@@ -136,7 +184,7 @@ pub async fn execute_action_with_retry(action: Action) -> Result<String, String>
         logging!(info, Type::Cmd, true, "执行动作 {} (尝试 {}/{})", action.name, attempt + 1, config.max_retries + 1);
         
         // 使用timeout包装执行
-        let execution_future = execute_action_internal(action.clone());
+        let execution_future = execute_action_internal(action.clone(), ExecutionContext::GROUP);
         let timeout_duration = Duration::from_secs(config.timeout_seconds);
         
         match timeout(timeout_duration, execution_future).await {
@@ -168,7 +216,7 @@ pub async fn execute_action_with_retry(action: Action) -> Result<String, String>
 }
 
 /// 原始的action执行逻辑，重命名为内部函数
-pub async fn execute_action_internal(action: Action) -> Result<String, String> {
+async fn execute_action_internal(action: Action, context: ExecutionContext) -> Result<String, String> {
     logging!(info, Type::Cmd, true, "内部执行动作: {:?}", action);
     if let Ok(t) = ActionType::try_from(action.typ.as_str()) {
         match t {
@@ -185,12 +233,15 @@ pub async fn execute_action_internal(action: Action) -> Result<String, String> {
                 Ok(format!("open_url: ok"))
             }
             ActionType::Command => {
-                if action.wait > 0 {
-                    let output = execute_command(action.command, action.args).await?;
-                    Ok(output)
-                } else {
-                    let output = execute_command_indepent(action.command, action.args).await?;
-                    Ok(output)
+                match resolve_command_execution_mode(&action, context) {
+                    CommandExecutionMode::Foreground => {
+                        let output = execute_command(action.command, action.args).await?;
+                        Ok(output)
+                    }
+                    CommandExecutionMode::Detached => {
+                        let output = execute_command_indepent(action.command, action.args).await?;
+                        Ok(output)
+                    }
                 }
             }
             ActionType::Notice => {
@@ -308,5 +359,116 @@ pub async fn execute_action_internal(action: Action) -> Result<String, String> {
         }
     } else {
         return Err("未知操作类型".to_string());
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn mock_command_action(
+        command: &str,
+        args: Option<Vec<&str>>,
+        wait: usize,
+        retry: Option<usize>,
+        timeout: Option<u64>,
+    ) -> Action {
+        Action {
+            id: Some("mock-action-id".to_string()),
+            name: "Mock Command".to_string(),
+            desc: "Mock command action for tests".to_string(),
+            wait,
+            typ: "command".to_string(),
+            retry,
+            timeout,
+            command: command.to_string(),
+            args: args.map(|items| items.into_iter().map(|item| item.to_string()).collect()),
+            count: None,
+        }
+    }
+
+    #[test]
+    fn command_mode_defaults_to_detached_for_plain_command() {
+        let action = mock_command_action("echo", Some(vec!["hello"]), 0, None, None);
+        assert!(matches!(
+            resolve_command_execution_mode(&action, ExecutionContext::DEFAULT),
+            CommandExecutionMode::Detached
+        ));
+    }
+
+    #[test]
+    fn command_mode_forces_foreground_in_group_context() {
+        let action = mock_command_action("echo", Some(vec!["hello"]), 0, None, None);
+        assert!(matches!(
+            resolve_command_execution_mode(&action, ExecutionContext::GROUP),
+            CommandExecutionMode::Foreground
+        ));
+    }
+
+    #[test]
+    fn command_mode_forces_foreground_when_retry_timeout_or_wait_is_set() {
+        let retry_action = mock_command_action("echo", Some(vec!["retry"]), 0, Some(1), None);
+        let timeout_action = mock_command_action("echo", Some(vec!["timeout"]), 0, None, Some(3));
+        let wait_action = mock_command_action("echo", Some(vec!["wait"]), 100, None, None);
+
+        assert!(matches!(
+            resolve_command_execution_mode(&retry_action, ExecutionContext::DEFAULT),
+            CommandExecutionMode::Foreground
+        ));
+        assert!(matches!(
+            resolve_command_execution_mode(&timeout_action, ExecutionContext::DEFAULT),
+            CommandExecutionMode::Foreground
+        ));
+        assert!(matches!(
+            resolve_command_execution_mode(&wait_action, ExecutionContext::DEFAULT),
+            CommandExecutionMode::Foreground
+        ));
+    }
+
+    #[cfg(target_os = "windows")]
+    #[test]
+    fn windows_command_line_quotes_complex_args() {
+        let cmdline = build_windows_command_line(
+            "echo",
+            Some(&vec![
+                "hello world".to_string(),
+                "plain".to_string(),
+                "a\"b".to_string(),
+            ]),
+        );
+
+        assert_eq!(cmdline, "echo \"hello world\" plain \"a\\\"b\"");
+    }
+
+    #[cfg(target_os = "windows")]
+    #[tokio::test]
+    async fn execute_command_returns_stdout_for_mock_echo() {
+        let output = execute_command("echo".to_string(), Some(vec!["hello action".to_string()]))
+            .await
+            .unwrap();
+
+        assert!(output.contains("hello action"));
+    }
+
+    #[cfg(target_os = "windows")]
+    #[tokio::test]
+    async fn execute_action_internal_uses_foreground_mode_in_group_context() {
+        let action = mock_command_action("echo", Some(vec!["group foreground"]), 0, None, None);
+        let output = execute_action_internal(action, ExecutionContext::GROUP)
+            .await
+            .unwrap();
+
+        assert!(output.contains("group foreground"));
+    }
+
+    #[cfg(target_os = "windows")]
+    #[tokio::test]
+    async fn execute_action_internal_uses_detached_mode_by_default() {
+        let action = mock_command_action("echo", Some(vec!["detached"]), 0, None, None);
+        let output = execute_action_internal(action, ExecutionContext::DEFAULT)
+            .await
+            .unwrap();
+
+        assert_eq!(output, "命令已启动，独立运行中");
     }
 }

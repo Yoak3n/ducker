@@ -6,7 +6,7 @@ use crate::{
     store::{db::Database, module::PeriodicTaskManager},
     utils::{
         logging::Type,
-        date::calculate_next_period
+        date::{calculate_next_period, str_to_datetime}
     },
     logging
 };
@@ -89,27 +89,31 @@ impl PeriodicTaskManager for Database {
         })
     }
 
-    // 什么时候调用才会让系统正常运行呢？
-    // 当一个周期性任务被触发时，系统会调用这个函数来更新下一个周期任务的触发时间。
-    fn update_periodic_task_last_period(&self, id: &str, next_period: Option<i64>) -> Result<()> {
+    // 当周期任务创建出下一个实体任务后，推进周期记录。
+    // None: 按当前 next_period 正常向前推进一格。
+    // Some(period): 保留当前 last_period 作为日期锚点，仅将 next_period 显式更新到 period。
+    fn update_periodic_task_last_period(&self, id: &str, period: Option<i64>) -> Result<()> {
         let conn = self.conn.write();
 
         // 获取当前的 next_period 和 interval
-        let (current_next_period,current_last_period, interval): (Option<i64>, Option<i64>, u8) = conn.query_row(
+        let (current_next_period, current_last_period, interval): (Option<i64>, Option<i64>, u8) = conn.query_row(
             "SELECT next_period, last_period, interval FROM periodic_tasks WHERE id = ?1",
             params![id],
             |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)),
         )?;
-        
-        // 计算新的 next_period
-        let new_next_period;
-        let new_last_period = if let Some(n) = next_period {
-            // 如果传入新的 next_period,表示是特殊情况： 进行了日期自适应调整 —— 不更新last_period，只更新next_period
-            new_next_period = n;
-            current_last_period.unwrap()
+
+        let (new_last_period, new_next_period) = if let Some(period) = period {
+            let preserved_last = current_last_period.or(current_next_period);
+            (
+                preserved_last.ok_or_else(|| anyhow::anyhow!("周期性任务缺少 last_period/next_period: {}", id))?,
+                period,
+            )
         } else {
-            new_next_period = calculate_next_period(current_next_period.unwrap(), interval);
-            current_next_period.unwrap()
+            let current_next_period = current_next_period.ok_or_else(|| anyhow::anyhow!("周期性任务缺少 next_period: {}", id))?;
+            (
+                current_next_period,
+                calculate_next_period(current_next_period, interval),
+            )
         };
 
         conn.execute(
@@ -254,6 +258,53 @@ impl PeriodicTaskManager for Database {
             interval: task.interval,
             last_period: current_periodic_task.last_period,
             next_period: current_periodic_task.next_period,
+        })
+    }
+
+    /// 将已有任务转为周期任务：只创建 periodic_tasks 记录，不重复插入 tasks 表
+    fn create_periodic_rule_only(&self, task: &PeriodicTaskData) -> Result<PeriodicTaskRecord> {
+        let conn = self.conn.write();
+        let task_id = task.task.id.as_deref().unwrap_or("");
+
+        // 将 due_to 字符串转为时间戳
+        let due_to_ts = task.task.due_to.as_deref()
+            .map(|s| str_to_datetime(s).timestamp())
+            .unwrap_or(0);
+
+        // 1. 更新已有任务的 periodic 字段，指向自身 ID
+        conn.execute(
+            "UPDATE tasks SET periodic = ?1 WHERE id = ?2",
+            params![Some(task_id), task_id],
+        )?;
+
+        // 2. 只插入 periodic_tasks 记录
+        let next_period = calculate_next_period(due_to_ts, task.interval as u8);
+        let last_period = if task.interval == 0 || task.interval == 100 {
+            None
+        } else {
+            Some(due_to_ts)
+        };
+
+        let mut stmt = conn.prepare(
+            "INSERT INTO periodic_tasks (id, name, interval, next_period, last_period)
+             VALUES (?1, ?2, ?3, ?4, ?5)",
+        )?;
+        let row_id = stmt.insert(params![
+            task_id,
+            &task.name,
+            task.interval as u8,
+            Some(next_period),
+            last_period,
+        ])?;
+
+        logging!(debug, Type::Database, "将任务转为周期任务成功: {}", row_id);
+
+        Ok(PeriodicTaskRecord {
+            id: task_id.to_string(),
+            name: task.name.clone(),
+            interval: task.interval,
+            last_period: last_period.map(|v| v as u64),
+            next_period: Some(next_period as u64),
         })
     }
 }
