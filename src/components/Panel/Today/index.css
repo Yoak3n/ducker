@@ -1,4 +1,4 @@
-li:not(.today).dued{
+li.dued{
     .task-item-title{
         color: #ffc107;
         &::before{

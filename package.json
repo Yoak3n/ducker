@@ -1,7 +1,7 @@
 {
   "name": "ducker",
   "private": true,
-  "version": "0.3.0",
+  "version": "0.3.1",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -58,9 +58,6 @@
     "vaul": "^1.1.2",
     "zod": "^3.25.76",
     "zustand": "^5.0.12"
-  },
-  "pnpm": {
-    "onlyBuiltDependencies": ["esbuild"]
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",
