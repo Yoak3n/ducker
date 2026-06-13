@@ -22,11 +22,11 @@
         &.dropdown-button {
             width: 1.5rem;
             height: 1.5rem;
-            color: #000;
+            color: var(--foreground);
             background-color: transparent;
             border: none;
             border-radius: 1.5rem;
-            background-color: #e4e4e4;
+            background-color: var(--muted);
         }
     }
 
@@ -42,7 +42,7 @@
     .task-item-title {
         font-weight: normal;
         font-size: 14px;
-        color: #555;
+        color: var(--foreground);
     }
 }
 
@@ -55,6 +55,6 @@
 }
 .root-task.completed,
 .sub-task.completed {
-    background: #e8f8f5;
-    color: #27ae60;
+    background: rgba(34, 197, 94, 0.1);
+    color: #22c55e;
 }

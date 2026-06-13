@@ -4,7 +4,7 @@
   max-width: 1200px;
   margin: 0 auto;
   padding: 20px;
-  color: #333;
+  color: var(--foreground);
 }
 
 .tabs button {
@@ -15,7 +15,7 @@
   border-bottom: 3px solid transparent;
   cursor: pointer;
   font-size: 16px;
-  color: #7f8c8d;
+  color: var(--muted-foreground);
   transition: all 0.3s;
 }
 
@@ -31,7 +31,7 @@
 
 
 .progress-bar {
-  background: #ecf0f1;
+  background: var(--muted);
   height: 20px;
   border-radius: 10px;
   margin: 15px 0;
@@ -51,7 +51,7 @@
   left: 50%;
   top: 50%;
   transform: translate(-50%, -50%);
-  color: #2c3e50;
+  color: var(--foreground);
   font-size: 12px;
   font-weight: bold;
 }
@@ -64,17 +64,17 @@
 .task-list li {
   padding: 10px;
   margin: 5px 0;
-  background: #f9f9f9;
+  background: var(--muted);
   border-radius: 4px;
 }
 
 .task-list li.completed {
-  background: #e8f8f5;
-  color: #27ae60;
+  background: rgba(34, 197, 94, 0.1);
+  color: #22c55e;
 }
 
 .task-list li.empty {
-  color: #95a5a6;
+  color: var(--muted-foreground);
   font-style: italic;
   justify-content: center;
 }
@@ -108,7 +108,7 @@
 .week-primary {
   flex: 1 1 0%;
   min-width: 0;
-  background: #fff;
+  background: var(--card);
   border: 2px solid #3498db;
   border-radius: 12px;
   padding: 18px 20px;
@@ -133,7 +133,7 @@
 .week-primary-label {
   font-size: 18px;
   font-weight: 700;
-  color: #1e293b;
+  color: var(--foreground);
 }
 
 .week-primary-label--today {
@@ -142,16 +142,16 @@
 
 .week-primary-sub {
   font-size: 12px;
-  color: #94a3b8;
+  color: var(--muted-foreground);
 }
 
 .week-primary-ring {
   position: relative;
   width: 48px;
   height: 48px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
 }
 
 .week-progress-ring {
@@ -160,17 +160,19 @@
 }
 
 .week-primary-pct {
+  position: relative;
   font-size: 11px;
   font-weight: 600;
   color: #3498db;
   font-variant-numeric: tabular-nums;
+  line-height: 1;
 }
 
 /* Stats */
 .week-primary-stats {
   display: flex;
   align-items: center;
-  background: #f8fafc;
+  background: var(--muted);
   border-radius: 8px;
   padding: 10px 0;
 }
@@ -186,13 +188,13 @@
 .week-pstat strong {
   font-size: 18px;
   font-weight: 700;
-  color: #1e293b;
+  color: var(--foreground);
   font-variant-numeric: tabular-nums;
 }
 
 .week-pstat small {
   font-size: 11px;
-  color: #94a3b8;
+  color: var(--muted-foreground);
 }
 
 .week-pstat--done { color: #22c55e; }
@@ -201,7 +203,7 @@
 .week-pstat-sep {
   width: 1px;
   height: 24px;
-  background: #e2e8f0;
+  background: var(--border);
 }
 
 .week-primary-body {
@@ -215,7 +217,7 @@
   align-items: center;
   justify-content: center;
   min-height: 80px;
-  color: #cbd5e1;
+  color: var(--muted-foreground);
   font-size: 13px;
 }
 
@@ -229,8 +231,8 @@
 }
 
 .week-side-card {
-  background: #fff;
-  border: 1px solid #e2e8f0;
+  background: var(--card);
+  border: 1px solid var(--border);
   border-radius: 8px;
   padding: 10px 12px;
   display: flex;
@@ -255,18 +257,18 @@
 .week-side-label {
   font-size: 12px;
   font-weight: 600;
-  color: #475569;
+  color: var(--foreground);
 }
 
 .week-side-count {
   font-size: 11px;
-  color: #94a3b8;
+  color: var(--muted-foreground);
   font-variant-numeric: tabular-nums;
 }
 
 .week-side-bar {
   height: 3px;
-  background: #f1f5f9;
+  background: var(--muted);
   border-radius: 2px;
   overflow: hidden;
 }
@@ -294,7 +296,7 @@
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  border: 1.5px solid #cbd5e1;
+  border: 1.5px solid var(--muted-foreground);
   flex-shrink: 0;
 }
 
@@ -305,7 +307,7 @@
 
 .week-side-name {
   font-size: 11px;
-  color: #475569;
+  color: var(--foreground);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -314,14 +316,14 @@
 
 .week-side-empty {
   font-size: 11px;
-  color: #cbd5e1;
+  color: var(--muted-foreground);
   padding: 6px 0;
   text-align: center;
 }
 
 /* ── Ghost element ────────────────── */
 .week-ghost {
-  background: #fff;
+  background: var(--card);
   border: 1px solid #3498db;
   border-radius: 8px;
   padding: 10px 12px;
@@ -374,12 +376,12 @@
 .monthly-title {
   font-size: 20px;
   font-weight: 700;
-  color: #1e293b;
+  color: var(--foreground);
 }
 
 .monthly-year {
   font-size: 13px;
-  color: #94a3b8;
+  color: var(--muted-foreground);
   font-weight: 400;
 }
 
@@ -394,7 +396,7 @@
   align-items: center;
   gap: 5px;
   font-size: 12px;
-  color: #64748b;
+  color: var(--muted-foreground);
 }
 
 .monthly-stat-dot {
@@ -410,7 +412,7 @@
 .monthly-stat strong {
   font-weight: 700;
   font-variant-numeric: tabular-nums;
-  color: #1e293b;
+  color: var(--foreground);
 }
 
 /* ── Weekday labels ──────────────── */
@@ -426,14 +428,15 @@
   text-align: center;
   font-size: 11px;
   font-weight: 600;
-  color: #94a3b8;
+  color: var(--muted-foreground);
   text-transform: uppercase;
   letter-spacing: 0.5px;
   padding: 6px 0;
 }
 
 .monthly-weekday--weekend {
-  color: #cbd5e1;
+  color: var(--muted-foreground);
+  opacity: 0.6;
 }
 
 /* ── Calendar grid ───────────────── */
@@ -446,8 +449,8 @@
 
 /* ── Day cell ────────────────────── */
 .monthly-cell {
-  background: #fff;
-  border: 1px solid #f1f5f9;
+  background: var(--card);
+  border: 1px solid var(--border);
   border-radius: 8px;
   padding: 6px 8px;
   min-height: 96px;
@@ -457,17 +460,17 @@
 }
 
 .monthly-cell:hover {
-  border-color: #e2e8f0;
+  border-color: var(--border);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 
 .monthly-cell--outside {
   opacity: 0.35;
-  background: #fafbfc;
+  background: var(--muted);
 }
 
 .monthly-cell--weekend {
-  background: #fafbfd;
+  background: var(--muted);
 }
 
 .monthly-cell--today {
@@ -488,7 +491,7 @@
 .monthly-cell-num {
   font-size: 12px;
   font-weight: 600;
-  color: #475569;
+  color: var(--foreground);
   line-height: 1;
 }
 
@@ -505,7 +508,7 @@
 }
 
 .monthly-cell--weekend .monthly-cell-num {
-  color: #94a3b8;
+  color: var(--muted-foreground);
 }
 
 .monthly-cell-count {
@@ -539,7 +542,7 @@
   width: 13px;
   height: 13px;
   border-radius: 3px;
-  border: 1.5px solid #cbd5e1;
+  border: 1.5px solid var(--muted-foreground);
   flex-shrink: 0;
   cursor: pointer;
   display: flex;
@@ -573,7 +576,7 @@
 
 .monthly-task-name {
   font-size: 11px;
-  color: #475569;
+  color: var(--foreground);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -584,12 +587,13 @@
 
 .monthly-task-name--done {
   text-decoration: line-through;
-  color: #b0bec5;
+  color: var(--muted-foreground);
+  opacity: 0.6;
 }
 
 .monthly-cell-empty {
   font-size: 11px;
-  color: #e2e8f0;
+  color: var(--muted-foreground);
   text-align: center;
   padding: 8px 0;
   flex: 1;

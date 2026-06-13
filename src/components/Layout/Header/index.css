@@ -16,6 +16,8 @@ header {
     }
 
     .header-operation {
+        display: flex;
+        align-items: center;
         button {
             margin-right: .3rem;
             border: none;

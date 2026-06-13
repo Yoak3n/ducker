@@ -117,7 +117,7 @@ const TaskDashboard: React.FC = () => {
 
   return (
     <div className="task-dashboard">
-      <div className="tabs flex justify-center mb-1 border-b border-gray-200">
+      <div className="tabs flex justify-center mb-1 border-b border-border">
         <button 
           className={activeTab === 'today' ? 'active' : ''}
           onClick={() => setActiveTab('today')}
@@ -138,7 +138,7 @@ const TaskDashboard: React.FC = () => {
         </button>
       </div>
       
-      <div className="tab-content bg-white p-4 rounded-lg shadow-md">
+      <div className="tab-content bg-card p-4 rounded-lg shadow-md">
         {activeTab === 'today' && (
           <TodayView
             tasks={tasks}

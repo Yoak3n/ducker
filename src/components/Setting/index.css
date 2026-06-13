@@ -16,7 +16,7 @@
 }
 
 .setting-item {
-    background: #fff;
+    background: var(--card);
     border-radius: 12px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
     padding: 24px 32px;
@@ -29,13 +29,13 @@
             font-size: 1.2rem;
             font-weight: 600;
             margin-bottom: 1rem;
-            color: #222;
+            color: var(--card-foreground);
             letter-spacing: 0.02em;
 
             &::after {
                 content: '';
                 display: block;
-                background: #000;
+                background: var(--border);
                 width: 110%;
                 height: 1px;
                 margin-top: 0.5rem;

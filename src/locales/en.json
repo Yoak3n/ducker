@@ -70,6 +70,10 @@
   "Slient Launch": "Slient Launch",
   "General": "General",
   "Appearance": "Appearance",
+  "Theme": "Theme",
+  "Theme Light": "Light",
+  "Theme Dark": "Dark",
+  "Theme System": "System",
 
   "Startup Tasks": "Startup Tasks",
   "View and manage tasks that run on application startup": "View and manage tasks that run on application startup",

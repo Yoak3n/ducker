@@ -116,13 +116,13 @@ export default function ActionSelect({
               variant="ghost"
               size="sm"
               onClick={handleClearAll}
-              className="text-xs text-red-500 hover:text-red-700"
+              className="text-xs text-destructive hover:text-destructive"
             >
               清空全部
             </Button>
           </div>
 
-          <div className="flex flex-wrap gap-2 p-3 bg-gray-50 rounded-lg">
+          <div className="flex flex-wrap gap-2 p-3 bg-muted rounded-lg">
             {currentSelectedActions.map((action, index) => (
               <div key={action.id} className="flex items-center gap-1">
                 <Badge variant="secondary" className="text-xs">
@@ -132,13 +132,13 @@ export default function ActionSelect({
                     variant="ghost"
                     size="sm"
                     onClick={() => handleActionRemove(action)}
-                    className="ml-1 h-4 w-4 p-0 hover:bg-red-100"
+                    className="ml-1 h-4 w-4 p-0 hover:bg-destructive/20"
                   >
-                    <X size={12} className="text-red-500" />
+                    <X size={12} className="text-destructive" />
                   </Button>
                 </Badge>
                 {index < currentSelectedActions.length - 1 && (
-                  <ArrowRight size={12} className="text-gray-400" />
+                  <ArrowRight size={12} className="text-muted-foreground" />
                 )}
               </div>
             ))}
@@ -149,7 +149,7 @@ export default function ActionSelect({
       )}
       {/* 搜索框 */}
       <div className="relative">
-        <Search size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+        <Search size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
         <Input
           placeholder="搜索 actions..."
           value={searchTerm}
@@ -212,10 +212,10 @@ export default function ActionSelect({
               })}
             </div>
           ) : (
-            <div className="text-center py-8 text-gray-500">
+            <div className="text-center py-8 text-muted-foreground">
               <SearchX size={40} className="mb-2 mx-auto" />
               <p className="text-sm">未找到匹配的 Actions</p>
-              <p className="text-xs text-gray-400 mt-1">尝试调整搜索条件或类型过滤器</p>
+              <p className="text-xs text-muted-foreground mt-1">尝试调整搜索条件或类型过滤器</p>
             </div>
           )}
         </div>

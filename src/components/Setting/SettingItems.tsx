@@ -18,6 +18,7 @@ const SettingItems: FC = () => {
     const auto_launch = useConfigStore(state=>state.enable_auto_launch)
     const setConfigStateInStore = useConfigStore(state=>state.setConfig)
     const language = useConfigStore(state=>state.language)
+    const theme = useConfigStore(state=>state.theme)
     // Zustand 的 useConfigStore(state => state.enable_auto_launch) 只有在组件重新渲染时才会拿到新值。
     // 需要手动获取新值
     useEffect(() => {
@@ -73,9 +74,9 @@ const SettingItems: FC = () => {
                 <div className="flex gap-32">
                     <div className="flex items-center space-x-2">
                         <Label htmlFor="language">{t("Select Language")}</Label>
-                        <Select 
-                            value={language} 
-                            defaultValue="zh" 
+                        <Select
+                            value={language}
+                            defaultValue="zh"
                             onValueChange={(v) => {
                                 handleConfigUpdate({ language: v })
                             }}
@@ -90,6 +91,25 @@ const SettingItems: FC = () => {
                             </SelectContent>
                         </Select>
 
+                    </div>
+                    <div className="flex items-center space-x-2">
+                        <Label htmlFor="theme">{t("Theme")}</Label>
+                        <Select
+                            value={theme || "system"}
+                            defaultValue="system"
+                            onValueChange={(v) => {
+                                handleConfigUpdate({ theme: v })
+                            }}
+                            >
+                            <SelectTrigger>
+                                <SelectValue placeholder={t("Theme")} />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="light">{t("Theme Light")}</SelectItem>
+                                <SelectItem value="dark">{t("Theme Dark")}</SelectItem>
+                                <SelectItem value="system">{t("Theme System")}</SelectItem>
+                            </SelectContent>
+                        </Select>
                     </div>
                 </div>
             </SettingItem>

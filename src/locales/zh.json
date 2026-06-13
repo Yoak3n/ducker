@@ -69,6 +69,10 @@
   "Slient Launch": "静默启动",
   "General": "通用",
   "Appearance": "外观",
+  "Theme": "主题",
+  "Theme Light": "浅色",
+  "Theme Dark": "深色",
+  "Theme System": "跟随系统",
 
   "Startup Tasks": "启动时任务",
   "View and manage tasks that run on application startup": "查看和管理应用启动时运行的任务",

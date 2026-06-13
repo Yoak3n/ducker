@@ -17,6 +17,7 @@ pub struct Config {
     pub enable_auto_launch: Option<bool>,
     pub silent_launch: Option<bool>,
     pub language: Option<String>,
+    pub theme: Option<String>,
 }
 
 impl Config {
@@ -56,6 +57,7 @@ impl Config {
             enable_auto_launch: Some(false),
             silent_launch: Some(false),
             language: Some("zh".to_string()),
+            theme: Some("system".to_string()),
         }
     }
 
@@ -79,6 +81,7 @@ impl Config {
         patch!(enable_auto_launch);
         patch!(silent_launch);
         patch!(language);
+        patch!(theme);
     }
 }
 

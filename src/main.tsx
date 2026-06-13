@@ -12,9 +12,20 @@ if (import.meta.env.PROD) {
     });
 }
 
+function applyTheme(theme?: string) {
+    const root = document.documentElement;
+    if (!theme || theme === 'system') {
+        const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        root.classList.toggle('dark', isDark);
+    } else {
+        root.classList.toggle('dark', theme === 'dark');
+    }
+}
+
 const loadConfig = async () => {
     const config = await getConfig();
     config.language && changeLanguage(config.language);
+    applyTheme(config.theme);
 }
 
 (async () => {
@@ -27,6 +38,6 @@ const loadConfig = async () => {
     createRoot(document.getElementById('root')!).render(
       // <StrictMode>
         <App />
-      // </StrictMode> 
+      // </StrictMode>
     );
 })();
