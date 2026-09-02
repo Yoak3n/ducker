@@ -1,6 +1,7 @@
 mod config;
 pub mod core;
 mod feat;
+pub mod mcp;
 mod module;
 mod process;
 mod schema;

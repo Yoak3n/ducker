@@ -1,5 +1,5 @@
 use crate::{
-    schema::AppState, store::module::{ActionManager, TaskManager}, utils::{
+    schema::AppState, store::{db::Database, module::{ActionManager, TaskManager}}, utils::{
         date::{str_to_datetime, to_datetime_str},
         help::get_uid,
     }
@@ -23,45 +23,48 @@ pub struct TaskRecord {
     pub reminder: Option<i64>,
 }
 
+/// 从记录构建 TaskView（不依赖 AppState/Tauri，MCP server 与 GUI 共用）
+pub fn task_view_from_record(record: &TaskRecord, db: &Database) -> anyhow::Result<TaskView> {
+    // 获取关联的 actions
+    let action_records = db.get_actions(&record.actions)?;
+    let actions = Some(
+        action_records
+            .into_iter()
+            .map(|record| Action::from(record))
+            .collect(),
+    );
+
+    let children = db
+        .get_tasks_by_parent_id(&record.id)?
+        .into_iter()
+        .map(|child| task_view_from_record(&child, db))
+        .collect::<Result<Vec<_>, anyhow::Error>>()?;
+
+    let created_at = to_datetime_str(record.created_at);
+    let due_to = Some(to_datetime_str(record.due_to));
+    let reminder = record.reminder.map(to_datetime_str);
+
+    Ok(TaskView {
+        id: record.id.clone(),
+        value: record.value,
+        name: record.name.clone(),
+        completed: record.completed,
+        auto: record.auto,
+        periodic: record.periodic.clone(),
+        actions,
+        children: Some(children),
+        created_at,
+        due_to,
+        reminder,
+    })
+}
+
 impl TryFrom<(&TaskRecord, &AppState)> for TaskView {
     type Error = anyhow::Error;
 
     fn try_from((record, state): (&TaskRecord, &AppState)) -> Result<Self, Self::Error> {
         let db = state.db.lock();
-
-        // 获取关联的 actions
-        let action_records = db.get_actions(&record.actions)?;
-        let actions = Some(
-            action_records
-                .into_iter()
-                .map(|record| Action::from(record))
-                .collect(),
-        );
-        // println!("{:?}", actions);
-
-        let children = db
-            .get_tasks_by_parent_id(&record.id)?
-            .into_iter()
-            .map(|child| Self::try_from((&child, state)))
-            .collect::<Result<Vec<_>, _>>()?;
-
-        let created_at = to_datetime_str(record.created_at);
-        let due_to = Some(to_datetime_str(record.due_to));
-        let reminder = record.reminder.map(to_datetime_str);
-
-        Ok(Self {
-            id: record.id.clone(),
-            value: record.value,
-            name: record.name.clone(),
-            completed: record.completed,
-            auto: record.auto,
-            periodic: record.periodic.clone(),
-            actions,
-            children: Some(children),
-            created_at,
-            due_to,
-            reminder,
-        })
+        task_view_from_record(record, &db)
     }
 }
 

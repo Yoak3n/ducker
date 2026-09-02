@@ -18,6 +18,10 @@ pub struct Config {
     pub silent_launch: Option<bool>,
     pub language: Option<String>,
     pub theme: Option<String>,
+    /// MCP 服务开关：允许 ducker-mcp 二进制读写本机任务库
+    pub enable_mcp: Option<bool>,
+    /// 用户 PATH 注册结果记录（幂等展示 + 卸载器清理依据）
+    pub mcp_path_registered: Option<bool>,
 }
 
 impl Config {
@@ -58,6 +62,8 @@ impl Config {
             silent_launch: Some(false),
             language: Some("zh".to_string()),
             theme: Some("system".to_string()),
+            enable_mcp: Some(false),
+            mcp_path_registered: Some(false),
         }
     }
 
@@ -82,6 +88,8 @@ impl Config {
         patch!(silent_launch);
         patch!(language);
         patch!(theme);
+        patch!(enable_mcp);
+        patch!(mcp_path_registered);
     }
 }
 

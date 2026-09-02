@@ -94,6 +94,10 @@ pub fn generate_handlers() -> impl Fn(tauri::ipc::Invoke<tauri::Wry>) -> bool + 
         cmd::config::save_config,
         cmd::config::get_config,
         cmd::config::update_config,
+        // MCP
+        cmd::mcp::get_mcp_status,
+        cmd::mcp::register_mcp_path,
+        cmd::mcp::unregister_mcp_path,
         // Sound
         cmd::sound::play_sound,
     ]

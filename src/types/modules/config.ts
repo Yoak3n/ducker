@@ -3,6 +3,8 @@ interface Config {
     silent_launch?: boolean
     language?: string
     theme?: string
+    enable_mcp?: boolean
+    mcp_path_registered?: boolean
 }
 
 export type { Config }

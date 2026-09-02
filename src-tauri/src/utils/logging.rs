@@ -1,4 +1,18 @@
 use std::fmt;
+use std::sync::atomic::{AtomicBool, Ordering};
+
+/// 控制台（stdout）输出开关。
+/// MCP server 进程的 stdout 是 JSON-RPC 协议通道，必须在此进程启动时关闭，
+/// 避免 `logging!(..., true, ...)` 的 println! 污染协议流。
+static CONSOLE_OUTPUT: AtomicBool = AtomicBool::new(true);
+
+pub fn set_console_output(enabled: bool) {
+    CONSOLE_OUTPUT.store(enabled, Ordering::Relaxed);
+}
+
+pub fn console_output() -> bool {
+    CONSOLE_OUTPUT.load(Ordering::Relaxed)
+}
 
 #[allow(dead_code)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -88,21 +102,23 @@ macro_rules! wrap_err {
 
 #[macro_export]
 macro_rules! logging {
-    // 带 println 的版本（支持格式化参数）
-    ($level:ident, $type:expr, true, $($arg:tt)*) => {
-        println!("{} {}", $type, format_args!($($arg)*));
+    // 带 println 的版本（支持格式化参数）；console_output 关闭时（MCP 模式）不污染 stdout
+    ($level:ident, $type:expr, true, $($arg:tt)*) => {{
+        if $crate::utils::logging::console_output() {
+            println!("{} {}", $type, format_args!($($arg)*));
+        }
         log::$level!(target: "app", "{} {}", $type, format_args!($($arg)*));
-    };
+    }};
 
     // 带 println 的版本（使用 false 明确不打印）
-    ($level:ident, $type:expr, false, $($arg:tt)*) => {
+    ($level:ident, $type:expr, false, $($arg:tt)*) => {{
         log::$level!(target: "app", "{} {}", $type, format_args!($($arg)*));
-    };
+    }};
 
-    // 不带 print 参数的版本（默认不打印）
-    ($level:ident, $type:expr, $($arg:tt)*) => {
+    // 不带 print 参数的版本（默认不打印）；块展开，表达式位可用
+    ($level:ident, $type:expr, $($arg:tt)*) => {{
         log::$level!(target: "app", "{} {}", $type, format_args!($($arg)*));
-    };
+    }};
 }
 
 #[macro_export]

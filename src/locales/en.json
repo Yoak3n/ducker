@@ -88,5 +88,20 @@
   "Never": "Never",
   
   "Auto": "Auto",
-  "Auto Description": "Execute the task automatically at the set time"
+  "Auto Description": "Execute the task automatically at the set time",
+
+  "MCP Service": "MCP Service",
+  "Enable MCP Service": "Allow ducker-mcp to access task library",
+  "MCP Service Description": "When enabled, AI assistants (e.g. dsh) can read and create tasks via MCP (ducker-mcp). Use 'ducker-mcp' as the command in MCP config without a full path — click the button above to add the program directory to user PATH first.",
+  "Add to PATH": "Add to PATH",
+  "Remove from PATH": "Remove from PATH",
+  "MCP Status": "Status",
+  "PATH Registered": "Registered",
+  "PATH Not Registered": "Not registered",
+  "PATH Removed": "Removed from PATH",
+  "ducker-mcp.exe not found": "ducker-mcp.exe not found",
+  "MCP Config": "MCP Config",
+  "Copy Config": "Copy Config",
+  "Copied to clipboard": "Copied to clipboard",
+  "MCP Config Hint": "Paste it under mcpServers in your MCP client config; adjust the key name if your client uses a different schema."
 }

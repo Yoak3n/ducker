@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::{schema::TaskData, store::module::TaskManager};
+use crate::{schema::TaskData, store::{db::Database, module::TaskManager}};
 use super::{TaskView,AppState};
 
 #[derive(Deserialize, Serialize, Debug)]
@@ -13,16 +13,12 @@ pub struct  PeriodicTask {
     pub next_period: Option<u64>,
 }
 
-impl TryFrom<(&PeriodicTaskRecord,&AppState)> for PeriodicTask {
-    type Error = anyhow::Error;
-    
-    fn try_from((record, state): (&PeriodicTaskRecord, &AppState)) -> Result<Self, Self::Error> {
+impl PeriodicTask {
+    /// 从周期规则记录构建（不依赖 AppState/Tauri，MCP server 与 GUI 共用）
+    pub fn build(record: &PeriodicTaskRecord, db: &Database) -> anyhow::Result<Self> {
         // 获取关联的 task
-        let task_record = {
-            let db = state.db.lock();
-            db.get_task(&record.id)?
-        };
-        let task = TaskView::try_from((&task_record, state))?;
+        let task_record = db.get_task(&record.id)?;
+        let task = super::task::task_view_from_record(&task_record, db)?;
         let interval = match record.interval {
             0 => Period::OnStart,
             1 => Period::Daily,
@@ -40,6 +36,15 @@ impl TryFrom<(&PeriodicTaskRecord,&AppState)> for PeriodicTask {
             last_period: record.last_period,
             next_period: record.next_period,
         })
+    }
+}
+
+impl TryFrom<(&PeriodicTaskRecord,&AppState)> for PeriodicTask {
+    type Error = anyhow::Error;
+
+    fn try_from((record, state): (&PeriodicTaskRecord, &AppState)) -> Result<Self, Self::Error> {
+        let db = state.db.lock();
+        Self::build(record, &db)
     }
 }
 
