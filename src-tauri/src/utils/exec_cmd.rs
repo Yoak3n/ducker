@@ -2,11 +2,15 @@
 // 注意：前台执行使用 tokio::process，这样外层的 tokio::time::timeout 才能真正生效
 // （std::process::output 是阻塞调用，timeout 包不住它）。
 
-/// 前台执行并捕获 stdout（Windows 经 cmd /S /C；其他平台直接执行）
+/// 前台执行并捕获 stdout（Windows 经 cmd /S /C；其他平台直接执行）。
+/// stdin 显式置空：交互式命令（如裸 cmd）否则会继承父进程 stdin——
+/// 在 MCP 进程里那是 JSON-RPC 协议管道，命令会一直等输入直到超时。
 pub async fn execute_command(
     command: String,
     args: Option<Vec<String>>,
 ) -> Result<String, String> {
+    use std::process::Stdio;
+
     #[cfg(target_os = "windows")]
     {
         let full_command = build_windows_command_line(&command, args.as_ref());
@@ -14,6 +18,7 @@ pub async fn execute_command(
         cmd.args(["/S", "/C", &full_command]);
         // GUI 是 windows_subsystem 程序：前台执行也不允许弹出命令行窗口
         cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
+        cmd.stdin(Stdio::null());
         let output = cmd.output().await.map_err(|e| e.to_string())?;
         if !output.status.success() {
             return Err(String::from_utf8_lossy(&output.stderr).to_string());
@@ -26,6 +31,7 @@ pub async fn execute_command(
         if let Some(args) = &args {
             cmd.args(args);
         }
+        cmd.stdin(Stdio::null());
         let output = cmd.output().await.map_err(|e| e.to_string())?;
         if !output.status.success() {
             return Err(String::from_utf8_lossy(&output.stderr).to_string());

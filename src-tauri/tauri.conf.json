@@ -24,6 +24,7 @@
     "windows": {
       "nsis": {
         "displayLanguageSelector": true,
+        "installerHooks": "build/nsis/hooks.nsh",
         "languages": [
           "SimpChinese",
           "English"

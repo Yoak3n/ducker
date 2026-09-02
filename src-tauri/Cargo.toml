@@ -56,6 +56,8 @@ rodio = "0.21.1"
 tauri-plugin-log = "2.0.0-rc"
 tauri-plugin-notification = "^2.3.3"
 rusqlite = { version = "0.34.0", features = ["bundled"] }
+# 与 tauri-plugin-notification 锁定同一版本（4.12），无头进程直接发原生通知
+notify-rust = "=4.12.0"
 tauri-plugin-dialog = "^2.7.1"
 tauri-plugin-opener = "^2.5.3"
 tauri-plugin-shell = "^2.3.5"

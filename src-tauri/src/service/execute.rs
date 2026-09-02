@@ -177,9 +177,23 @@ impl ExecContext {
                     .map_err(|e| e.to_string())?;
                 Ok(format!("notice: sent '{title}' / '{body}'"))
             }
-            Self::Headless(_) => Ok(format!(
-                "notice: 无头进程（ducker-mcp）不支持系统通知，已跳过 '{title}'"
-            )),
+            Self::Headless(_) => {
+                // 无头进程（ducker-mcp）：notify-rust 直接发 Windows 原生 toast，
+                // 不依赖 Tauri。显式传 ducker 的 AUMID（安装器开始菜单快捷方式已注册），
+                // 否则 notify-rust 默认回退 PowerShell 的身份（错误的图标与应用名）。
+                // 发送失败降级为说明文字，不让通知失败阻塞动作执行。
+                let summary = format!("{title}: {body}");
+                let result = notify_rust::Notification::new()
+                    .app_id(crate::utils::dirs::APP_ID)
+                    .summary(&summary)
+                    .body(&body)
+                    .timeout(notify_rust::Timeout::Milliseconds(6000))
+                    .show();
+                match result {
+                    Ok(_) => Ok(format!("notice: sent (headless toast) '{summary}'")),
+                    Err(e) => Ok(format!("notice: 无头通知发送失败（{e}），内容为 '{summary}'")),
+                }
+            }
         }
     }
 
