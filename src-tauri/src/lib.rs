@@ -1,6 +1,7 @@
 mod config;
 pub mod core;
 mod feat;
+pub mod mcp;
 mod module;
 mod process;
 mod schema;
@@ -113,9 +114,12 @@ pub fn run() {
             Handle::global().init(app.handle().clone());
             tauri::async_runtime::block_on(async move {
                 resolve::resolve_setup(app).await;
-                // 启动时检查周期性任务
-                app_init::check_periodic_task().await;
             });
+            // 启动时检查周期性任务：放到后台执行。
+            // 开机 action 序列（同步 wait、重试）可能耗时数十秒，
+            // 若在主线程 block_on 内联 await 会阻塞整个事件循环——
+            // 表现为执行期间托盘菜单/窗口全部无响应。
+            tauri::async_runtime::spawn(app_init::check_periodic_task());
 
             Ok(())
         })

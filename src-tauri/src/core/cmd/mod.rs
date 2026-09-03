@@ -4,3 +4,4 @@ pub mod config;
 pub mod task;
 pub mod window;
 pub mod sound;
+pub mod mcp;

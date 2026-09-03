@@ -69,6 +69,10 @@
   "Slient Launch": "静默启动",
   "General": "通用",
   "Appearance": "外观",
+  "Theme": "主题",
+  "Theme Light": "浅色",
+  "Theme Dark": "深色",
+  "Theme System": "跟随系统",
 
   "Startup Tasks": "启动时任务",
   "View and manage tasks that run on application startup": "查看和管理应用启动时运行的任务",
@@ -83,5 +87,20 @@
   "Never": "从未",
 
   "Auto": "自动执行",
-  "Auto Description": "任务将按设定的时间自动重复执行"
+  "Auto Description": "任务将按设定的时间自动重复执行",
+
+  "MCP Service": "MCP 服务",
+  "Enable MCP Service": "允许 ducker-mcp 读写任务库",
+  "MCP Service Description": "开启后，AI 助手（dsh 等）可通过 MCP 协议（ducker-mcp）读取与创建任务。MCP 配置中的 command 填 ducker-mcp 即可，无需完整路径——先点击上方按钮把程序目录加入用户 PATH。",
+  "Add to PATH": "加入 PATH",
+  "Remove from PATH": "从 PATH 移除",
+  "MCP Status": "状态",
+  "PATH Registered": "已注册",
+  "PATH Not Registered": "未注册",
+  "PATH Removed": "已从 PATH 移除",
+  "ducker-mcp.exe not found": "未找到 ducker-mcp.exe",
+  "MCP Config": "MCP 配置",
+  "Copy Config": "复制配置",
+  "Copied to clipboard": "已复制到剪贴板",
+  "MCP Config Hint": "粘贴到 MCP 客户端配置的 mcpServers 下即可；若客户端使用其他配置键名，请按其格式对应调整。"
 }

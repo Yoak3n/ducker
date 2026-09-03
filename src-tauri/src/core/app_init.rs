@@ -94,6 +94,10 @@ pub fn generate_handlers() -> impl Fn(tauri::ipc::Invoke<tauri::Wry>) -> bool + 
         cmd::config::save_config,
         cmd::config::get_config,
         cmd::config::update_config,
+        // MCP
+        cmd::mcp::get_mcp_status,
+        cmd::mcp::register_mcp_path,
+        cmd::mcp::unregister_mcp_path,
         // Sound
         cmd::sound::play_sound,
     ]
@@ -111,56 +115,68 @@ pub async fn check_periodic_task() {
     use tauri::Manager;
     let app_handle = get_app_handle!();
     let state = app_handle.state::<AppState>();
-    let db_guard = state.db.lock();
-    let res = db_guard.get_enabled_periodic_tasks();
-    logging!(info, Type::Database,true, "获取所有启用的周期性任务");
-    if let Ok(tasks) = res {
-        let prepared_tasks_ids: Vec<String> = tasks
-            .iter()
-            .filter(|task| 
-                task.interval == 0 || 
-                (task.interval == 100 && task.last_period.map_or(true, |timestamp| !is_today(timestamp)))
-            )
-            .map(|task| task.id.clone())
-            .collect();
-        logging!(info, Type::Database,true, "准备执行的周期性任务{:?}",prepared_tasks_ids);
-        if !prepared_tasks_ids.is_empty() {
-            if let Ok(prepared_task_records) = db_guard.get_tasks(&prepared_tasks_ids) {
-                // 收集所有立即执行任务的action ID
-                let prepared_action_ids: Vec<String> = prepared_task_records
+    // 数据库操作收进独立作用域：MutexGuard 非 Send，必须在任何 .await
+    // 之前随块结束确定性释放（手动 drop 在同作用域内对 Send 分析无效）
+    let collected: Option<Vec<Action>> = {
+        let db_guard = state.db.lock();
+        let res = db_guard.get_enabled_periodic_tasks();
+        logging!(info, Type::Database,true, "获取所有启用的周期性任务");
+        match res {
+            Ok(tasks) => {
+                let prepared_tasks_ids: Vec<String> = tasks
                     .iter()
-                    .flat_map(|task| task.actions.iter().cloned())
+                    .filter(|task|
+                        task.interval == 0 ||
+                        (task.interval == 100 && task.last_period.map_or(true, |timestamp| !is_today(timestamp)))
+                    )
+                    .map(|task| task.id.clone())
                     .collect();
+                logging!(info, Type::Database,true, "准备执行的周期性任务{:?}",prepared_tasks_ids);
+                if prepared_tasks_ids.is_empty() {
+                    None
+                } else if let Ok(prepared_task_records) = db_guard.get_tasks(&prepared_tasks_ids) {
+                    // 收集所有立即执行任务的action ID
+                    let prepared_action_ids: Vec<String> = prepared_task_records
+                        .iter()
+                        .flat_map(|task| task.actions.iter().cloned())
+                        .collect();
 
-                if !prepared_action_ids.is_empty() {
-                    if let Ok(prepared_actions) = db_guard.get_actions(&prepared_action_ids) {
+                    if prepared_action_ids.is_empty() {
+                        None
+                    } else if let Ok(prepared_actions) = db_guard.get_actions(&prepared_action_ids) {
                         let collected_actions: Vec<Action> = prepared_actions
                             .into_iter()
                             .map(|a| a.into())
                             .collect();
                         logging!(info, Type::Database,true, "获取所有启用的周期性任务的所有动作{:?}",collected_actions);
-                        
                         let _ = db_guard
-                            .update_periodic_tasks_last_run(&prepared_tasks_ids)    
+                            .update_periodic_tasks_last_run(&prepared_tasks_ids)
                             .unwrap();
-                        drop(db_guard);
-                        let r = execute_plural_actions(collected_actions).await;
-                        if let Err(e) = r {
-                            logging!(error, Type::Database,true, "执行周期性任务的所有动作失败{:?}",e);
-                        } else {
-                            logging!(info, Type::Database,true, "执行周期性任务的所有动作成功");
-                        }
+                        Some(collected_actions)
+                    } else {
+                        None
                     }
-                    Handle::global().app_handle().map(|h| 
-                        h.notification()
-                        .builder()
-                        .title("Startup Tasks Completed")
-                        .show()
-                    );
-                    
+                } else {
+                    None
                 }
             }
+            Err(_) => None,
         }
+    };
+
+    if let Some(collected_actions) = collected {
+        let r = execute_plural_actions(collected_actions).await;
+        if let Err(e) = r {
+            logging!(error, Type::Database,true, "执行周期性任务的所有动作失败{:?}",e);
+        } else {
+            logging!(info, Type::Database,true, "执行周期性任务的所有动作成功");
+        }
+        Handle::global().app_handle().map(|h|
+            h.notification()
+            .builder()
+            .title("Startup Tasks Completed")
+            .show()
+        );
     }
 }
 

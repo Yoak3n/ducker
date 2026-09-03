@@ -1,18 +1,25 @@
 [package]
 name = "ducker"
-version = "0.3.1"
+version = "0.3.2"
 description = "A Tauri App"
 authors = ["Yoake"]
 license = ""
 repository = ""
 edition = "2021"
 rust-version = "1.77.2"
+default-run = "ducker"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [lib]
 name = "app_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
+
+# 第二个二进制：MCP server（stdio），供 dsh 等 AI 助手读写任务与动作
+[[bin]]
+name = "ducker-mcp"
+path = "src/bin/ducker-mcp.rs"
+
 
 [build-dependencies]
 tauri-build = { version = "2.2.0", features = [] }
@@ -25,6 +32,9 @@ tokio = { version = "^1.44", features = [
   "macros",
   "time",
   "sync",
+  "io-std",
+  "io-util",
+  "process",
 ] }
 serde = { version = "1.0", features = ["derive"] }
 log = "0.4.27"
@@ -37,6 +47,7 @@ once_cell = "1.21.1"
 anyhow = "1.0.97"
 chrono = {version = "^0.4", features = ["serde"] }
 rand = "0.8.5"
+dirs = "5"
 scopeguard = "1.2.0"
 delay_timer = "0.11.6"
 # sys-locale = "0.3.2"
@@ -45,6 +56,8 @@ rodio = "0.21.1"
 tauri-plugin-log = "2.0.0-rc"
 tauri-plugin-notification = "^2.3.3"
 rusqlite = { version = "0.34.0", features = ["bundled"] }
+# 与 tauri-plugin-notification 锁定同一版本（4.12），无头进程直接发原生通知
+notify-rust = "=4.12.0"
 tauri-plugin-dialog = "^2.7.1"
 tauri-plugin-opener = "^2.5.3"
 tauri-plugin-shell = "^2.3.5"
@@ -55,3 +68,8 @@ tauri-plugin-global-shortcut = "^2.3.1"
 mouse_position = "0.1.2"
 tauri-plugin-single-instance = "2.3.3"
 tauri-plugin-window-state = "2"
+
+[target.'cfg(windows)'.dependencies]
+# 用户 PATH 注册：raw API 保留 REG_EXPAND_SZ，广播 WM_SETTINGCHANGE
+winreg = "0.52"
+winapi = { version = "0.3", features = ["winuser", "winnt", "minwindef"] }

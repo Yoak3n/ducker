@@ -333,13 +333,13 @@ const ActionModify: React.FC = () => {
                                 name="name"
                                 render={({ field }) => (
                                     <FormItem className='w-5/6 mb-2'>
-                                        <FormLabel className="block text-sm font-medium text-gray-700">Action Name</FormLabel>
+                                        <FormLabel className="block text-sm font-medium text-foreground">Action Name</FormLabel>
                                         <FormControl>
                                             <Input
                                                 {...field}
                                                 type="text"
                                                 placeholder="Enter action name"
-                                                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                                                className="mt-1 block w-full border-border rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
                                             />
 
                                         </FormControl>
@@ -352,7 +352,7 @@ const ActionModify: React.FC = () => {
                                 control={form.control}
                                 render={({ field }) => (
                                     <FormItem className='mb-2'>
-                                        <FormLabel className="block text-sm font-medium text-gray-700">Action Type</FormLabel>
+                                        <FormLabel className="block text-sm font-medium text-foreground">Action Type</FormLabel>
                                         <Select value={field.value || "file"} onValueChange={(e) => {
                                             if (e && e != '') {
                                                 field.onChange(e)
@@ -388,12 +388,12 @@ const ActionModify: React.FC = () => {
                             name="desc"
                             render={({ field }) => (
                                 <FormItem className='w-5/6 mb-2'>
-                                    <FormLabel className="block text-sm font-medium text-gray-700">Desc</FormLabel>
+                                    <FormLabel className="block text-sm font-medium text-foreground">Desc</FormLabel>
                                     <FormControl>
                                         <Textarea
                                             {...field}
                                             placeholder="Enter action desc"
-                                            className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 resize-none"
+                                            className="mt-1 block w-full border-border rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 resize-none"
                                         />
                                     </FormControl>
                                     <p className="text-muted-foreground text-sm">
@@ -409,7 +409,7 @@ const ActionModify: React.FC = () => {
                                     control={form.control}
                                     render={({ field }) => (
                                         <FormItem className='mb-2'>
-                                            <FormLabel className="block text-sm font-medium text-gray-700">
+                                            <FormLabel className="block text-sm font-medium text-foreground">
                                                 {fieldLabels.commandLabel}
                                             </FormLabel>
                                             <div className="flex items-center space-x-2">
@@ -443,7 +443,7 @@ const ActionModify: React.FC = () => {
                                     control={form.control}
                                     render={({ field }) => (
                                         <FormItem className='w-5/6 mb-2'>
-                                            <FormLabel className="block text-sm font-medium text-gray-700">
+                                            <FormLabel className="block text-sm font-medium text-foreground">
                                                 {fieldLabels.argsLabel}
                                             </FormLabel>
                                             <FormControl>
@@ -451,7 +451,7 @@ const ActionModify: React.FC = () => {
                                                     <Textarea
                                                         {...field}
                                                         placeholder={fieldLabels.argsPlaceholder}
-                                                        className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 resize-none"
+                                                        className="mt-1 block w-full border-border rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 resize-none"
                                                         rows={3}
                                                     />
                                                 ) : currentActionType === "group" ? (
@@ -472,10 +472,10 @@ const ActionModify: React.FC = () => {
                                             />
                                         </div>
                                         {selectedActions.length > 0 && (
-                                            <div className=" w-4/5 border rounded-md p-3 bg-gray-50 flex flex-col max-h-96">
-                                                <div className="text-sm font-medium text-gray-700 mb-2 flex items-center justify-between flex-shrink-0">
+                                            <div className=" w-4/5 border rounded-md p-3 bg-muted flex flex-col max-h-96">
+                                                <div className="text-sm font-medium text-foreground mb-2 flex items-center justify-between flex-shrink-0">
                                                     <span>已选择的Actions ({selectedActions.length})</span>
-                                                    <span className="text-xs text-gray-500">拖拽重新排序</span>
+                                                    <span className="text-xs text-muted-foreground">拖拽重新排序</span>
                                                 </div>
                                                 <div className="flex-1 overflow-y-auto space-y-1 min-h-0">
                                                     {selectedActions.map((action, index) => {
@@ -485,20 +485,20 @@ const ActionModify: React.FC = () => {
                                                                 key={action.id} 
                                                                 className={`flex items-center justify-between py-2 px-3 rounded border transition-colors ${
                                                                     isValid 
-                                                                        ? 'bg-white border-gray-200 hover:border-gray-300' 
-                                                                        : 'bg-red-50 border-red-200 hover:border-red-300'
+                                                                        ? 'bg-card border-border hover:border-border' 
+                                                                        : 'bg-destructive/10 border-destructive/30 hover:border-destructive/50'
                                                                 }`}
                                                             >
                                                                 <div className="flex items-center gap-2 flex-1 min-w-0">
-                                                                    <span className="text-xs text-gray-400 font-mono w-6 text-center">
+                                                                    <span className="text-xs text-muted-foreground font-mono w-6 text-center">
                                                                         {index + 1}
                                                                     </span>
                                                                     <div className="flex-1 min-w-0">
-                                                                        <div className={`text-sm truncate ${isValid ? 'text-gray-900' : 'text-red-600'}`}>
+                                                                        <div className={`text-sm truncate ${isValid ? 'text-foreground' : 'text-destructive'}`}>
                                                                             {action.name}
                                                                         </div>
                                                                         {!isValid && (
-                                                                            <div className="text-xs text-red-500">
+                                                                            <div className="text-xs text-destructive">
                                                                                 Action已被删除
                                                                             </div>
                                                                         )}
@@ -515,7 +515,7 @@ const ActionModify: React.FC = () => {
                                                                                 [newActions[index], newActions[index - 1]] = [newActions[index - 1], newActions[index]];
                                                                                 handleActionsChange(newActions);
                                                                             }}
-                                                                            className="h-6 w-6 p-0 hover:bg-gray-200"
+                                                                            className="h-6 w-6 p-0 hover:bg-muted"
                                                                             title="上移"
                                                                         >
                                                                             <ChevronUp size={12} />
@@ -531,7 +531,7 @@ const ActionModify: React.FC = () => {
                                                                                 [newActions[index], newActions[index + 1]] = [newActions[index + 1], newActions[index]];
                                                                                 handleActionsChange(newActions);
                                                                             }}
-                                                                            className="h-6 w-6 p-0 hover:bg-gray-200"
+                                                                            className="h-6 w-6 p-0 hover:bg-muted"
                                                                             title="下移"
                                                                         >
                                                                             <ChevronDown size={12} />
@@ -545,7 +545,7 @@ const ActionModify: React.FC = () => {
                                                                             const newActions = selectedActions.filter(a => a.id !== action.id);
                                                                             handleActionsChange(newActions);
                                                                         }}
-                                                                        className={`h-6 w-6 p-0 ${isValid ? 'hover:bg-red-100 hover:text-red-600' : 'hover:bg-red-200 text-red-600'}`}
+                                                                        className={`h-6 w-6 p-0 ${isValid ? 'hover:bg-destructive/20 hover:text-destructive' : 'hover:bg-destructive/30 text-destructive'}`}
                                                                         title="删除"
                                                                     >
                                                                         <X size={12} />
@@ -556,7 +556,7 @@ const ActionModify: React.FC = () => {
                                                     })}
                                                 </div>
                                                 {selectedActions.some(action => !actions.some(a => a.id === action.id)) && (
-                                                    <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded text-xs text-yellow-700 flex-shrink-0">
+                                                    <div className="mt-2 p-2 bg-yellow-500/10 border border-yellow-500/30 rounded text-xs text-yellow-500 flex-shrink-0">
                                                         <TriangleAlert size={12} className="inline mr-1" />
                                                         检测到无效的Action，建议删除或重新选择
                                                     </div>
@@ -569,7 +569,7 @@ const ActionModify: React.FC = () => {
                                                         {...field}
                                                         type="text"
                                                         placeholder={fieldLabels.argsPlaceholder}
-                                                        className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                                                        className="mt-1 block w-full border-border rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
                                                     />
                                                 )}
                                             </FormControl>
@@ -584,7 +584,7 @@ const ActionModify: React.FC = () => {
                                 control={form.control}
                                 render={({ field }) => (
                                     <FormItem className='mb-2'>
-                                        <FormLabel className="block text-sm font-medium text-gray-700">Wait (milliseconds)</FormLabel>
+                                        <FormLabel className="block text-sm font-medium text-foreground">Wait (milliseconds)</FormLabel>
                                         <FormControl>
                                             <Input
                                                 {...field}
@@ -603,7 +603,7 @@ const ActionModify: React.FC = () => {
                                 control={form.control}
                                 render={({ field }) => (
                                     <FormItem className='mb-2'>
-                                        <FormLabel className="block text-sm font-medium text-gray-700">Retry Count</FormLabel>
+                                        <FormLabel className="block text-sm font-medium text-foreground">Retry Count</FormLabel>
                                         <FormControl>
                                             <Input
                                                 {...field}
@@ -622,7 +622,7 @@ const ActionModify: React.FC = () => {
                                 control={form.control}
                                 render={({ field }) => (
                                     <FormItem className='mb-2'>
-                                        <FormLabel className="block text-sm font-medium text-gray-700">Timeout (seconds)</FormLabel>
+                                        <FormLabel className="block text-sm font-medium text-foreground">Timeout (seconds)</FormLabel>
                                         <FormControl>
                                             <Input
                                                 {...field}
@@ -683,7 +683,7 @@ const ActionModify: React.FC = () => {
         {/* ActionSelect Modal */}
         {isActionSelectOpen && (
             <div className="fixed inset-0 bg-black/60 backdrop-blur-sm animate-[fadeIn_0.2s_ease-out] flex items-center justify-center z-50">
-                <div className="bg-white rounded-lg p-6 w-full max-w-4xl max-h-[80vh] overflow-hidden">
+                <div className="bg-card border border-border rounded-lg p-6 w-full max-w-4xl max-h-[80vh] overflow-hidden">
                     <div className="flex justify-between items-center mb-4">
                         <h3 className="text-lg font-semibold">选择Actions</h3>
                         <Button

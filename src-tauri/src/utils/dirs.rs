@@ -46,11 +46,13 @@ pub fn app_home_dir() -> Result<PathBuf> {
                 .parent()
                 .ok_or(anyhow::anyhow!("failed to get executable directory"))?;
 
-            // 使用系统临时目录 + 应用ID
+            // 使用系统数据目录 + 应用ID
+            // 注意：Windows 上 Tauri data_dir 是 Roaming（%APPDATA%），
+            // 无句柄 fallback 必须与其一致，否则 MCP 进程会读错目录
             #[cfg(target_os = "windows")]
             {
-                if let Some(local_app_data) = std::env::var_os("LOCALAPPDATA") {
-                    let path = PathBuf::from(local_app_data).join(APP_ID);
+                if let Some(roaming) = std::env::var_os("APPDATA") {
+                    let path = PathBuf::from(roaming).join(APP_ID);
                     return Ok(path);
                 }
             }

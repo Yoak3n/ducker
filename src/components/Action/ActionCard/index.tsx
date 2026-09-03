@@ -49,7 +49,7 @@ export default function ActionCard({
   return (
     <Card 
       className={`box-border cursor-pointer transition-all duration-200 hover:shadow-md ${
-        isSelected ? 'ring-2 ring-blue-500 bg-blue-50' : 'hover:bg-gray-50'
+        isSelected ? 'ring-2 ring-blue-500 bg-blue-50 dark:bg-blue-950' : 'hover:bg-muted'
       }`}
       onClick={handleCardClick}
     >
@@ -70,7 +70,7 @@ export default function ActionCard({
                 variant="ghost" 
                 size="sm" 
                 onClick={handleRemove}
-                className="h-6 w-6 p-0 hover:bg-red-100"
+                className="h-6 w-6 p-0 hover:bg-destructive/20"
               >
                 <X size={14} className="text-red-500" />
               </Button>
@@ -80,7 +80,7 @@ export default function ActionCard({
       </CardHeader>
       
       <CardContent className="pt-0 pb-2">
-        <CardDescription className="text-xs text-gray-600 line-clamp-2">
+        <CardDescription className="text-xs text-muted-foreground line-clamp-2">
           {action.desc}
         </CardDescription>
         
@@ -98,7 +98,7 @@ export default function ActionCard({
       
       <CardFooter className="pt-0 pb-3">
         <div className="w-full">
-          <div className="text-xs text-gray-500 font-mono truncate">
+          <div className="text-xs text-muted-foreground font-mono truncate">
             {action.command} {action.args?.join(' ')}
           </div>
         </div>

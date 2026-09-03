@@ -175,7 +175,7 @@ export default function TaskForm({ onSave, task, parentTask }: TaskFormProps) {
 
   return (
     <>
-      <div className="text-xl font-semibold text-gray-800 px-5 py-3 border-b border-gray-200 cursor-move" data-tauri-drag-region>
+      <div className="text-xl font-semibold text-foreground px-5 py-3 border-b border-border cursor-move" data-tauri-drag-region>
         {task ? t("Edit Task") : parentTask ? t("Create Child Task") : t("Create Task")}
       </div>
 
@@ -213,13 +213,13 @@ export default function TaskForm({ onSave, task, parentTask }: TaskFormProps) {
         />
 
         {/* 操作区 */}
-        <div className="flex justify-end gap-3 mt-4 pt-4 border-t border-gray-200">
-          <button type="button" className="px-4 py-2 rounded-md text-sm font-medium cursor-pointer transition-all duration-200 border min-w-[70px] bg-white text-gray-500 border-gray-300 hover:bg-gray-50 hover:text-gray-600 hover:border-gray-400" onClick={handleClose}>
+        <div className="flex justify-end gap-3 mt-4 pt-4 border-t border-border">
+          <button type="button" className="px-4 py-2 rounded-md text-sm font-medium cursor-pointer transition-all duration-200 border min-w-[70px] bg-card text-muted-foreground border-border hover:bg-muted hover:text-foreground hover:border-border" onClick={handleClose}>
             {t("Cancel")}
           </button>
           <button
             type="submit"
-            className="px-4 py-2 rounded-md text-sm font-medium cursor-pointer transition-all duration-200 border min-w-[70px] bg-blue-500 text-white border-blue-500 hover:bg-blue-600 hover:border-blue-600 hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(59,130,246,0.3)] disabled:bg-gray-400 disabled:border-gray-400 disabled:cursor-not-allowed disabled:opacity-60 disabled:transform-none disabled:shadow-none"
+            className="px-4 py-2 rounded-md text-sm font-medium cursor-pointer transition-all duration-200 border min-w-[70px] bg-blue-500 text-white border-blue-500 hover:bg-blue-600 hover:border-blue-600 hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(59,130,246,0.3)] disabled:bg-muted disabled:border-border disabled:cursor-not-allowed disabled:opacity-60 disabled:transform-none disabled:shadow-none"
             disabled={
               !formData.name.trim() ||
               (isPeriodic && formData.periodicInterval === undefined)

@@ -44,7 +44,7 @@ const ActionsList = () => {
         <div className="flex w-full flex-col gap-6 overflow-y-auto">
             <div className="flex w-full justify-between">
                 <div className="relative w-full pr-5">
-                    <Search size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                    <Search size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
                     <Input
                         placeholder="搜索 actions..."
                         value={searchTerm}

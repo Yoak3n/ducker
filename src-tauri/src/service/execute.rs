@@ -1,160 +1,542 @@
-use anyhow::Result;
-use std::time::Duration;
-use tauri::{async_runtime, Manager};
+// Action 执行统一核心。
+//
+// 设计：单一执行核心 + 执行环境上下文（ExecContext）。
+// - GUI 与 MCP（无头）共用同一套：重试/超时策略、序列编排（同步等待/异步并发）、
+//   group 递归、使用计数；差异通过 ExecContext 的环境钩子注入。
+// - 同步 action（wait > 0）：等待完成后才执行下一个，结束后再等待 wait 毫秒。
+// - 异步 action（wait == 0）：立即启动下一个；命令类直接分离运行，其余在后台任务
+//   中执行并回收结果（ActionOutcome），不丢结果。
+// - 失败交互：同步 action 自动重试耗尽后，GUI 环境弹出错误对话框（重试仅一次/取消）；
+//   取消或再失败则中止后续 action。无头环境不弹窗，直接失败。
+// - 所有命令执行走 utils::exec_cmd：前台捕获输出且超时真正生效，不弹命令行窗口。
 
-use crate::{
-    feat::action::execute_action, 
-    get_app_handle, logging,
-    schema::{
-        action::Action, AppState
-    }, service::hub::Hub, store::module::TaskManager, utils::logging::Type
-};
+use std::sync::Arc;
+use std::time::Duration;
+
+use serde::Serialize;
 use tokio::time::timeout;
 
-pub async fn execute_single_action(action: &Action) -> Result<String, String> {
-    let is_sync = action.wait > 0;
-    Ok(if is_sync {
-        // 同步执行 - 等待任务完成
-        let max_retries = action.retry.unwrap_or(0); // 最大重试次数
-        let mut retry_count = 0;
-        let mut last_error = String::new();
+use crate::{
+    core::handle::Handle,
+    logging,
+    schema::{Action, ActionType, AppState},
+    service::hub::Hub,
+    store::{
+        db::Database,
+        module::{ActionManager, TaskManager},
+    },
+    utils::{
+        exec_cmd::{execute_command, execute_command_indepent},
+        logging::Type,
+    },
+};
+use tauri::Manager;
 
-        // 获取超时时间，如果未设置则使用默认值（例如30秒）
-        let timeout_duration = Duration::from_secs(action.timeout.unwrap_or(60));
+const DEFAULT_TIMEOUT_SECS: u64 = 30;
+const DEFAULT_GROUP_RETRIES: usize = 3;
+const MAX_GROUP_DEPTH: usize = 5;
+const RETRY_BUTTON_LABEL: &str = "重试";
 
-        while retry_count <= max_retries {
-            // 使用 timeout 包装 execute_action 调用
-            match timeout(timeout_duration, execute_action(action.clone())).await {
-                Ok(result) => {
-                    // 任务在超时前完成
-                    match result {
-                        Ok(out) => {
-                            logging!(info, Type::Service, true, "任务执行成功:{}", out);
-                            return Ok(out);
-                        }
-                        Err(e) => {
-                            last_error = e.to_string();
-                            if max_retries <= 0 {
-                                logging!(
-                                    error,
-                                    Type::Service,
-                                    true,
-                                    "任务执行失败:{}",
-                                    &last_error
-                                );
-                                return Err(last_error.into());
-                            }
-                            if retry_count < max_retries {
-                                logging!(
-                                    info,
-                                    Type::Service,
-                                    true,
-                                    "任务执行失败，正在重试 ({}/{}): {}",
-                                    retry_count,
-                                    max_retries,
-                                    &last_error
-                                );
-                                tokio::time::sleep(tokio::time::Duration::from_millis(1000)).await;
-                            }
-                            
-                        }
-                    }
+/// 单个 action 的结构化执行结果
+#[derive(Debug, Clone, Serialize)]
+pub struct ActionOutcome {
+    pub id: Option<String>,
+    pub name: String,
+    pub typ: String,
+    pub success: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub output: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub error: Option<String>,
+}
+
+impl ActionOutcome {
+    fn from_action(action: &Action) -> Self {
+        Self {
+            id: action.id.clone(),
+            name: action.name.clone(),
+            typ: action.typ.clone(),
+            success: false,
+            output: None,
+            error: None,
+        }
+    }
+}
+
+/// 执行环境上下文：GUI / 无头（MCP）的差异都收敛在这里
+#[derive(Clone)]
+pub enum ExecContext {
+    /// Tauri GUI 进程：opener 打开路径、系统通知、失败对话框
+    Gui,
+    /// 无头进程（ducker-mcp）：数据库由进程自持
+    Headless(Arc<Database>),
+}
+
+impl ExecContext {
+    pub fn gui() -> Self {
+        Self::Gui
+    }
+
+    pub fn headless(db: Arc<Database>) -> Self {
+        Self::Headless(db)
+    }
+
+    /// 借用数据库执行一次可能失败的操作（不跨 await 持锁）
+    fn with_db<T>(&self, f: impl FnOnce(&Database) -> Result<T, String>) -> Result<T, String> {
+        match self {
+            Self::Headless(db) => f(db),
+            Self::Gui => {
+                let handle = Handle::global()
+                    .app_handle()
+                    .ok_or_else(|| "app handle not initialized".to_string())?;
+                let state = handle.state::<AppState>();
+                let db = state.db.lock();
+                f(&db)
+            }
+        }
+    }
+
+    /// 用系统默认方式打开 URL/目录/文件
+    async fn open_target(&self, target: String) -> Result<String, String> {
+        match self {
+            Self::Gui => {
+                use tauri_plugin_opener::OpenerExt;
+                let handle = Handle::global()
+                    .app_handle()
+                    .ok_or_else(|| "app handle not initialized".to_string())?;
+                let opener = handle.opener();
+                // 先按 URL 处理，失败再按路径处理
+                if opener.open_url(&target, None::<&str>).is_err() {
+                    opener
+                        .open_path(&target, None::<&str>)
+                        .map_err(|e| e.to_string())?;
                 }
-                Err(_) => {
-                    // 任务超时
-                    last_error = format!("任务执行超时（{}秒）", timeout_duration.as_secs());
-                    if max_retries <= 0 {
-                        logging!(error, Type::Service, true, "任务执行失败:{}", &last_error);
-                        return Err(last_error.into());
-                    }
-                    retry_count += 1;
-                    if retry_count < max_retries {
-                        println!(
-                            "任务执行超时，正在重试 ({}/{}): {}",
-                            retry_count, max_retries, &last_error
-                        );
-                        tokio::time::sleep(tokio::time::Duration::from_millis(1000)).await;
+                Ok(format!("open: ok ({target})"))
+            }
+            Self::Headless(_) => {
+                use std::process::Stdio;
+                #[cfg(target_os = "windows")]
+                {
+                    let mut cmd = tokio::process::Command::new("cmd");
+                    cmd.args(["/C", "start", "", &target]);
+                    cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
+                    cmd.stdout(Stdio::null()).stderr(Stdio::null()).stdin(Stdio::null());
+                    cmd.spawn().map_err(|e| format!("打开失败: {e}"))?;
+                    Ok(format!("open: ok ({target})"))
+                }
+                #[cfg(not(target_os = "windows"))]
+                {
+                    #[cfg(target_os = "macos")]
+                    let program = "open";
+                    #[cfg(all(unix, not(target_os = "macos")))]
+                    let program = "xdg-open";
+                    let status = tokio::process::Command::new(program)
+                        .arg(&target)
+                        .stdout(Stdio::null())
+                        .stderr(Stdio::null())
+                        .status()
+                        .await
+                        .map_err(|e| format!("打开失败: {e}"))?;
+                    if status.success() {
+                        Ok(format!("open: ok ({target})"))
+                    } else {
+                        Err(format!("打开失败: {program} 退出码 {:?}", status.code()))
                     }
                 }
             }
         }
+    }
 
-        if retry_count > max_retries {
+    /// 系统通知（Notice 类型）
+    fn send_notice(&self, action: &Action) -> Result<String, String> {
+        let title = if action.command.trim().is_empty() {
+            "Ducker"
+        } else {
+            &action.command
+        };
+        let body = action
+            .args
+            .as_ref()
+            .and_then(|args| args.first())
+            .map(|s| s.trim().to_string())
+            .filter(|s| !s.is_empty())
+            .unwrap_or_else(|| "通知消息".to_string());
+
+        match self {
+            Self::Gui => {
+                use tauri_plugin_notification::NotificationExt;
+                let handle = Handle::global()
+                    .app_handle()
+                    .ok_or_else(|| "app handle not initialized".to_string())?;
+                handle
+                    .notification()
+                    .builder()
+                    .title(title)
+                    .body(&body)
+                    .show()
+                    .map_err(|e| e.to_string())?;
+                Ok(format!("notice: sent '{title}' / '{body}'"))
+            }
+            Self::Headless(_) => {
+                // 无头进程（ducker-mcp）：notify-rust 直接发 Windows 原生 toast，
+                // 不依赖 Tauri。显式传 ducker 的 AUMID（安装器开始菜单快捷方式已注册），
+                // 否则 notify-rust 默认回退 PowerShell 的身份（错误的图标与应用名）。
+                // 发送失败降级为说明文字，不让通知失败阻塞动作执行。
+                let summary = format!("{title}: {body}");
+                let result = notify_rust::Notification::new()
+                    .app_id(crate::utils::dirs::APP_ID)
+                    .summary(&summary)
+                    .body(&body)
+                    .timeout(notify_rust::Timeout::Milliseconds(6000))
+                    .show();
+                match result {
+                    Ok(_) => Ok(format!("notice: sent (headless toast) '{summary}'")),
+                    Err(e) => Ok(format!("notice: 无头通知发送失败（{e}），内容为 '{summary}'")),
+                }
+            }
+        }
+    }
+
+    /// 失败交互：返回 true 表示用户选择重试（仅提供一次）。
+    /// 无头环境不弹窗。
+    async fn prompt_retry(&self, action: &Action, error: &str) -> bool {
+        match self {
+            Self::Headless(_) => false,
+            Self::Gui => {
+                let Some(handle) = Handle::global().app_handle() else {
+                    return false;
+                };
+                let name = action.name.clone();
+                let err = error.to_string();
+                let task = tokio::task::spawn_blocking(move || {
+                    use tauri_plugin_dialog::{DialogExt, MessageDialogButtons, MessageDialogKind};
+                    handle
+                        .dialog()
+                        .message(format!("动作「{}」执行失败：\n{}", name, err))
+                        .title("Action 执行失败")
+                        .kind(MessageDialogKind::Error)
+                        .buttons(MessageDialogButtons::OkCancelCustom(
+                            RETRY_BUTTON_LABEL.to_string(),
+                            "取消".to_string(),
+                        ))
+                        .blocking_show_with_result()
+                });
+                match task.await {
+                    Ok(result) => match result {
+                        tauri_plugin_dialog::MessageDialogResult::Yes
+                        | tauri_plugin_dialog::MessageDialogResult::Ok => true,
+                        tauri_plugin_dialog::MessageDialogResult::Custom(s) => {
+                            s == RETRY_BUTTON_LABEL
+                        }
+                        _ => false,
+                    },
+                    Err(e) => {
+                        logging!(error, Type::Service, "执行失败对话框异常: {e}");
+                        false
+                    }
+                }
+            }
+        }
+    }
+
+    /// 成功后记录使用次数（两个环境一致，仅此一处计数）
+    fn record_usage(&self, action: &Action) {
+        if let Some(id) = &action.id {
+            if let Err(e) =
+                self.with_db(|db| db.update_action_count(id).map_err(|e| e.to_string()))
+            {
+                logging!(
+                    error,
+                    Type::Service,
+                    "更新动作 {} 使用次数失败: {e}",
+                    action.name
+                );
+            }
+        }
+    }
+}
+
+/// 执行单个 action 的原始逻辑（单次尝试，不含重试/超时）
+async fn run_once(ctx: &ExecContext, action: Action, depth: usize) -> Result<String, String> {
+    let t = ActionType::try_from(action.typ.as_str()).map_err(|_| "未知操作类型".to_string())?;
+    match t {
+        ActionType::Command => execute_command(action.command, action.args).await,
+        ActionType::Url | ActionType::Directory | ActionType::File => {
+            ctx.open_target(action.command).await
+        }
+        ActionType::Notice => ctx.send_notice(&action),
+        ActionType::Group => {
+            if depth >= MAX_GROUP_DEPTH {
+                return Err(format!(
+                    "group 嵌套超过上限（{MAX_GROUP_DEPTH} 层），可能存在循环引用"
+                ));
+            }
+            let action_ids: Vec<String> = action
+                .args
+                .unwrap_or_default()
+                .iter()
+                .flat_map(|arg| arg.split(','))
+                .map(|id| id.trim().to_string())
+                .filter(|id| !id.is_empty())
+                .collect();
+            if action_ids.is_empty() {
+                return Ok("group: no actions to execute".to_string());
+            }
+            let sub_actions: Vec<Action> = ctx
+                .with_db(|db| {
+                    db.get_actions(&action_ids)
+                        .map_err(|e| format!("Failed to get actions: {e}"))
+                })?
+                .into_iter()
+                .map(Action::from)
+                .collect();
+            if sub_actions.is_empty() {
+                return Ok("group: no valid actions found".to_string());
+            }
+
+            let (mut ok, mut fail) = (0usize, 0usize);
+            let mut details = Vec::new();
+            for sub in sub_actions {
+                // group 成员强制同步：等待完成、默认 3 次重试、超时 30 秒
+                let result = Box::pin(run_with_retries(ctx, sub.clone(), depth + 1, DEFAULT_GROUP_RETRIES)).await;
+                match result {
+                    Ok(out) => {
+                        details.push(format!("✓ {}: {}", sub.name, out));
+                        ok += 1;
+                    }
+                    Err(e) => {
+                        details.push(format!("✗ {}: {}", sub.name, e));
+                        fail += 1;
+                    }
+                }
+                if sub.wait > 0 {
+                    tokio::time::sleep(Duration::from_millis(sub.wait as u64)).await;
+                }
+            }
+            let summary = format!(
+                "group: executed {} actions (success: {}, failed: {})",
+                ok + fail,
+                ok,
+                fail
+            );
+            if fail > 0 {
+                Ok(format!("{summary}\nDetails:\n{}", details.join("\n")))
+            } else {
+                Ok(summary)
+            }
+        }
+    }
+}
+
+/// 带自动重试与超时的单 action 执行（策略收敛在此，替代原先三处重复实现）
+async fn run_with_retries(
+    ctx: &ExecContext,
+    action: Action,
+    depth: usize,
+    default_retries: usize,
+) -> Result<String, String> {
+    let max_retries = action.retry.unwrap_or(default_retries);
+    let timeout_secs = action.timeout.unwrap_or(DEFAULT_TIMEOUT_SECS);
+    let mut last_error = String::new();
+
+    for attempt in 0..=max_retries {
+        if attempt > 0 {
             logging!(
-                error,
+                info,
                 Type::Service,
                 true,
-                "任务执行失败，已达到最大重试次数{}",
-                &last_error
+                "动作 {} 执行失败，正在重试 ({}/{}): {}",
+                action.name,
+                attempt,
+                max_retries,
+                last_error
             );
-            return Err(last_error.into());
+        }
+        match timeout(
+            Duration::from_secs(timeout_secs),
+            run_once(ctx, action.clone(), depth),
+        )
+        .await
+        {
+            Ok(Ok(out)) => return Ok(out),
+            Ok(Err(e)) => last_error = e,
+            Err(_) => last_error = format!("任务执行超时（{timeout_secs}秒）"),
+        }
+        if attempt < max_retries {
+            tokio::time::sleep(Duration::from_millis(1000)).await;
+        }
+    }
+    Err(last_error)
+}
+
+/// 执行一批 action 并返回全部结构化结果。
+///
+/// - wait > 0：同步，等待完成（含自动重试）；失败时 GUI 弹窗提供一次重试，
+///   用户取消或重试仍失败则根据 abort_on_error 决定是否中止后续 action。
+/// - wait == 0：异步，立即执行下一个；命令类（无重试/超时配置）分离运行，
+///   其余在后台任务执行并回收结果。
+///
+/// 成功的 action 统一在此记录使用次数（无论同步还是异步、无论环境）。
+pub async fn run_sequence(
+    ctx: &ExecContext,
+    actions: Vec<Action>,
+    abort_on_error: bool,
+) -> Vec<ActionOutcome> {
+    let mut outcomes: Vec<ActionOutcome> = Vec::with_capacity(actions.len());
+    let mut pending: Vec<tokio::task::JoinHandle<ActionOutcome>> = Vec::new();
+    let mut aborted = false;
+
+    for action in actions {
+        if aborted {
+            let mut o = ActionOutcome::from_action(&action);
+            o.error = Some("前序动作失败，已跳过".to_string());
+            outcomes.push(o);
+            continue;
         }
 
-        // 使用异步等待而不是阻塞主线程
-        tokio::time::sleep(tokio::time::Duration::from_millis(action.wait as u64)).await;
-        last_error
-    } else {
-        // 异步执行 - 不等待任务完成
-        let action_name = action.name.clone();
-        let action_clone = action.clone();
-        let timeout_duration = Duration::from_secs(action.timeout.unwrap_or(30));
-
-        async_runtime::spawn(async move {
-            logging!(info, Type::Service, true, "异步执行任务: {}", &action_name);
-            match timeout(timeout_duration, execute_action(action_clone)).await {
-                Ok(result) => {
-                    if let Err(e) = result {
+        if action.wait == 0 {
+            // 异步：命令类且无重试/超时配置 → 分离运行，立即返回
+            if action.typ == "command"
+                && action.retry.unwrap_or(0) == 0
+                && action.timeout.is_none()
+            {
+                let mut o = ActionOutcome::from_action(&action);
+                match execute_command_indepent(action.command.clone(), action.args.clone()) {
+                    Ok(msg) => {
+                        o.success = true;
+                        o.output = Some(msg);
+                        ctx.record_usage(&action);
+                    }
+                    Err(e) => o.error = Some(e),
+                }
+                outcomes.push(o);
+                continue;
+            }
+            // 其余异步动作在后台执行并回收结果
+            let ctx_clone = ctx.clone();
+            let action_clone = action.clone();
+            pending.push(tokio::spawn(async move {
+                let mut o = ActionOutcome::from_action(&action_clone);
+                match run_with_retries(&ctx_clone, action_clone.clone(), 0, 0).await {
+                    Ok(out) => {
+                        o.success = true;
+                        o.output = Some(out);
+                        ctx_clone.record_usage(&action_clone);
+                    }
+                    Err(e) => {
+                        o.error = Some(e.clone());
                         logging!(
                             error,
                             Type::Service,
                             true,
-                            "任务 {} 执行失败: {}",
-                            &action_name,
+                            "异步动作 {} 执行失败: {}",
+                            action_clone.name,
                             e
                         );
-                    } else {
-                        logging!(info, Type::Service, true, "任务 {} 执行成功", &action_name);
                     }
                 }
-                Err(_) => {
-                    eprintln!(
-                        "任务 {} 执行超时（{}秒）",
-                        &action_name,
-                        timeout_duration.as_secs()
-                    );
+                o
+            }));
+            outcomes.push(ActionOutcome::from_action(&action));
+            continue;
+        }
+
+        // 同步：等待完成后执行下一个
+        let mut outcome = ActionOutcome::from_action(&action);
+        match run_with_retries(ctx, action.clone(), 0, 0).await {
+            Ok(out) => {
+                outcome.success = true;
+                outcome.output = Some(out);
+                ctx.record_usage(&action);
+            }
+            Err(first_error) => {
+                logging!(error, Type::Service, true, "动作 {} 执行失败: {}", action.name, first_error);
+                // GUI 环境给一次人工重试机会
+                if ctx.prompt_retry(&action, &first_error).await {
+                    match run_once(ctx, action.clone(), 0).await {
+                        Ok(out) => {
+                            outcome.success = true;
+                            outcome.output = Some(out);
+                            ctx.record_usage(&action);
+                        }
+                        Err(e) => outcome.error = Some(e),
+                    }
+                } else {
+                    outcome.error = Some(first_error);
                 }
             }
-        });
-        return Ok("".to_string());
-    })
+        }
+
+        if !outcome.success {
+            if abort_on_error {
+                aborted = true;
+            }
+        } else {
+            logging!(info, Type::Service, true, "动作 {} 执行成功", action.name);
+        }
+        // 同步动作完成后等待 wait 毫秒再执行下一个
+        if action.wait > 0 {
+            tokio::time::sleep(Duration::from_millis(action.wait as u64)).await;
+        }
+        outcomes.push(outcome);
+    }
+
+    // 回收异步动作的结果（不改变同步结果的推进语义）
+    for handle in pending {
+        match handle.await {
+            Ok(o) => {
+                if let Some(slot) = outcomes.iter_mut().find(|slot| !slot.success && slot.output.is_none() && slot.error.is_none() && slot.id == o.id) {
+                    *slot = o;
+                } else {
+                    outcomes.push(o);
+                }
+            }
+            Err(e) => logging!(error, Type::Service, "异步动作结果回收失败: {e}"),
+        }
+    }
+
+    outcomes
 }
 
+// ---------- 兼容旧调用方的薄封装 ----------
+
+/// 顺序执行一批动作；任一同步动作最终失败（含用户取消重试）则返回 Err
 pub async fn execute_plural_actions(actions: Vec<Action>) -> Result<String, String> {
-    if actions.is_empty() {
-        return Ok("".to_string());
-    }
-    let mut out = "".to_string();
-    for action in actions {
-        let out_action: String = execute_single_action(&action).await?;
-        out += &out_action;
-    }
-    return Ok(out);
+    let outcomes = run_sequence(&ExecContext::gui(), actions, true).await;
+    finalize_outcomes(outcomes)
 }
 
-pub async fn marked_tasks_completed(tasks_ids: Vec<String>) -> Result<()> {
+/// 执行单个动作
+pub async fn execute_single_action(action: Action) -> Result<String, String> {
+    execute_plural_actions(vec![action]).await
+}
+
+fn finalize_outcomes(outcomes: Vec<ActionOutcome>) -> Result<String, String> {
+    let mut output = String::new();
+    for o in &outcomes {
+        if let Some(err) = &o.error {
+            return Err(format!("动作 {} 执行失败: {err}", o.name));
+        }
+        if let Some(out) = &o.output {
+            output.push_str(out);
+        }
+    }
+    Ok(output)
+}
+
+// ---------- 定时任务链路（GUI 专用，保持原逻辑） ----------
+
+pub async fn marked_tasks_completed(tasks_ids: Vec<String>) -> anyhow::Result<()> {
     logging!(info, Type::Database, "开始更新任务 {} 的状态为已完成", tasks_ids.join(","));
-    let app_handle = get_app_handle!();
+    let app_handle = crate::get_app_handle!();
     let state = app_handle.state::<AppState>();
-    
-    // 在作用域内获取锁，处理完后立即释放
     {
         let db = state.db.lock();
         for task_id in tasks_ids {
             db.update_task_status(&task_id, true)?;
         }
-        logging!(info, Type::Database,true, "更新任务的状态为已完成");
-    } // 数据库锁在这里自动释放
-    
+        logging!(info, Type::Database, true, "更新任务的状态为已完成");
+    }
     Ok(())
 }
 
@@ -163,13 +545,11 @@ pub async fn execute_tasks(id: &str, ts: i64) -> Result<String, String> {
     if tasks.is_empty() {
         return Ok("".to_string());
     }
-    let mut tasks_name = Vec::new();
     let mut tasks_ids = Vec::new();
     let mut out_tasks = "".to_string();
     for task in tasks {
         let actions = task.actions.clone().unwrap_or_default();
-        tasks_name.push(task.name);
-        let out_task: String = execute_plural_actions(actions).await?;
+        let out_task = execute_plural_actions(actions).await?;
         out_tasks += &out_task;
         tasks_ids.push(task.id);
     }

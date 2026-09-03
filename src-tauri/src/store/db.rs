@@ -7,7 +7,7 @@ use std::path::PathBuf;
 
 use super::module::*;
 use crate::{
-    logging,get_app_handle,
+    logging,
     schema::{
         PeriodicTaskRecord, TaskData,
         TaskRecord,
@@ -30,6 +30,12 @@ unsafe impl Sync for Database {}
 impl Database {
     pub fn new(db_path: PathBuf) -> Result<Self> {
         let conn = Connection::open(db_path.join("ducker.db"))?;
+
+        // GUI 与 ducker-mcp 可能并发访问同一数据库：
+        // WAL 允许读写并发，busy_timeout 让短暂锁竞争自动等待而不是报错
+        conn.busy_timeout(std::time::Duration::from_millis(5000))?;
+        let _ = conn.pragma_update(None, "journal_mode", "WAL");
+        let _ = conn.pragma_update(None, "synchronous", "NORMAL");
 
         conn.execute(
             "CREATE TABLE IF NOT EXISTS tasks (
@@ -152,9 +158,12 @@ impl Database {
             match self.create_next_periodic_task(&task) {
                 Ok(_) => {
                     logging!(info, Type::Database, true, "创建下一个周期性任务成功");
-                    // 刷新任务列表，会不会有种不该在这里的感觉？
-                    let app_handle = get_app_handle!();
-                    app_handle.emit("task-changed", None::<()>)?;
+                    // 通知 GUI 前端刷新；MCP 等无 Tauri 句柄的进程自动跳过
+                    if let Some(app_handle) =
+                        crate::core::handle::Handle::global().app_handle()
+                    {
+                        let _ = app_handle.emit("task-changed", None::<()>);
+                    }
                 },
                 Err(e) => {
                     logging!(error, Type::Database, true, "创建下一个周期性任务失败: {:?}", e);

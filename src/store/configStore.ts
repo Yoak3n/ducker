@@ -17,6 +17,8 @@ const initialState: ConfigState = {
     enable_auto_launch: false,
     silent_launch: false,
     language: "zh",
+    theme: "system",
+    enable_mcp: false,
     filters: {}
 }
 
@@ -29,7 +31,7 @@ export const useConfigStore = create<ConfigStore>()(
                 set({ loading: true, error: null },false);
                 try {
                     const config = await configApi.getConfig();
-                    set({ enable_auto_launch: config.enable_auto_launch, silent_launch: config.silent_launch, language: config.language, loading: false },false);
+                    set({ enable_auto_launch: config.enable_auto_launch, silent_launch: config.silent_launch, language: config.language, theme: config.theme || "system", enable_mcp: config.enable_mcp, loading: false },false);
                 } catch (error:any) {
                     set({ error: error.message || 'Failed to fetch config', loading: false });
                 }
