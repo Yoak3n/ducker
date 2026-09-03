@@ -3,14 +3,61 @@
 
 @custom-variant dark (&:is(.dark *));
 
-html{
+html {
   overflow-y: hidden;
 }
 
-/* 美观的滚动条样式 */
+/* ============================================================
+   Motion tokens — emilkowalski/skills rules:
+   ease-out for enter/exit, ease-in-out for on-screen movement,
+   custom curves over built-ins, UI under 300ms,
+   transform/opacity only.
+   ============================================================ */
+@theme {
+  /* Strong ease-out for UI enter/exit */
+  --ease-emil-out: cubic-bezier(0.23, 1, 0.32, 1);
+  /* Strong ease-in-out for on-screen movement */
+  --ease-emil-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  /* iOS-like drawer curve (Ionic) */
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+  /* Gentle overshoot, use sparingly */
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+:root {
+  /* Frequency-tiered durations — UI stays under 300ms */
+  --duration-fast: 120ms;    /* press feedback */
+  --duration-normal: 180ms;  /* tooltips, hover, small popovers */
+  --duration-ui: 220ms;      /* dropdowns, selects, menus */
+  --duration-overlay: 260ms; /* dialogs, sheets, drawers */
+
+  /* Brand / semantic colors — single source of truth */
+  --brand: #3498db;
+  --brand-strong: #2e86c1;
+  --success: #22c55e;
+  --warning: #f59e0b;
+}
+
+.dark {
+  --brand: #4aa8e0;
+  --brand-strong: #3498db;
+}
+
+/* ============================================================
+   Base
+   ============================================================ */
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
+    Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: transparent;
+}
+
+/* Thin, quiet scrollbars */
 .custom-scrollbar {
   scrollbar-width: thin;
-  scrollbar-color: var(--muted-foreground) var(--muted);
+  scrollbar-color: color-mix(in oklab, var(--muted-foreground) 40%, transparent) transparent;
 }
 
 .custom-scrollbar::-webkit-scrollbar {
@@ -18,31 +65,16 @@ html{
 }
 
 .custom-scrollbar::-webkit-scrollbar-track {
-  background: var(--muted);
-  border-radius: 4px;
+  background: transparent;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: var(--muted-foreground);
+  background: color-mix(in oklab, var(--muted-foreground) 40%, transparent);
   border-radius: 4px;
-  transition: background-color 0.2s ease;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: var(--muted-foreground);
-  opacity: 0.8;
-}
-
-.custom-scrollbar::-webkit-scrollbar-thumb:active {
-  background: var(--muted-foreground);
-  opacity: 0.6;
-}
-
-body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
-    Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  background: color-mix(in oklab, var(--muted-foreground) 60%, transparent);
 }
 
 .app-container {
@@ -60,19 +92,11 @@ main {
   width: 100%;
 }
 
-footer {
-  background-color: #2c3e50;
-  color: white;
-  text-align: center;
-  padding: 1rem;
-  margin-top: auto;
-}
-
-.home-page{
+/* Home Page Styles */
+.home-page {
   background-color: transparent;
 }
 
-/* Home Page Styles */
 .home-page h1 {
   margin-bottom: 1rem;
   color: var(--foreground);
@@ -93,7 +117,7 @@ footer {
 }
 
 .feature h2 {
-  color: #3498db;
+  color: var(--brand);
   margin-bottom: 0.5rem;
 }
 
@@ -112,7 +136,7 @@ footer {
 }
 
 .about-content h2 {
-  color: #3498db;
+  color: var(--brand);
   margin: 1.5rem 0 0.5rem;
 }
 
@@ -133,7 +157,7 @@ footer {
 
 .not-found-page h1 {
   font-size: 6rem;
-  color: #3498db;
+  color: var(--brand);
   margin-bottom: 0.5rem;
 }
 
@@ -146,17 +170,22 @@ footer {
 .back-home {
   display: inline-block;
   margin-top: 1.5rem;
-  background-color: #3498db;
+  background-color: var(--brand);
   color: white;
   padding: 0.75rem 1.5rem;
-  border-radius: 4px;
+  border-radius: 8px;
   text-decoration: none;
   font-weight: 500;
-  transition: background-color 0.3s;
+  transition: background-color var(--duration-normal) var(--ease-emil-out),
+    transform var(--duration-fast) var(--ease-emil-out);
 }
 
 .back-home:hover {
-  background-color: #2980b9;
+  background-color: var(--brand-strong);
+}
+
+.back-home:active {
+  transform: scale(0.97);
 }
 
 /* Responsive Adjustments */
@@ -210,6 +239,10 @@ footer {
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+  --color-brand: var(--brand);
+  --color-brand-strong: var(--brand-strong);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
 }
 
 :root {
@@ -311,5 +344,25 @@ footer {
     --sidebar-accent-foreground: oklch(0.985 0 0);
     --sidebar-border: oklch(1 0 0 / 10%);
     --sidebar-ring: oklch(0.439 0 0);
+  }
+}
+
+/* ============================================================
+   Reduced motion — keep opacity/color cues, drop the movement.
+   ============================================================ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  /* Loading spinners are essential feedback, not decoration — keep them */
+  .animate-spin {
+    animation-duration: 1s !important;
+    animation-iteration-count: infinite !important;
   }
 }

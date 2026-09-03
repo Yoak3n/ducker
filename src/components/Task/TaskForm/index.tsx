@@ -214,12 +214,12 @@ export default function TaskForm({ onSave, task, parentTask }: TaskFormProps) {
 
         {/* 操作区 */}
         <div className="flex justify-end gap-3 mt-4 pt-4 border-t border-border">
-          <button type="button" className="px-4 py-2 rounded-md text-sm font-medium cursor-pointer transition-all duration-200 border min-w-[70px] bg-card text-muted-foreground border-border hover:bg-muted hover:text-foreground hover:border-border" onClick={handleClose}>
+          <button type="button" className="px-4 py-2 rounded-md text-sm font-medium cursor-pointer border min-w-[70px] bg-card text-muted-foreground border-border transition-[background-color,border-color,color] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-[0.97] hover:bg-muted hover:text-foreground" onClick={handleClose}>
             {t("Cancel")}
           </button>
           <button
             type="submit"
-            className="px-4 py-2 rounded-md text-sm font-medium cursor-pointer transition-all duration-200 border min-w-[70px] bg-blue-500 text-white border-blue-500 hover:bg-blue-600 hover:border-blue-600 hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(59,130,246,0.3)] disabled:bg-muted disabled:border-border disabled:cursor-not-allowed disabled:opacity-60 disabled:transform-none disabled:shadow-none"
+            className="px-4 py-2 rounded-md text-sm font-medium cursor-pointer min-w-[70px] bg-brand text-white border border-brand transition-[background-color,border-color,transform] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-[0.97] active:duration-100 hover:bg-brand-strong disabled:bg-muted disabled:border-border disabled:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-60 disabled:transform-none"
             disabled={
               !formData.name.trim() ||
               (isPeriodic && formData.periodicInterval === undefined)

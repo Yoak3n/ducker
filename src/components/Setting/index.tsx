@@ -14,7 +14,7 @@ const SettingLayout: FC = () => {
     <div className="setting">
       <SidebarProvider defaultOpen={false} className="text-lg">
         <AppSidebar />
-        <div className="setting-layout">
+        <div className="setting-layout" style={{overflowX: 'auto'}}>
           <SettingItems />
         </div>
       </SidebarProvider>

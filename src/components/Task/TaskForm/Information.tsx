@@ -16,9 +16,9 @@ interface Props {
 
 const Information = React.memo(function Information({ editing, completed, name, auto, value, parentTask, handleInputChange }: Props) {
     return (
-        <div className="bg-gradient-to-br from-slate-50 to-slate-100 border border-slate-300 rounded-lg p-4 transition-all duration-200 hover:border-slate-400 hover:shadow-md">
-          <div className="flex items-center gap-2 mb-3 pb-2 border-b border-border bg-card/80 rounded px-3 py-2 -mx-2">
-            <Pencil size={18} className="text-slate-800" />
+        <div className="bg-card border border-border rounded-lg p-4 transition-[border-color,box-shadow] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] hover:border-border">
+          <div className="flex items-center gap-2 mb-3 pb-2 border-b border-border bg-muted/50 rounded px-3 py-2 -mx-2">
+            <Pencil size={18} className="text-foreground" />
             <h3 className="m-0 text-sm font-semibold text-foreground">基本信息</h3>
           </div>
 
@@ -28,7 +28,7 @@ const Information = React.memo(function Information({ editing, completed, name, 
             {editing && (
               <div className="flex flex-col gap-2 min-w-[100px]">
                 <label className="text-sm font-medium text-muted-foreground m-0">任务状态</label>
-                <div className='flex items-center gap-2 px-3 py-2.5 bg-card border border-border rounded-lg transition-all duration-200 cursor-pointer hover:bg-muted hover:border-border hover:-translate-y-0.5 hover:shadow-lg h-10 justify-center'>
+                <div className='flex items-center gap-2 px-3 py-2.5 bg-card border border-border rounded-lg transition-[background-color,border-color] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] cursor-pointer hover:bg-muted h-10 justify-center'>
                   <Checkbox
                     checked={completed}
                     onCheckedChange={(v) => handleInputChange('completed', v)}
@@ -50,25 +50,25 @@ const Information = React.memo(function Information({ editing, completed, name, 
                 autoComplete='off'
                 required
                 autoFocus
-                className="w-full px-3 py-2.5 border border-border rounded-lg text-sm transition-all duration-200 bg-card focus:outline-none focus:border-blue-500 focus:shadow-[0_0_0_3px_rgba(59,130,246,0.1)] h-10 placeholder:text-muted-foreground"
+                className="w-full px-3 py-2.5 border border-border rounded-lg text-sm transition-[border-color,box-shadow] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] bg-card focus:outline-none focus:border-brand focus:shadow-[0_0_0_3px_color-mix(in_srgb,var(--brand)_15%,transparent)] h-10 placeholder:text-muted-foreground"
               />
             </div>
 
             {/* 自动执行 */}
             <div className="flex flex-col gap-2 min-w-[100px]">
               <label className="text-sm font-medium text-muted-foreground m-0">自动执行</label>
-              <div className='flex items-center gap-2 px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg transition-all duration-200 cursor-pointer h-10 justify-center hover:bg-slate-100 hover:border-slate-300 hover:-translate-y-0.5 hover:shadow-lg'>
+              <div className='flex items-center gap-2 px-3 py-2.5 bg-card border border-border rounded-lg transition-[background-color,border-color] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] cursor-pointer h-10 justify-center hover:bg-muted'>
                 <Checkbox
                   checked={auto}
                   onCheckedChange={(v) => handleInputChange('auto', v)}
                 />
-                <span className="text-sm font-medium text-slate-600 m-0 cursor-pointer select-none">启用</span>
+                <span className="text-sm font-medium text-muted-foreground m-0 cursor-pointer select-none">启用</span>
               </div>
             </div>
           </div>
 
           {parentTask && (
-            <div className="flex items-center gap-2 px-3 py-2 bg-sky-50 border border-sky-200 rounded-md mb-3 text-sky-700 text-sm">
+            <div className="flex items-center gap-2 px-3 py-2 bg-[color-mix(in_srgb,var(--brand)_8%,transparent)] border border-[color-mix(in_srgb,var(--brand)_25%,transparent)] rounded-md mb-3 text-foreground text-sm">
               <CornerDownRight size={16} />
               <span>父任务: {parentTask.name}</span>
             </div>
@@ -85,7 +85,7 @@ const Information = React.memo(function Information({ editing, completed, name, 
                 placeholder="请输入任务价值（可选）"
                 min="0"
                 step="1"
-                className="w-full px-3 py-2.5 border border-border rounded-lg text-sm transition-all duration-200 bg-card focus:outline-none focus:border-blue-500 focus:shadow-[0_0_0_3px_rgba(59,130,246,0.1)] h-10 placeholder:text-muted-foreground"
+                className="w-full px-3 py-2.5 border border-border rounded-lg text-sm transition-[border-color,box-shadow] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] bg-card focus:outline-none focus:border-brand focus:shadow-[0_0_0_3px_color-mix(in_srgb,var(--brand)_15%,transparent)] h-10 placeholder:text-muted-foreground"
               />
             </div>
             <div className="mb-3">
@@ -96,7 +96,7 @@ const Information = React.memo(function Information({ editing, completed, name, 
                 value={parentTask?.id || ''}
                 onChange={(e) => handleInputChange('parent_id', e.target.value || undefined)}
                 placeholder="请输入父任务ID（可选）"
-                className="w-full px-3 py-2.5 border border-border rounded-lg text-sm transition-all duration-200 bg-card focus:outline-none focus:border-blue-500 focus:shadow-[0_0_0_3px_rgba(59,130,246,0.1)] h-10 placeholder:text-muted-foreground"
+                className="w-full px-3 py-2.5 border border-border rounded-lg text-sm transition-[border-color,box-shadow] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] bg-card focus:outline-none focus:border-brand focus:shadow-[0_0_0_3px_color-mix(in_srgb,var(--brand)_15%,transparent)] h-10 placeholder:text-muted-foreground"
               />
             </div>
           </div>

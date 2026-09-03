@@ -1,6 +1,7 @@
 header {
     background-color: var(--sidebar);
-    padding: .8rem 1rem;
+    padding: .5rem 1rem;
+    padding-right: .5rem;
     color: var(--sidebar-foreground);
     display: flex;
     border-radius: 2px 2px 0 0;
@@ -11,14 +12,17 @@ header {
 
     .header-title {
         user-select: none;
-        font-size: 1rem;
+        font-size: .85rem;
         font-weight: 600;
+        letter-spacing: 0.01em;
+        color: var(--muted-foreground);
     }
 
     .header-operation {
         display: flex;
         align-items: center;
         button {
+            appearance: none;
             margin-right: .3rem;
             border: none;
             outline: none;
@@ -27,13 +31,24 @@ header {
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: opacity .15s ease;
+            width: 1.9rem;
+            height: 1.9rem;
+            border-radius: 8px;
+            transition: background-color 120ms cubic-bezier(0.23, 1, 0.32, 1),
+                color 120ms cubic-bezier(0.23, 1, 0.32, 1),
+                transform 100ms cubic-bezier(0.23, 1, 0.32, 1);
             svg {
                 color: currentColor;
-                transition: opacity .15s ease;
             }
             &:hover {
-                opacity: .85;
+                background-color: var(--secondary);
+            }
+            &:active {
+                transform: scale(0.94);
+            }
+            &.btn-close:hover {
+                background-color: #e81123;
+                color: #fff;
             }
         }
     }

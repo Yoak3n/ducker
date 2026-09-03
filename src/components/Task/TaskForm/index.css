@@ -1,6 +1,6 @@
 /* TaskForm 组件的必要样式 - 已使用 Tailwind CSS 简化 */
 
-/* 滚动条隐藏样式 - Tailwind 的 scrollbar-none 类 */
+/* 滚动条隐藏样式 */
 .scrollbar-none {
   scrollbar-width: none; /* Firefox */
   -ms-overflow-style: none; /* IE and Edge */
@@ -10,40 +10,8 @@
   display: none; /* Chrome, Safari, Opera */
 }
 
-/* 周期设置展开动画 */
-@keyframes slideDown {
-  from {
-    opacity: 0;
-    max-height: 0;
-    transform: translateY(-10px);
-  }
-  to {
-    opacity: 1;
-    max-height: 500px;
-    transform: translateY(0);
-  }
-}
-
-/* 模态框动画 */
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-@keyframes slideIn {
-  from {
-    opacity: 0;
-    transform: translateY(-20px) scale(0.95);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
+/* 动画统一走 tw-animate-css 的 transition 工具类
+   （可中断、可重定向），不再使用一次性 keyframes。 */
 
 /* 响应式设计调整 */
 @media (max-width: 768px) {

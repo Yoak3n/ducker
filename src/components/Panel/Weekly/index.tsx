@@ -15,12 +15,12 @@ type WeeklyViewProps = {
 function ProgressRing({ percent }: { percent: number }) {
   return (
     <svg width="32" height="32" viewBox="0 0 36 36" className="week-progress-ring">
-      <circle cx="18" cy="18" r="15.9" fill="none" stroke="#f1f5f9" strokeWidth="3" />
+      <circle cx="18" cy="18" r="15.9" fill="none" stroke="var(--muted)" strokeWidth="3" />
       <circle
-        cx="18" cy="18" r="15.9" fill="none" stroke="#3498db" strokeWidth="3"
+        cx="18" cy="18" r="15.9" fill="none" stroke="var(--brand)" strokeWidth="3"
         strokeDasharray={`${percent} ${100 - percent}`}
         strokeDashoffset="25" strokeLinecap="round"
-        style={{ transition: "stroke-dasharray 0.35s ease" }}
+        style={{ transition: "stroke-dasharray 0.4s cubic-bezier(0.23, 1, 0.32, 1)" }}
       />
     </svg>
   );
@@ -93,7 +93,7 @@ export default function WeeklyView({ tasks, weekDays, todayDate, onToggleTask }:
         return;
       }
 
-      const DURATION = 420;
+      const DURATION = 260;
       const CONTAINER_RECT = containerNode.getBoundingClientRect();
       const primaryFrom = primaryNode.getBoundingClientRect();
       const targetFrom = targetNode.getBoundingClientRect();
@@ -127,7 +127,7 @@ export default function WeeklyView({ tasks, weekDays, todayDate, onToggleTask }:
         zIndex: "50" as const,
         pointerEvents: "none" as const,
         willChange: "transform, opacity" as const,
-        transition: `transform ${DURATION}ms cubic-bezier(0.4, 0, 0.2, 1), opacity ${DURATION}ms cubic-bezier(0.4, 0, 0.2, 1)`,
+        transition: `transform ${DURATION}ms cubic-bezier(0.23, 1, 0.32, 1), opacity ${DURATION}ms cubic-bezier(0.23, 1, 0.32, 1)`,
       };
 
       // Position clones at their starting locations relative to container
@@ -200,7 +200,7 @@ export default function WeeklyView({ tasks, weekDays, todayDate, onToggleTask }:
 
         requestAnimationFrame(() => {
           sideCardTransitions.forEach((node) => {
-            node.style.transition = `transform ${DURATION}ms cubic-bezier(0.4, 0, 0.2, 1)`;
+            node.style.transition = `transform ${DURATION}ms cubic-bezier(0.23, 1, 0.32, 1)`;
             node.style.transform = "";
           });
 
@@ -338,7 +338,7 @@ export default function WeeklyView({ tasks, weekDays, todayDate, onToggleTask }:
                 </div>
                 {dayTotal > 0 && (
                   <div className="week-side-bar">
-                    <div className="week-side-bar-fill" style={{ width: `${dayPercent}%` }} />
+                    <div className="week-side-bar-fill" style={{ '--progress': dayPercent / 100 } as React.CSSProperties} />
                   </div>
                 )}
                 <div className="week-side-tasks">

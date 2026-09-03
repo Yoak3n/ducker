@@ -47,9 +47,9 @@ export default function ActionCard({
   };
 
   return (
-    <Card 
-      className={`box-border cursor-pointer transition-all duration-200 hover:shadow-md ${
-        isSelected ? 'ring-2 ring-blue-500 bg-blue-50 dark:bg-blue-950' : 'hover:bg-muted'
+    <Card
+      className={`box-border cursor-pointer transition-[background-color,border-color,box-shadow,transform] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] hover:shadow-md active:scale-[0.98] ${
+        isSelected ? 'ring-2 ring-brand bg-[color-mix(in_srgb,var(--brand)_8%,transparent)]' : 'hover:bg-muted'
       }`}
       onClick={handleCardClick}
     >

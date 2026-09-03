@@ -1,10 +1,11 @@
-li.dued{
-    .task-item-title{
-        color: #ffc107;
-        &::before{
+li.dued {
+    .task-item-title {
+        color: var(--warning);
+        &::before {
             content: "⚠";
             margin-right: 5px;
         }
 
     }
 }
+

@@ -3,12 +3,16 @@ import { ThemeProvider } from 'next-themes';
 import router from './router';
 import './index.css';
 import { Toaster } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
 function App() {
 
   return (
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-      <Toaster position='top-center'/>
-      <RouterProvider router={router} />
+      {/* Single provider at the root so adjacent tooltips can skip the delay */}
+      <TooltipProvider delayDuration={150} skipDelayDuration={0}>
+        <Toaster position='top-center' richColors />
+        <RouterProvider router={router} />
+      </TooltipProvider>
     </ThemeProvider>
   );
 }

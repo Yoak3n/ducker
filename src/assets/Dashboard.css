@@ -1,10 +1,14 @@
 /* TaskDashboard.css */
 .task-dashboard {
-  font-family: Arial, sans-serif;
   max-width: 1200px;
   margin: 0 auto;
   padding: 20px;
   color: var(--foreground);
+}
+
+/* ── Tabs ────────────────────────────────────────────── */
+.tabs {
+  --tab-accent: var(--brand);
 }
 
 .tabs button {
@@ -12,24 +16,29 @@
   margin: 0 5px;
   background: none;
   border: none;
-  border-bottom: 3px solid transparent;
+  border-bottom: 2px solid transparent;
   cursor: pointer;
   font-size: 16px;
   color: var(--muted-foreground);
-  transition: all 0.3s;
+  transition: color var(--duration-normal) var(--ease-emil-out),
+    border-color var(--duration-normal) var(--ease-emil-out);
 }
 
 .tabs button.active {
-  color: #3498db;
-  border-bottom-color: #3498db;
-  font-weight: bold;
+  color: var(--tab-accent);
+  border-bottom-color: var(--tab-accent);
+  font-weight: 600;
 }
 
 .tabs button:hover {
-  color: #3498db;
+  color: var(--foreground);
 }
 
+.tabs button:active {
+  transform: scale(0.97);
+}
 
+/* ── Progress bar — transform-based fill (GPU-only) ──── */
 .progress-bar {
   background: var(--muted);
   height: 20px;
@@ -40,10 +49,13 @@
 }
 
 .progress-bar .progress {
-  background: #3498db;
+  background: var(--brand);
   height: 100%;
+  width: 100%;
   border-radius: 10px;
-  transition: width 0.3s;
+  transform: scaleX(var(--progress, 0));
+  transform-origin: left center;
+  transition: transform 0.4s var(--ease-emil-out);
 }
 
 .progress-bar span {
@@ -56,6 +68,7 @@
   font-weight: bold;
 }
 
+/* ── Task list ───────────────────────────────────────── */
 .task-list {
   list-style: none;
   padding: 0;
@@ -65,22 +78,18 @@
   padding: 10px;
   margin: 5px 0;
   background: var(--muted);
-  border-radius: 4px;
+  border-radius: 6px;
 }
 
 .task-list li.completed {
-  background: rgba(34, 197, 94, 0.1);
-  color: #22c55e;
+  background: color-mix(in srgb, var(--success) 10%, transparent);
+  color: var(--success);
 }
 
 .task-list li.empty {
   color: var(--muted-foreground);
   font-style: italic;
   justify-content: center;
-}
-
-.task-list input[type="checkbox"] {
-  margin-right: 10px;
 }
 
 /* ===== Weekly View — Two Column + Ghost ===== */
@@ -109,7 +118,7 @@
   flex: 1 1 0%;
   min-width: 0;
   background: var(--card);
-  border: 2px solid #3498db;
+  border: 1px solid color-mix(in srgb, var(--brand) 45%, var(--border));
   border-radius: 12px;
   padding: 18px 20px;
   display: flex;
@@ -137,7 +146,7 @@
 }
 
 .week-primary-label--today {
-  color: #3498db;
+  color: var(--brand);
 }
 
 .week-primary-sub {
@@ -163,7 +172,7 @@
   position: relative;
   font-size: 11px;
   font-weight: 600;
-  color: #3498db;
+  color: var(--brand);
   font-variant-numeric: tabular-nums;
   line-height: 1;
 }
@@ -197,8 +206,8 @@
   color: var(--muted-foreground);
 }
 
-.week-pstat--done { color: #22c55e; }
-.week-pstat--pending { color: #f59e0b; }
+.week-pstat--done { color: var(--success); }
+.week-pstat--pending { color: var(--warning); }
 
 .week-pstat-sep {
   width: 1px;
@@ -240,12 +249,18 @@
   gap: 5px;
   cursor: pointer;
   text-align: left;
-  transition: border-color 0.15s, box-shadow 0.15s;
+  transition: border-color var(--duration-normal) var(--ease-emil-out),
+    box-shadow var(--duration-normal) var(--ease-emil-out),
+    transform var(--duration-fast) var(--ease-emil-out);
 }
 
 .week-side-card:hover {
-  border-color: #3498db;
-  box-shadow: 0 2px 8px rgba(52, 152, 219, 0.1);
+  border-color: color-mix(in srgb, var(--brand) 55%, var(--border));
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.04), 0 4px 12px color-mix(in srgb, var(--brand) 14%, transparent);
+}
+
+.week-side-card:active {
+  transform: scale(0.98);
 }
 
 .week-side-header {
@@ -275,9 +290,12 @@
 
 .week-side-bar-fill {
   height: 100%;
-  background: #3498db;
+  width: 100%;
+  background: var(--brand);
   border-radius: 2px;
-  transition: width 0.3s ease;
+  transform: scaleX(var(--progress, 0));
+  transform-origin: left center;
+  transition: transform 0.4s var(--ease-emil-out);
 }
 
 .week-side-tasks {
@@ -298,11 +316,13 @@
   border-radius: 50%;
   border: 1.5px solid var(--muted-foreground);
   flex-shrink: 0;
+  transition: background-color var(--duration-normal) var(--ease-emil-out),
+    border-color var(--duration-normal) var(--ease-emil-out);
 }
 
 .week-side-dot--done {
-  background: #3498db;
-  border-color: #3498db;
+  background: var(--brand);
+  border-color: var(--brand);
 }
 
 .week-side-name {
@@ -324,7 +344,7 @@
 /* ── Ghost element ────────────────── */
 .week-ghost {
   background: var(--card);
-  border: 1px solid #3498db;
+  border: 1px solid color-mix(in srgb, var(--brand) 45%, var(--border));
   border-radius: 8px;
   padding: 10px 12px;
   pointer-events: none;
@@ -405,9 +425,9 @@
   border-radius: 50%;
 }
 
-.monthly-stat-dot--total { background: #3498db; }
-.monthly-stat-dot--done { background: #22c55e; }
-.monthly-stat-dot--pending { background: #f59e0b; }
+.monthly-stat-dot--total { background: var(--brand); }
+.monthly-stat-dot--done { background: var(--success); }
+.monthly-stat-dot--pending { background: var(--warning); }
 
 .monthly-stat strong {
   font-weight: 700;
@@ -456,12 +476,14 @@
   min-height: 96px;
   display: flex;
   flex-direction: column;
-  transition: border-color 0.15s, box-shadow 0.15s;
+  transition: border-color var(--duration-normal) var(--ease-emil-out),
+    box-shadow var(--duration-normal) var(--ease-emil-out),
+    background-color var(--duration-normal) var(--ease-emil-out);
 }
 
 .monthly-cell:hover {
-  border-color: var(--border);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  border-color: color-mix(in srgb, var(--foreground) 18%, var(--border));
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.04), 0 4px 12px rgb(0 0 0 / 0.05);
 }
 
 .monthly-cell--outside {
@@ -473,11 +495,11 @@
   background: var(--muted);
 }
 
+/* Keep a constant 1px border; ring via box-shadow — no layout shift */
 .monthly-cell--today {
-  border-color: #3498db;
-  border-width: 2px;
-  background: linear-gradient(135deg, rgba(52, 152, 219, 0.04) 0%, transparent 100%);
-  box-shadow: 0 0 0 1px rgba(52, 152, 219, 0.15);
+  border-color: color-mix(in srgb, var(--brand) 65%, var(--border));
+  background: linear-gradient(135deg, color-mix(in srgb, var(--brand) 5%, transparent) 0%, transparent 100%);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--brand) 30%, transparent);
 }
 
 /* ── Cell header ─────────────────── */
@@ -496,7 +518,7 @@
 }
 
 .monthly-cell--today .monthly-cell-num {
-  background: #3498db;
+  background: var(--brand);
   color: #fff;
   width: 22px;
   height: 22px;
@@ -513,10 +535,10 @@
 
 .monthly-cell-count {
   font-size: 10px;
-  color: #3498db;
+  color: var(--brand);
   font-weight: 600;
   font-variant-numeric: tabular-nums;
-  background: rgba(52, 152, 219, 0.08);
+  background: color-mix(in srgb, var(--brand) 10%, transparent);
   padding: 1px 5px;
   border-radius: 4px;
 }
@@ -548,20 +570,27 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: border-color 0.15s, background 0.15s;
   appearance: none;
   -webkit-appearance: none;
   margin: 0;
   padding: 0;
+  background: transparent;
+  transition: background-color var(--duration-fast) var(--ease-emil-out),
+    border-color var(--duration-fast) var(--ease-emil-out),
+    transform var(--duration-fast) var(--ease-emil-out);
 }
 
 .monthly-task-check:hover {
-  border-color: #3498db;
+  border-color: var(--brand);
+}
+
+.monthly-task-check:active {
+  transform: scale(0.9);
 }
 
 .monthly-task-check:checked {
-  background: #3498db;
-  border-color: #3498db;
+  background: var(--brand);
+  border-color: var(--brand);
 }
 
 .monthly-task-check:checked::after {
@@ -583,6 +612,8 @@
   line-height: 1.3;
   flex: 1;
   min-width: 0;
+  transition: color var(--duration-normal) var(--ease-emil-out),
+    opacity var(--duration-normal) var(--ease-emil-out);
 }
 
 .monthly-task-name--done {

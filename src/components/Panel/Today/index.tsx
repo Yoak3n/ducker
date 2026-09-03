@@ -72,7 +72,7 @@ const TodayView = ({ tasks, todayDate, todayRange, onToggleTask }: TodayViewProp
             {totalCount > 0 &&
                 <div className="progress-bar">
                     <div className="progress"
-                        style={{ width: `${progressPercent}%` }}
+                        style={{ '--progress': progressPercent / 100 } as React.CSSProperties}
                     ></div>
                     <span>
                         {completedValueCount} / {totalCount} {t("Completed")}

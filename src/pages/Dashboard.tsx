@@ -173,7 +173,7 @@ const TaskDashboard: React.FC = () => {
               </div>
             </div>
             <div className="progress-bar">
-              <div className="progress" style={{ width: `${monthlyProgress}%` }}></div>
+              <div className="progress" style={{ '--progress': monthlyProgress / 100 } as React.CSSProperties}></div>
               <span>
                 {monthlyCompleted} / {monthlyTotal} 完成
               </span>

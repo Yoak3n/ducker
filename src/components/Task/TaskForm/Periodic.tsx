@@ -19,9 +19,9 @@ interface Props {
 const Periodic = memo(function Periodic({ periodicInterval, isPeriodic, setIsPeriodic, handleInputChange }: Props) {
     const { t } = useI18n();
     return (
-        <div className="bg-gradient-to-br from-slate-50 to-slate-100 border border-slate-200 rounded-lg p-4 transition-all duration-200 hover:border-slate-300 hover:shadow-md">
-            <div className="flex items-center gap-2 mb-3 pb-2 border-b border-border bg-card/80 rounded px-3 py-2 -mx-2">
-                <Repeat size={18} className="text-purple-500" />
+        <div className="bg-card border border-border rounded-lg p-4 transition-[border-color,box-shadow] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)]">
+            <div className="flex items-center gap-2 mb-3 pb-2 border-b border-border bg-muted/50 rounded px-3 py-2 -mx-2">
+                <Repeat size={18} className="text-foreground" />
                 <h3 className="m-0 text-sm font-semibold text-foreground">{t("Period Setting")}</h3>
             </div>
 
@@ -40,7 +40,7 @@ const Periodic = memo(function Periodic({ periodicInterval, isPeriodic, setIsPer
             </div>
 
             {isPeriodic && (
-                <div className="mt-4 pt-4 border-t border-border animate-[slideDown_0.3s_ease-out] bg-card/50 rounded-md p-4">
+                <div className="mt-4 pt-4 border-t border-border bg-card/50 rounded-md p-4 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:slide-in-from-top-1 data-[state=open]:duration-200">
                     <div className="mb-3">
                         <div className="mb-3">
                             <Label className='py-1'>{t("Periodic Interval")}</Label>

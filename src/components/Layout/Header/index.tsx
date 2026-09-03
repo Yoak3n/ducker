@@ -36,7 +36,7 @@ export default function Header() {
                 <button onClick={handleMaximize}>
                     <Square size={14} />
                 </button>
-                <button onClick={handleClose}>
+                <button className="btn-close" onClick={handleClose}>
                     <X size={16} />
                 </button>
             </div>

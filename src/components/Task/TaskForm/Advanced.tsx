@@ -27,7 +27,7 @@ const TaskFormAdvanced = memo(function TaskFormAdvanced({ actionsData, handleInp
                     <button
                         type="button"
                         onClick={() => setShowAdvanced(!showAdvanced)}
-                        className="flex items-center justify-between cursor-pointer w-full px-3 py-2 text-muted-foreground text-sm font-medium transition-all duration-200 bg-muted border border-border rounded-md hover:text-foreground hover:bg-muted hover:border-border"
+                        className="flex items-center justify-between cursor-pointer w-full px-3 py-2 text-muted-foreground text-sm font-medium transition-[color,background-color,border-color] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] bg-muted border border-border rounded-md hover:text-foreground hover:bg-accent active:scale-[0.99]"
                     >
                         <div className="flex items-center gap-2">
                             {showAdvanced ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
@@ -36,18 +36,18 @@ const TaskFormAdvanced = memo(function TaskFormAdvanced({ actionsData, handleInp
                     </button>
                 </CollapsibleTrigger>
                 <CollapsibleContent>
-                    <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 mt-2">
+                    <div className="bg-card border border-border rounded-lg p-3 mt-2 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:slide-in-from-top-1 data-[state=open]:duration-200">
                         <div className="flex justify-between items-center">
                             <div className="flex items-center gap-2">
-                                <Settings size={18} className="text-slate-600" />
-                                <h3 className="m-0 text-sm font-semibold text-slate-700">
+                                <Settings size={18} className="text-muted-foreground" />
+                                <h3 className="m-0 text-sm font-semibold text-foreground">
                                     {t("Associated Action")}
                                 </h3>
-                                <span className="bg-blue-500 text-white text-xs font-semibold px-2 py-1 rounded-full min-w-5 text-center">{actionsData.length}</span>
+                                <span className="bg-brand text-white text-xs font-semibold px-2 py-1 rounded-full min-w-5 text-center">{actionsData.length}</span>
                             </div>
                             <button
                                 type="button"
-                                className="flex items-center gap-2 px-3 py-2 bg-blue-500 text-white border-none rounded-md text-sm font-medium cursor-pointer transition-all duration-200 hover:bg-blue-600 hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(59,130,246,0.3)]"
+                                className="flex items-center gap-2 px-3 py-2 bg-brand text-white border-none rounded-md text-sm font-medium cursor-pointer transition-[background-color,transform] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-[0.97] hover:bg-brand-strong"
                                 onClick={() => setActionSelectOpen(true)}
                             >
                                 <CirclePlus size={14} />
@@ -56,12 +56,12 @@ const TaskFormAdvanced = memo(function TaskFormAdvanced({ actionsData, handleInp
                         </div>
 
                         {actionsData.length === 0 && (
-                            <div className="flex flex-col items-center py-6 px-3 text-center text-slate-600">
-                                <Brain size={40} className="text-slate-300 mb-2" />
-                                <p className="m-0 mb-2 text-sm font-medium text-slate-700">
+                            <div className="flex flex-col items-center py-6 px-3 text-center text-muted-foreground">
+                                <Brain size={40} className="text-muted-foreground/40 mb-2" />
+                                <p className="m-0 mb-2 text-sm font-medium text-foreground">
                                     {t("No Associated Action")}
                                 </p>
-                                <span className="text-sm text-slate-500">
+                                <span className="text-sm text-muted-foreground">
                                     {t("Click to add action")}
                                 </span>
                             </div>
@@ -81,7 +81,7 @@ const TaskFormAdvanced = memo(function TaskFormAdvanced({ actionsData, handleInp
                                             <span className="text-muted-foreground text-xs bg-muted px-1 rounded">({action.type})</span>
                                             <button
                                                 type="button"
-                                                className="flex items-center justify-center w-5 h-5 border-none bg-red-500 text-white rounded cursor-pointer transition-colors duration-200 hover:bg-red-600"
+                                                className="flex items-center justify-center w-5 h-5 border-none bg-destructive text-white rounded cursor-pointer transition-[background-color,transform] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-90 hover:bg-destructive/85"
                                                 onClick={() => {
                                                     const newActions = actionsData.filter((_, i) => i !== index);
                                                     handleInputChange('actions', newActions);
@@ -99,16 +99,16 @@ const TaskFormAdvanced = memo(function TaskFormAdvanced({ actionsData, handleInp
             </Collapsible>
 
             {actionSelectOpen && (
-                <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[9999] backdrop-blur-sm animate-[fadeIn_0.2s_ease-out]">
-                    <div className="bg-card rounded-xl shadow-[0_25px_50px_-12px_rgba(0,0,0,0.25)] w-[90%] max-w-[800px] max-h-[80vh] flex flex-col overflow-hidden animate-[slideIn_0.3s_ease-out]">
-                        <div className="flex items-center justify-between px-6 py-5 border-b border-border bg-gradient-to-r from-muted to-muted text-foreground">
-                            <h2 className="m-0 text-xl font-semibold flex items-center gap-2 text-slate-700">
-                                <Brain size={24} className="text-slate-600" />
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9999] flex items-center justify-center animate-in fade-in duration-200">
+                    <div className="bg-card rounded-xl shadow-2xl w-[90%] max-w-[800px] max-h-[80vh] flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-2 zoom-in-[0.98] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)]">
+                        <div className="flex items-center justify-between px-6 py-5 border-b border-border bg-muted/50 text-foreground">
+                            <h2 className="m-0 text-xl font-semibold flex items-center gap-2 text-foreground">
+                                <Brain size={24} className="text-muted-foreground" />
                                 {t("To Select Action")}
                             </h2>
                             <button
                                 type="button"
-                                className="flex items-center justify-center w-8 h-8 border-none bg-slate-600/10 text-slate-600 rounded-lg cursor-pointer transition-all duration-200 hover:bg-slate-600/20 hover:text-slate-700 hover:scale-105"
+                                className="flex items-center justify-center w-8 h-8 border-none bg-muted text-muted-foreground rounded-lg cursor-pointer transition-[background-color,color,transform] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] hover:bg-accent hover:text-foreground active:scale-95"
                                 onClick={() => setActionSelectOpen(false)}
                             >
                                 <X size={20} />
@@ -122,17 +122,17 @@ const TaskFormAdvanced = memo(function TaskFormAdvanced({ actionsData, handleInp
                                 maxHeight='50vh'
                             />
                         </div>
-                        <div className="flex justify-end gap-3 px-6 py-4 border-t border-border bg-muted">
+                        <div className="flex justify-end gap-3 px-6 py-4 border-t border-border bg-muted/50">
                             <button
                                 type="button"
-                                className="px-5 py-2 border border-border bg-card text-muted-foreground rounded-lg text-sm font-medium cursor-pointer transition-all duration-200 hover:bg-muted hover:border-border hover:text-foreground"
+                                className="px-5 py-2 border border-border bg-card text-muted-foreground rounded-lg text-sm font-medium cursor-pointer transition-[background-color,color,transform] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] hover:bg-muted hover:text-foreground active:scale-[0.97]"
                                 onClick={() => setActionSelectOpen(false)}
                             >
                                 {t("Cancel")}
                             </button>
                             <button
                                 type="button"
-                                className="px-5 py-2 border border-blue-500 bg-blue-500 text-white rounded-lg text-sm font-medium cursor-pointer transition-all duration-200 flex items-center gap-2 hover:bg-blue-600 hover:border-blue-600 hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(59,130,246,0.3)]"
+                                className="px-5 py-2 border border-brand bg-brand text-white rounded-lg text-sm font-medium cursor-pointer transition-[background-color,transform] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] flex items-center gap-2 active:scale-[0.97] hover:bg-brand-strong"
                                 onClick={() => setActionSelectOpen(false)}
                             >
                                 <Check size={16} />

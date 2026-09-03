@@ -339,7 +339,7 @@ const ActionModify: React.FC = () => {
                                                 {...field}
                                                 type="text"
                                                 placeholder="Enter action name"
-                                                className="mt-1 block w-full border-border rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                                                className="mt-1 block w-full border-border rounded-md shadow-sm focus:ring-brand focus:border-brand"
                                             />
 
                                         </FormControl>
@@ -393,7 +393,7 @@ const ActionModify: React.FC = () => {
                                         <Textarea
                                             {...field}
                                             placeholder="Enter action desc"
-                                            className="mt-1 block w-full border-border rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 resize-none"
+                                            className="mt-1 block w-full border-border rounded-md shadow-sm focus:ring-brand focus:border-brand resize-none"
                                         />
                                     </FormControl>
                                     <p className="text-muted-foreground text-sm">
@@ -451,7 +451,7 @@ const ActionModify: React.FC = () => {
                                                     <Textarea
                                                         {...field}
                                                         placeholder={fieldLabels.argsPlaceholder}
-                                                        className="mt-1 block w-full border-border rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 resize-none"
+                                                        className="mt-1 block w-full border-border rounded-md shadow-sm focus:ring-brand focus:border-brand resize-none"
                                                         rows={3}
                                                     />
                                                 ) : currentActionType === "group" ? (
@@ -569,7 +569,7 @@ const ActionModify: React.FC = () => {
                                                         {...field}
                                                         type="text"
                                                         placeholder={fieldLabels.argsPlaceholder}
-                                                        className="mt-1 block w-full border-border rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                                                        className="mt-1 block w-full border-border rounded-md shadow-sm focus:ring-brand focus:border-brand"
                                                     />
                                                 )}
                                             </FormControl>
@@ -682,8 +682,8 @@ const ActionModify: React.FC = () => {
         
         {/* ActionSelect Modal */}
         {isActionSelectOpen && (
-            <div className="fixed inset-0 bg-black/60 backdrop-blur-sm animate-[fadeIn_0.2s_ease-out] flex items-center justify-center z-50">
-                <div className="bg-card border border-border rounded-lg p-6 w-full max-w-4xl max-h-[80vh] overflow-hidden">
+            <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 animate-in fade-in duration-200">
+                <div className="bg-card border border-border rounded-lg p-6 w-full max-w-4xl max-h-[80vh] overflow-hidden animate-in fade-in slide-in-from-bottom-2 zoom-in-[0.98] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)]">
                     <div className="flex justify-between items-center mb-4">
                         <h3 className="text-lg font-semibold">选择Actions</h3>
                         <Button
