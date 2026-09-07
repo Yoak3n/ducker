@@ -26,13 +26,16 @@ use crate::{
         module::{ActionManager, TaskManager},
     },
     utils::{
+        date::to_datetime_str,
         exec_cmd::{execute_command, execute_command_indepent},
         logging::Type,
     },
 };
 use tauri::Manager;
 
-const DEFAULT_TIMEOUT_SECS: u64 = 30;
+/// 未显式配置 timeout 的普通动作（command/file/url/directory/notice）的兜底超时（秒）。
+/// 从 30s 放宽到 120s：30s 会把正常耗时操作（如等游戏进入主界面）误判为失败。
+const DEFAULT_TIMEOUT_SECS: u64 = 120;
 const DEFAULT_GROUP_RETRIES: usize = 3;
 const MAX_GROUP_DEPTH: usize = 5;
 const RETRY_BUTTON_LABEL: &str = "重试";
@@ -66,8 +69,11 @@ impl ActionOutcome {
 /// 执行环境上下文：GUI / 无头（MCP）的差异都收敛在这里
 #[derive(Clone)]
 pub enum ExecContext {
-    /// Tauri GUI 进程：opener 打开路径、系统通知、失败对话框
+    /// Tauri GUI 进程（人工触发）：opener 打开路径、系统通知、失败弹重试对话框
     Gui,
+    /// Tauri GUI 进程（定时/自动触发）：行为同 Gui，但失败不弹人工重试对话框，
+    /// 避免无人值守的定时任务因等待点击而挂起
+    GuiAuto,
     /// 无头进程（ducker-mcp）：数据库由进程自持
     Headless(Arc<Database>),
 }
@@ -75,6 +81,10 @@ pub enum ExecContext {
 impl ExecContext {
     pub fn gui() -> Self {
         Self::Gui
+    }
+
+    pub fn gui_auto() -> Self {
+        Self::GuiAuto
     }
 
     pub fn headless(db: Arc<Database>) -> Self {
@@ -85,7 +95,7 @@ impl ExecContext {
     fn with_db<T>(&self, f: impl FnOnce(&Database) -> Result<T, String>) -> Result<T, String> {
         match self {
             Self::Headless(db) => f(db),
-            Self::Gui => {
+            Self::Gui | Self::GuiAuto => {
                 let handle = Handle::global()
                     .app_handle()
                     .ok_or_else(|| "app handle not initialized".to_string())?;
@@ -99,7 +109,7 @@ impl ExecContext {
     /// 用系统默认方式打开 URL/目录/文件
     async fn open_target(&self, target: String) -> Result<String, String> {
         match self {
-            Self::Gui => {
+            Self::Gui | Self::GuiAuto => {
                 use tauri_plugin_opener::OpenerExt;
                 let handle = Handle::global()
                     .app_handle()
@@ -163,7 +173,7 @@ impl ExecContext {
             .unwrap_or_else(|| "通知消息".to_string());
 
         match self {
-            Self::Gui => {
+            Self::Gui | Self::GuiAuto => {
                 use tauri_plugin_notification::NotificationExt;
                 let handle = Handle::global()
                     .app_handle()
@@ -198,10 +208,11 @@ impl ExecContext {
     }
 
     /// 失败交互：返回 true 表示用户选择重试（仅提供一次）。
-    /// 无头环境不弹窗。
+    /// 无头与定时/自动触发环境不弹窗。
     async fn prompt_retry(&self, action: &Action, error: &str) -> bool {
         match self {
             Self::Headless(_) => false,
+            Self::GuiAuto => false,
             Self::Gui => {
                 let Some(handle) = Handle::global().app_handle() else {
                     return false;
@@ -297,7 +308,8 @@ async fn run_once(ctx: &ExecContext, action: Action, depth: usize) -> Result<Str
             let (mut ok, mut fail) = (0usize, 0usize);
             let mut details = Vec::new();
             for sub in sub_actions {
-                // group 成员强制同步：等待完成、默认 3 次重试、超时 30 秒
+                // group 成员强制同步：等待完成；未配置 timeout 时用宽松默认（见 run_with_retries），
+                // 未配置 retry 时按 DEFAULT_GROUP_RETRIES 重试
                 let result = Box::pin(run_with_retries(ctx, sub.clone(), depth + 1, DEFAULT_GROUP_RETRIES)).await;
                 match result {
                     Ok(out) => {
@@ -336,7 +348,13 @@ async fn run_with_retries(
     default_retries: usize,
 ) -> Result<String, String> {
     let max_retries = action.retry.unwrap_or(default_retries);
-    let timeout_secs = action.timeout.unwrap_or(DEFAULT_TIMEOUT_SECS);
+    // group 是编排容器，嵌套成员的超时各自管理，不在容器层再套一层墙钟，
+    // 否则「起手式」这类要等待 MAA 启动到主界面的组合动作会在 group 层被误判超时。
+    let outer_secs = if action.typ == "group" {
+        None
+    } else {
+        Some(action.timeout.unwrap_or(DEFAULT_TIMEOUT_SECS))
+    };
     let mut last_error = String::new();
 
     for attempt in 0..=max_retries {
@@ -352,15 +370,25 @@ async fn run_with_retries(
                 last_error
             );
         }
-        match timeout(
-            Duration::from_secs(timeout_secs),
-            run_once(ctx, action.clone(), depth),
-        )
-        .await
-        {
-            Ok(Ok(out)) => return Ok(out),
-            Ok(Err(e)) => last_error = e,
-            Err(_) => last_error = format!("任务执行超时（{timeout_secs}秒）"),
+        let result = match outer_secs {
+            Some(timeout_secs) => {
+                match timeout(
+                    Duration::from_secs(timeout_secs),
+                    run_once(ctx, action.clone(), depth),
+                )
+                .await
+                {
+                    Ok(Ok(out)) => Ok(out),
+                    Ok(Err(e)) => Err(e),
+                    Err(_) => Err(format!("任务执行超时（{timeout_secs}秒）")),
+                }
+            }
+            // group 不设外层超时：成员各自有超时上限
+            None => run_once(ctx, action.clone(), depth).await,
+        };
+        match result {
+            Ok(out) => return Ok(out),
+            Err(e) => last_error = e,
         }
         if attempt < max_retries {
             tokio::time::sleep(Duration::from_millis(1000)).await;
@@ -506,6 +534,12 @@ pub async fn execute_plural_actions(actions: Vec<Action>) -> Result<String, Stri
     finalize_outcomes(outcomes)
 }
 
+/// 定时/自动触发场景：行为同 execute_plural_actions，但失败不弹人工重试对话框
+pub async fn execute_plural_actions_auto(actions: Vec<Action>) -> Result<String, String> {
+    let outcomes = run_sequence(&ExecContext::gui_auto(), actions, true).await;
+    finalize_outcomes(outcomes)
+}
+
 /// 执行单个动作
 pub async fn execute_single_action(action: Action) -> Result<String, String> {
     execute_plural_actions(vec![action]).await
@@ -543,18 +577,63 @@ pub async fn marked_tasks_completed(tasks_ids: Vec<String>) -> anyhow::Result<()
 pub async fn execute_tasks(id: &str, ts: i64) -> Result<String, String> {
     let tasks = Hub::global().get_schedule(id, ts).unwrap_or_default();
     if tasks.is_empty() {
+        // 到点触发但调度表里已查不到：多为错过后调度表被每分钟刷新清掉，
+        // 与 timer 的「到点触发」日志对照即可定位错过的时间窗
+        logging!(
+            info,
+            Type::Service,
+            "定时触发但调度表无匹配: id={}, ts={}（任务可能已错过执行窗口）",
+            id,
+            to_datetime_str(ts)
+        );
         return Ok("".to_string());
     }
+    logging!(
+        info,
+        Type::Service,
+        true,
+        "定时任务执行开始: id={}, 计划时间={}, 任务数={}",
+        id,
+        to_datetime_str(ts),
+        tasks.len()
+    );
     let mut tasks_ids = Vec::new();
-    let mut out_tasks = "".to_string();
+    let mut out_tasks = String::new();
+    let mut first_error: Option<String> = None;
+
     for task in tasks {
         let actions = task.actions.clone().unwrap_or_default();
-        let out_task = execute_plural_actions(actions).await?;
-        out_tasks += &out_task;
+        match execute_plural_actions_auto(actions).await {
+            Ok(out) => out_tasks += &out,
+            Err(e) => {
+                // 动作失败只记录并在最终结果里上报，不阻断任务实例的完成推进：
+                // 定时触发的周期任务无论成败都应进入下一周期，
+                // 否则状态停在未完成、next_period 不再前进，链条中断、次日不再生成实例。
+                logging!(
+                    error,
+                    Type::Service,
+                    true,
+                    "定时任务 {} 动作执行失败: {}",
+                    task.name,
+                    e
+                );
+                if first_error.is_none() {
+                    first_error = Some(format!("任务 {}: {}", task.name, e));
+                }
+            }
+        }
         tasks_ids.push(task.id);
     }
+
+    // 无论动作成败，都标记本次触发的实例完成；
+    // 周期性实例在此完成回调里创建下一次实例。
     if let Err(e) = marked_tasks_completed(tasks_ids).await {
         logging!(error, Type::Database, true, "更新任务状态失败: {}", e);
     }
-    Ok(out_tasks)
+
+    // 有失败时返回 Err 以便上层弹出失败通知，但任务状态已经推进，周期不再断链。
+    match first_error {
+        Some(e) => Err(format!("定时任务执行失败:{}", e)),
+        None => Ok(out_tasks),
+    }
 }

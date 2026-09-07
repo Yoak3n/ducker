@@ -14,6 +14,10 @@ use crate::store::db::Database;
 const PROTOCOL_VERSION: &str = "2024-11-05";
 
 pub fn run() {
+    // 文件日志（前缀区分进程，避免与 GUI 的 ducker-*.log 混淆）。
+    // CLI 一次性调用模式也初始化：任何经 MCP 的动作执行都有落盘轨迹。
+    crate::utils::file_log::init("ducker-mcp");
+
     // 一次性 CLI 模式：ducker-mcp call <tool> [json-args]，执行单个工具立即退出
     let args: Vec<String> = std::env::args().collect();
     if args.len() >= 2 && args[1] == "call" {
@@ -191,6 +195,7 @@ fn resolve_db_dir() -> anyhow::Result<PathBuf> {
 async fn serve(db: std::sync::Arc<Database>) -> anyhow::Result<()> {
     use tokio::io::{AsyncBufReadExt, BufReader};
 
+    log::info!("MCP stdio 服务启动");
     let mut reader = BufReader::new(tokio::io::stdin()).lines();
     let mut out = tokio::io::stdout();
 
@@ -261,6 +266,8 @@ async fn handle_tools_call(
         .and_then(|v| v.as_str())
         .ok_or_else(|| (-32602, "missing params.name".to_string()))?;
     let arguments = params.get("arguments").cloned().unwrap_or(json!({}));
+    // 审计轨迹：谁在什么时刻调用了什么工具（排查异常触发时的关键证据）
+    log::info!("MCP tools/call: {name}");
 
     match tools::call(db, name, &arguments).await {
         Ok(value) => {

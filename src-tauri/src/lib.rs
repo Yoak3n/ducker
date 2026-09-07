@@ -84,6 +84,8 @@ impl AppHandleManager {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    // 文件日志最先初始化：setup 阶段的日志也要落盘
+    utils::file_log::init("ducker");
     let subscriber = tracing_subscriber::fmt()
         // filter spans/events with level TRACE or higher.
         .with_max_level(Level::TRACE)

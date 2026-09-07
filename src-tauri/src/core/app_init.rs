@@ -108,7 +108,7 @@ pub async fn check_periodic_task() {
         get_app_handle,logging,
         schema::action::Action,
         schema::AppState,
-        service::execute::execute_plural_actions,
+        service::execute::execute_plural_actions_auto,
         store::module::{ActionManager, PeriodicTaskManager, TaskManager},
         utils::date::is_today,utils::logging::Type,
     };
@@ -165,7 +165,7 @@ pub async fn check_periodic_task() {
     };
 
     if let Some(collected_actions) = collected {
-        let r = execute_plural_actions(collected_actions).await;
+        let r = execute_plural_actions_auto(collected_actions).await;
         if let Err(e) = r {
             logging!(error, Type::Database,true, "执行周期性任务的所有动作失败{:?}",e);
         } else {

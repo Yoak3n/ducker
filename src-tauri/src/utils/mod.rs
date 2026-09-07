@@ -1,6 +1,7 @@
 pub mod date;
 pub mod dirs;
 pub mod exec_cmd;
+pub mod file_log;
 pub mod help;
 pub mod init;
 pub mod logging;

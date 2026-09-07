@@ -15,7 +15,7 @@ use crate::{
     logging, logging_error,
     service::{execute, hub::Hub},
     singleton,
-    utils::logging::Type,
+    utils::{date::to_datetime_str, logging::Type},
 };
 
 type TaskID = u64;
@@ -102,7 +102,8 @@ impl Timer {
         // Generate diff outside of lock to minimize lock contention
         // Hub::global().refresh();
         let diff_map = self.gen_diff();
-        logging!(info, Type::Timer,true, "Timer refresh at {}",Local::now().to_rfc3339_opts(SecondsFormat::Secs, true));
+        // 每分钟一次的心跳：debug 级（文件日志只收 Info 及以上），不在日志里刷屏
+        logging!(debug, Type::Timer, "Timer refresh at {}",Local::now().to_rfc3339_opts(SecondsFormat::Secs, true));
         if diff_map.is_empty() {
             logging!(debug, Type::Timer, "No timer changes needed");
             return Ok(());
@@ -146,13 +147,13 @@ impl Timer {
                         timer_map.remove(&uid); // Rollback on failure
                     } else {
                         logging!(
-                            debug,
+                            info,
                             Type::Timer,
                             true,
-                            "Added task {} for uid {} at {}",
-                            tid,
+                            "定时任务注册: uid={}, 到点时间={}, 间隔={}s",
                             uid,
-                            now + interval
+                            to_datetime_str(now + interval),
+                            interval
                         );
                     }
                 }
@@ -351,34 +352,25 @@ impl Timer {
         logging!(
             info,
             Type::Timer,
-            "Running timer task for action: {}, timestamp: {}",
+            "定时任务到点触发: uid={}, 计划时间={}, 当前时间={}",
             id,
-            timestamp
+            to_datetime_str(timestamp),
+            Local::now().format("%Y-%m-%d %H:%M:%S")
         );
-        match tokio::time::timeout(std::time::Duration::from_secs(40), async {
-            // feat::update_profile(uid.clone(), None, Some(is_current)).await
-            execute::execute_tasks(&id, timestamp).await
-        })
-        .await
-        {
-            Ok(result) => match result {
-                Ok(_) => {
-                    let duration = task_start.elapsed().as_millis();
-                    logging!(
-                        info,
-                        Type::Timer,
-                        "Timer task completed successfully for id: {} (took {}ms)",
-                        id,
-                        duration
-                    );
-                }
-                Err(e) => {
-                    logging_error!(Type::Timer, "Failed to update profile uid {}: {}", id, e);
-                    Handle::notice_message("Error", format!("定时任务执行失败:{}", e));
-                }
-            },
-            Err(_) => {
-                logging_error!(Type::Timer, "Timer task timed out for uid: {}", id);
+        match execute::execute_tasks(&id, timestamp).await {
+            Ok(_) => {
+                let duration = task_start.elapsed().as_millis();
+                logging!(
+                    info,
+                    Type::Timer,
+                    "Timer task completed successfully for id: {} (took {}ms)",
+                    id,
+                    duration
+                );
+            }
+            Err(e) => {
+                logging_error!(Type::Timer, "Failed to update profile uid {}: {}", id, e);
+                Handle::notice_message("Error", format!("定时任务执行失败:{}", e));
             }
         }
     }
