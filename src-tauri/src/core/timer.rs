@@ -1,13 +1,28 @@
-use anyhow::{Context, Result};
-use chrono::{Local, SecondsFormat};
-use delay_timer::prelude::{DelayTimer, DelayTimerBuilder, TaskBuilder};
+//! 定时任务调度核心。
+//!
+//! 2026-09 重构背景：
+//! 旧实现把每个「到点执行」注册成 delay_timer 0.11.6 时间轮的一次性任务，并每分钟
+//! 重注册刷新。该时间轮在注册时按 `(剩余秒数 + 秒针 + 1)` 计算槽位与圈数：当剩余秒数
+//! 位于本圈末尾、且与当前秒针位置叠加发生进位时，任务会整整多等一圈 —— 恰好 3600 秒，
+//! 表现为定时任务固定晚一小时触发（例：2026-09-08 15:05:09 注册的 22:30 任务最终在
+//! 23:30:01 触发：剩余 26691s、秒针 ≈3360，26691+1+3360 进位 → 实际 30292s 后才触发）。
+//! 此外旧实现每分钟的刷新任务带 maximum_parallel_runnable_num(1)，一旦某次执行
+//! panic/卡死，finish 事件不再发出、并行计数永久停在 1，后续刷新被静默跳过。
+//!
+//! 因此改为：一个独立的 1 秒 tokio tick —— 每分钟从数据库重建「调度表」（due_to →
+//! 任务），tick 直接把计划时间与当前时间比对触发；每次 tick 跑在隔离的子任务里，
+//! 个别异常只丢一拍，不会终止整个调度循环。delay_timer（时间轮）已从本模块移除。
+
+use anyhow::Result;
+use chrono::Local;
 use parking_lot::RwLock;
 use std::{
-    collections::HashMap,
+    collections::{HashMap, HashSet},
     sync::{
-        atomic::{AtomicBool, AtomicU64, Ordering},
+        atomic::{AtomicBool, AtomicI64, Ordering},
         Arc,
     },
+    time::Duration,
 };
 
 use crate::{
@@ -18,48 +33,42 @@ use crate::{
     utils::{date::to_datetime_str, logging::Type},
 };
 
-type TaskID = u64;
-// const AUTO_REFRESH_ID: &str = "auto_refresh_task";
-
-#[derive(Debug, Clone)]
-pub struct TimerTask {
-    pub task_id: TaskID,
-    pub interval_seconds: i64,
-    #[allow(unused)]
-    // 不知道这个字段有什么用
-    pub last_period: i64,
-}
+/// 调度表（数据库 → Hub）的重建周期
+const REFRESH_INTERVAL_SECS: i64 = 60;
+/// 已触发记录保留时间：覆盖「触发后到调度表把该实例清掉」之间可能的最长间隔
+const FIRED_RETENTION_SECS: i64 = 600;
+/// 到点判定 tick 周期
+const TICK_PERIOD: Duration = Duration::from_secs(1);
 
 pub struct Timer {
-    /// cron manager
-    pub delay_timer: Arc<RwLock<DelayTimer>>,
+    /// 当前跟踪的定时任务：uid -> 计划时间戳（调度表刷新时同步，用于变更日志）
+    tracked: Arc<RwLock<HashMap<String, i64>>>,
 
-    /// save the current state - using RwLock for better read concurrency
-    pub timer_map: Arc<RwLock<HashMap<String, TimerTask>>>,
+    /// 已触发过的 (uid, 计划时间戳)：避免 tick 重复触发同一个实例
+    fired: Arc<RwLock<HashSet<(String, i64)>>>,
 
-    /// increment id - atomic counter for better performance
-    pub timer_count: AtomicU64,
+    /// 上次重建调度表的 unix 秒
+    last_refresh_ts: AtomicI64,
 
-    /// Flag to mark if timer is initialized - atomic for better performance
+    /// Flag to mark if timer is initialized
     pub initialized: AtomicBool,
 }
 
-// Use singleton macro
 singleton!(Timer, TIMER_INSTANCE);
 
 impl Timer {
     fn new() -> Self {
         Timer {
-            delay_timer: Arc::new(RwLock::new(DelayTimerBuilder::default().build())),
-            timer_map: Arc::new(RwLock::new(HashMap::new())),
-            timer_count: AtomicU64::new(1),
+            tracked: Arc::new(RwLock::new(HashMap::new())),
+            fired: Arc::new(RwLock::new(HashSet::new())),
+            last_refresh_ts: AtomicI64::new(0),
             initialized: AtomicBool::new(false),
         }
     }
 
-    /// Initialize timer with better error handling and atomic operations
+    /// 启动定时调度：一个 1 秒 tokio tick（跑在 Tauri 的 tokio 运行时上，与 UI 线程解耦）。
     pub fn init(&self) -> Result<()> {
-        // Use compare_exchange for thread-safe initialization check
+        // 防止重复初始化
         if self
             .initialized
             .compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst)
@@ -71,314 +80,149 @@ impl Timer {
 
         logging!(info, Type::Timer, true, "Initializing timer...");
 
-        // Initialize timer tasks
-        if let Err(e) = self.refresh() {
-            // Reset initialization flag on error
-            self.initialized.store(false, Ordering::SeqCst);
-            logging_error!(Type::Timer, "Failed to initialize timer: {}", e);
-            return Err(e);
-        }
-
-        // 定时每一分钟刷新待办动作
-        let auto_refrsh_task_id = self.timer_count.fetch_add(1, Ordering::Relaxed);
-        let auto_refresh_task = TaskBuilder::default()
-            .set_task_id(auto_refrsh_task_id)
-            .set_maximum_parallel_runnable_num(1)
-            .set_frequency_repeated_by_minutes(1)
-            .spawn_async_routine(move || async move {
-                Hub::global().refresh().await;
-                let _ = Self::global().refresh();
-            })
-            .context("failed to create auto_refresh_task")?;
-        let delay_timer = self.delay_timer.write();
-        delay_timer.add_task(auto_refresh_task)?;
+        tauri::async_runtime::spawn(async move {
+            let mut ticker = tokio::time::interval(TICK_PERIOD);
+            // tick 处理滞后时不必追赶，顺延即可
+            ticker.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Delay);
+            loop {
+                ticker.tick().await;
+                // 每个 tick 放进独立子任务：单次异常（含数据库/调度表构建错误）
+                // 只丢掉这一拍，调度循环本身继续跑。
+                let join = tauri::async_runtime::spawn(async move {
+                    Timer::global().tick_once().await;
+                });
+                if let Err(e) = join.await {
+                    logging!(error, Type::Timer, true, "定时调度 tick 异常: {:?}", e);
+                }
+            }
+        });
 
         logging!(info, Type::Timer, "Timer initialization completed");
         Ok(())
     }
 
-    /// Refresh timer tasks with better error handling
-    pub fn refresh(&self) -> Result<()> {
-        // Generate diff outside of lock to minimize lock contention
-        // Hub::global().refresh();
-        let diff_map = self.gen_diff();
-        // 每分钟一次的心跳：debug 级（文件日志只收 Info 及以上），不在日志里刷屏
-        logging!(debug, Type::Timer, "Timer refresh at {}",Local::now().to_rfc3339_opts(SecondsFormat::Secs, true));
-        if diff_map.is_empty() {
-            logging!(debug, Type::Timer, "No timer changes needed");
-            return Ok(());
+    /// 一拍 tick：必要时重建调度表，然后触发所有已到点的任务。
+    async fn tick_once(&self) {
+        let now = Local::now().timestamp();
+
+        // 周期性重建调度表（默认每分钟一次；CAS 保证并发下只刷一次）
+        let last = self.last_refresh_ts.load(Ordering::Relaxed);
+        if now - last >= REFRESH_INTERVAL_SECS
+            && self
+                .last_refresh_ts
+                .compare_exchange(last, now, Ordering::SeqCst, Ordering::Relaxed)
+                .is_ok()
+        {
+            Hub::global().refresh().await;
+            self.sync_tracked();
+            self.prune_fired(now);
         }
 
-        // Apply changes while holding locks
-        let mut timer_map = self.timer_map.write();
-        let mut delay_timer = self.delay_timer.write();
-
-        for (uid, diff) in diff_map {
-            match diff {
-                DiffFlag::Del(tid) => {
-                    timer_map.remove(&uid);
-                    if let Err(e) = delay_timer.remove_task(tid) {
-                        logging!(
-                            warn,
-                            Type::Timer,
-                            true,
-                            "Failed to remove task {} for uid {}: {}",
-                            tid,
-                            uid,
-                            e
-                        );
-                    } else {
-                        logging!(debug, Type::Timer, true, "Removed task {} for uid {}", tid, uid);
-                    }
-                }
-                DiffFlag::Add(tid, interval) => {
-                    let now = Local::now().timestamp();
-                    let task = TimerTask {
-                        task_id: tid,
-                        interval_seconds: interval,
-                        last_period: now,
-                    };
-
-                    timer_map.insert(uid.clone(), task);
-                    if let Err(e) =
-                        self.add_task(&mut delay_timer, uid.clone(), tid, interval, now + interval)
-                    {
-                        logging_error!(Type::Timer, "Failed to add task for uid {}: {}", uid, e);
-                        timer_map.remove(&uid); // Rollback on failure
-                    } else {
-                        logging!(
-                            info,
-                            Type::Timer,
-                            true,
-                            "定时任务注册: uid={}, 到点时间={}, 间隔={}s",
-                            uid,
-                            to_datetime_str(now + interval),
-                            interval
-                        );
-                    }
-                }
-                DiffFlag::Mod(tid, interval) => {
-                    // Remove old task first
-                    if let Err(e) = delay_timer.remove_task(tid) {
-                        logging!(
-                            warn,
-                            Type::Timer,
-                            true,
-                            "Failed to remove old task {} for uid {}: {}",
-                            tid,
-                            uid,
-                            e
-                        );
-                    }
-                    let now = Local::now().timestamp();
-                    // Then add the new one
-                    let task = TimerTask {
-                        task_id: tid,
-                        interval_seconds: interval,
-                        last_period: now,
-                    };
-
-                    timer_map.insert(uid.clone(), task);
-                    // 这样时间戳加间隔可靠吗？
-                    if let Err(e) =
-                        self.add_task(&mut delay_timer, uid.clone(), tid, interval, now + interval)
-                    {
-                        logging_error!(Type::Timer, "Failed to update task for uid {}: {}", uid, e);
-                        timer_map.remove(&uid); // Rollback on failure
-                    } else {
-                        logging!(debug, Type::Timer, "Updated task {} for uid {}", tid, uid);
-                    }
+        // 到点触发：调度表里计划时间已到的任务
+        let Some(schedule) = Hub::global().latest_schedule() else {
+            return;
+        };
+        for (ts, tasks) in schedule.iter() {
+            if *ts > now {
+                continue;
+            }
+            for task in tasks.iter() {
+                let uid = task.id.clone();
+                // 已触发过（含正在执行）的实例不再触发
+                if self.fired.write().insert((uid.clone(), *ts)) {
+                    self.fire(&uid, *ts);
                 }
             }
         }
-
-        Ok(())
     }
 
-    /// Generate map of profile UIDs to update intervals
-    fn gen_map(&self) -> HashMap<String, i64> {
-        let mut new_map = HashMap::new();
-        let cur_time = Local::now().timestamp();
-        if let Some(items) = Hub::global().latest_schedule() {
-            for (timestamp, tasks) in items.iter() {
-                let interval = timestamp - cur_time;
-                for task in tasks.iter() {
-                    let id = task.id.clone();
-                    if interval > 0 {
-                        logging!(
-                            debug,
-                            Type::Timer,
-                            "找到定时更新配置: id={}, interval={}seconds",
-                            id,
-                            interval
-                        );
-                        // 新的配置的时间间隔大于当前的时间间隔，说明不需要更新
-                        if new_map.contains_key(&id) && new_map.get(&id).unwrap() < &interval {
-                            logging!(
-                                debug,
-                                Type::Timer,
-                                "定时更新配置已存在: id={}, interval={}seconds",
-                                task.id,
-                                interval
-                            );
-                            continue;
-                        }
-                        // TODO 这样就不支持在同一个时间戳执行同一个action
-                        new_map.insert(id, interval);
-                    }
-                }
-            }
-        }
-        logging!(
-            debug,
-            Type::Timer,
-            "生成的定时更新配置数量: {}",
-            new_map.len()
-        );
-        new_map
-    }
-
-    // Generate differences between current and new timer configuration
-    fn gen_diff(&self) -> HashMap<String, DiffFlag> {
-        let mut diff_map = HashMap::new();
-        let new_map = self.gen_map();
-
-        // Read lock for comparing current state
-        let timer_map = self.timer_map.read();
-        logging!(
-            debug,
-            Type::Timer,
-            "当前 timer_map 大小: {}",
-            timer_map.len()
-        );
-
-        // Find tasks to modify or delete
-        for (uid, timer_task) in timer_map.iter() {
-            match new_map.get(uid) {
-                // 由于delay_timer内部会更新task的interval_seconds，所以这里应该会不断发送ModFlag
-                Some(&interval) if interval != timer_task.interval_seconds => {
-                    // Task exists but interval changed
-                    logging!(
-                        debug,
-                        Type::Timer,
-                        "定时任务间隔变更: uid={}, 旧={}, 新={}",
-                        uid,
-                        timer_task.interval_seconds,
-                        interval
-                    );
-                    diff_map.insert(uid.clone(), DiffFlag::Mod(timer_task.task_id, interval));
-                }
-                None => {
-                    // Task no longer needed
-                    logging!(debug, Type::Timer, true, "定时任务已删除: uid={}", uid);
-                    diff_map.insert(uid.clone(), DiffFlag::Del(timer_task.task_id));
-                }
-                _ => {
-                    // Task exists with same interval, no change needed
-                    logging!(debug, Type::Timer, true, "定时任务保持不变: uid={}", uid);
-                }
-            }
-        }
-
-        // Find new tasks to add
-        // 我去，你这task_id竟然是自增的吗
-        let mut next_id = self.timer_count.load(Ordering::Relaxed);
-        let original_id = next_id;
-
-        for (uid, &interval) in new_map.iter() {
-            if !timer_map.contains_key(uid) {
-                logging!(
-                    debug,
-                    Type::Timer,
-                    true,
-                    "新增定时任务: uid={}, interval={}sec",
-                    uid,
-                    interval
-                );
-                diff_map.insert(uid.clone(), DiffFlag::Add(next_id, interval));
-                next_id += 1;
-            }
-        }
-
-        // Update counter only if we added new tasks
-        if next_id > original_id {
-            self.timer_count.store(next_id, Ordering::Relaxed);
-        }
-
-        diff_map
-    }
-
-    /// Add a timer task with better error handling
-    fn add_task(
-        &self,
-        delay_timer: &mut DelayTimer,
-        uid: String,
-        tid: TaskID,
-        seconds: i64,
-        timestamp: i64,
-    ) -> Result<()> {
+    /// 触发一次定时任务（记录日志 + 异步执行，不阻塞 tick）
+    fn fire(&self, uid: &str, ts: i64) {
         logging!(
             info,
             Type::Timer,
-            "Adding task: uid={}, id={}, interval={}sec",
-            uid,
-            tid,
-            seconds
-        );
-
-        // Create a task with reasonable retries and backoff
-        let task = TaskBuilder::default()
-            .set_task_id(tid)
-            .set_maximum_parallel_runnable_num(1)
-            .set_frequency_once_by_seconds(seconds as u64)
-            .spawn_async_routine(move || {
-                let uid = uid.clone();
-                async move {
-                    Self::async_task(uid, timestamp).await;
-                }
-            })
-            .context("failed to create timer task")?;
-
-        delay_timer
-            .add_task(task)
-            .context("failed to add timer task")?;
-        Ok(())
-    }
-
-    // Async task with better error handling and logging
-    async fn async_task(id: String, timestamp: i64) {
-        let task_start = std::time::Instant::now();
-
-        logging!(
-            info,
-            Type::Timer,
+            true,
             "定时任务到点触发: uid={}, 计划时间={}, 当前时间={}",
-            id,
-            to_datetime_str(timestamp),
+            uid,
+            to_datetime_str(ts),
             Local::now().format("%Y-%m-%d %H:%M:%S")
         );
-        match execute::execute_tasks(&id, timestamp).await {
-            Ok(_) => {
-                let duration = task_start.elapsed().as_millis();
-                logging!(
-                    info,
-                    Type::Timer,
-                    "Timer task completed successfully for id: {} (took {}ms)",
-                    id,
-                    duration
-                );
+
+        let id = uid.to_string();
+        tauri::async_runtime::spawn(async move {
+            let task_start = std::time::Instant::now();
+            match execute::execute_tasks(&id, ts).await {
+                Ok(_) => {
+                    let duration = task_start.elapsed().as_millis();
+                    logging!(
+                        info,
+                        Type::Timer,
+                        "Timer task completed successfully for id: {} (took {}ms)",
+                        id,
+                        duration
+                    );
+                }
+                Err(e) => {
+                    logging_error!(Type::Timer, "定时任务执行失败: id={}, err={}", id, e);
+                    Handle::notice_message("Error", format!("定时任务执行失败:{}", e));
+                }
             }
-            Err(e) => {
-                logging_error!(Type::Timer, "Failed to update profile uid {}: {}", id, e);
-                Handle::notice_message("Error", format!("定时任务执行失败:{}", e));
+        });
+    }
+
+    /// 把 tracked（用于变更日志）与最新调度表对齐：新增/变更打「定时任务注册」，
+    /// 已消失的打「定时任务已移除」。
+    fn sync_tracked(&self) {
+        let mut expect: HashMap<String, i64> = HashMap::new();
+        if let Some(schedule) = Hub::global().latest_schedule() {
+            for (ts, tasks) in schedule {
+                for task in tasks {
+                    expect
+                        .entry(task.id.clone())
+                        .and_modify(|e| {
+                            if ts < *e {
+                                *e = ts;
+                            }
+                        })
+                        .or_insert(ts);
+                }
             }
         }
-    }
-}
 
-#[derive(Debug)]
-enum DiffFlag {
-    Del(TaskID),
-    Add(TaskID, i64),
-    Mod(TaskID, i64),
+        let mut tracked = self.tracked.write();
+
+        let removed: Vec<String> = tracked
+            .iter()
+            .filter(|(uid, _)| !expect.contains_key(*uid))
+            .map(|(uid, _)| (*uid).clone())
+            .collect();
+        for uid in removed {
+            tracked.remove(&uid);
+            logging!(info, Type::Timer, true, "定时任务已移除: uid={}", uid);
+        }
+
+        for (uid, ts) in expect {
+            let unchanged = tracked
+                .get(&uid)
+                .is_some_and(|old| *old == ts);
+            if unchanged {
+                continue;
+            }
+            tracked.insert(uid.clone(), ts);
+            logging!(
+                info,
+                Type::Timer,
+                true,
+                "定时任务注册: uid={}, 到点时间={}",
+                uid,
+                to_datetime_str(ts)
+            );
+        }
+    }
+
+    /// 清理过期的已触发记录
+    fn prune_fired(&self, now: i64) {
+        let cutoff = now - FIRED_RETENTION_SECS;
+        self.fired.write().retain(|(_, ts)| *ts >= cutoff);
+    }
 }

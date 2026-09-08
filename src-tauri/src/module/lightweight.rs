@@ -21,13 +21,22 @@ use crate::logging_error;
 #[cfg(target_os = "macos")]
 use crate::AppHandleManager;
 
-use anyhow::{Context, Result};
-use delay_timer::prelude::TaskBuilder;
-// use std::sync::atomic::{AtomicBool, Ordering};
+use anyhow::Result;
+use parking_lot::Mutex;
+use std::sync::OnceLock;
+use std::time::Duration;
 use tauri::{Listener, Manager};
 
 // TODO 考虑为每个窗口添加单独的定时任务，当一个窗口关闭一分钟时，则销毁它
-const LIGHT_WEIGHT_TASK_ID: u64 = 10000000;
+
+/// 10 分钟倒计时任务句柄（tokio sleep 实现，取代 delay_timer 时间轮 ——
+/// 时间轮对「一次性 + 随时取消」的任务存在整点迟到的进位 bug，见 core/timer.rs 顶部说明）
+static LIGHT_WEIGHT_TIMER: OnceLock<Mutex<Option<tauri::async_runtime::JoinHandle<()>>>> =
+    OnceLock::new();
+
+fn light_weight_timer_handle() -> &'static Mutex<Option<tauri::async_runtime::JoinHandle<()>>> {
+    LIGHT_WEIGHT_TIMER.get_or_init(|| Mutex::new(None))
+}
 
 // 添加退出轻量模式的锁，防止并发调用
 // static EXITING_LIGHTWEIGHT: AtomicBool = AtomicBool::new(false);
@@ -214,25 +223,15 @@ pub fn add_window_listeners(window_label: &str) {
 fn setup_light_weight_timer() -> Result<()> {
     Timer::global().init()?;
 
-    // 创建任务
-    let task = TaskBuilder::default()
-        .set_task_id(LIGHT_WEIGHT_TASK_ID)
-        .set_maximum_parallel_runnable_num(1)
-        .set_frequency_once_by_minutes(10)
-        .spawn_async_routine(move || async move {
-            logging!(info, Type::Timer, true, "计时器到期，开始进入轻量模式");
-            entry_lightweight_mode();
-        })
-        .context("failed to create timer task")?;
+    // 取消可能残留的旧倒计时，再重新开始
+    cancel_light_weight_timer().ok();
 
-    // 添加任务到定时器
-    // 由于会定时刷新，所以这里需要添加一个不被刷新的容器
-    {
-        let delay_timer = Timer::global().delay_timer.write();
-        delay_timer
-            .add_task(task)
-            .context("failed to add timer task")?;
-    }
+    let handle = tauri::async_runtime::spawn(async move {
+        tokio::time::sleep(Duration::from_secs(10 * 60)).await;
+        logging!(info, Type::Timer, true, "计时器到期，开始进入轻量模式");
+        entry_lightweight_mode();
+    });
+    *light_weight_timer_handle().lock() = Some(handle);
 
     logging!(
         info,
@@ -244,14 +243,9 @@ fn setup_light_weight_timer() -> Result<()> {
 }
 
 fn cancel_light_weight_timer() -> Result<()> {
-    // let mut timer_map = Timer::global().timer_map.write();
-    let delay_timer = Timer::global().delay_timer.write();
-
-    // if let Some(task) = timer_map.remove(&LIGHT_WEIGHT_TASK_ID) {
-    delay_timer
-        .remove_task(LIGHT_WEIGHT_TASK_ID)
-        .context("failed to remove timer task")?;
+    if let Some(handle) = light_weight_timer_handle().lock().take() {
+        handle.abort();
+    }
     logging!(info, Type::Timer, "计时器已取消");
-    // }
     Ok(())
 }

@@ -1,6 +1,6 @@
 [package]
 name = "ducker"
-version = "0.3.4"
+version = "0.3.5"
 description = "A Tauri App"
 authors = ["Yoake"]
 license = ""
@@ -49,7 +49,7 @@ chrono = {version = "^0.4", features = ["serde"] }
 rand = "0.8.5"
 dirs = "5"
 scopeguard = "1.2.0"
-delay_timer = "0.11.6"
+# delay_timer = "0.11.6"  # 已移除：其时间轮对长一次性任务存在整点迟到进位 bug（见 core/timer.rs 说明）
 # sys-locale = "0.3.2"
 rodio = "0.21.1"
 
