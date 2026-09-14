@@ -134,13 +134,11 @@ export const useTaskStore = create<TaskStore>()(
 
             // 重新获取任务列表以确保数据同步
             await get().fetchTasks();
-            // const tasks = await taskApi.get_all_tasks();
-            // const newTask = tasks?.find(task => task.id === taskId);
-
-            // if (!newTask) {
-            //   throw new Error('创建任务失败：无法找到新创建的任务');
-            // }
-            return taskData;
+            const newTask = get().getTaskById(taskId);
+            if (!newTask) {
+              throw new Error('创建任务失败：无法找到新创建的任务');
+            }
+            return newTask;
           } catch (error) {
             set({
               loading: false,

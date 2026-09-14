@@ -12,7 +12,7 @@ export const useI18n = () => {
             "en": "English",
             "ru": "Русский",
             "zh": "中文",
-            "fa": "فارسی",
+            "fr": "Français",
             "tt": "Татарча",
             "id": "Bahasa Indonesia",
             "ar": "العربية",
